@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://seguro-tenerife/knowledge-base/asisa/schema.json",
+  "title": "ASISA product knowledge entry",
+  "description": "Один продукт/модальность ASISA в базе знаний. Источник истины — asisa.es. Контент покрытия/исключений хранится на испанском (как на сайте); summary_ru/en — краткие переводы-крючки. Детальный перевод под язык пользователя делается на этапе ответа (RAG + LLM).",
+  "type": "object",
+  "required": ["id", "line", "name_es", "official_url", "summary_es", "coverage"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "description": "Стабильный slug (line-product), ключ для эмбеддингов/БД." },
+    "line": {
+      "type": "string",
+      "description": "Линия страхования.",
+      "enum": ["salud", "salud_extranjeros", "dental", "vida", "decesos", "accidentes", "viaje", "mascotas", "hospitalizacion"]
+    },
+    "name_es": { "type": "string", "description": "Официальное название продукта (испанский)." },
+    "official_url": { "type": "string", "format": "uri", "description": "Страница продукта на asisa.es." },
+    "summary_es": { "type": "string", "description": "Суть продукта на испанском (с сайта)." },
+    "summary_ru": { "type": "string", "description": "Краткое резюме на русском (для основной аудитории)." },
+    "summary_en": { "type": "string", "description": "Краткое резюме на английском." },
+    "coverage": { "type": "array", "items": { "type": "string" }, "description": "Ключевые покрытия (испанский, с сайта)." },
+    "target_segments": { "type": "array", "items": { "type": "string" }, "description": "Кому подходит." },
+    "exclusions_or_limits": { "type": "array", "items": { "type": "string" }, "description": "Исключения/лимиты/периоды ожидания." },
+    "pricing_notes": { "type": ["string", "null"], "description": "Что известно о цене; null — не опубликовано (НЕ выдумывать, считать в тарификаторе/по телефону)." },
+    "relevant_for_expats": { "type": "string", "description": "Релевантность для приезжих/экспатов (в т.ч. сертификат для ВНЖ/визы)." },
+    "source_url": { "type": "string", "format": "uri", "description": "Источник данных (обычно = official_url)." }
+  }
+}

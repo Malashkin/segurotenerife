@@ -1,0 +1,237 @@
+{
+  "provider": "ASISA",
+  "country": "ES",
+  "retrieved": "2026-06-12",
+  "total_products": 34,
+  "lines": [
+    {
+      "line": "salud",
+      "count": 11,
+      "products": [
+        {
+          "id": "salud-ya",
+          "name_es": "ASISA Ya",
+          "expats": "false"
+        },
+        {
+          "id": "salud-esencial-plus",
+          "name_es": "ASISA Esencial +",
+          "expats": "false"
+        },
+        {
+          "id": "salud-esencial",
+          "name_es": "ASISA Esencial",
+          "expats": "false"
+        },
+        {
+          "id": "salud-completa-plus-plus",
+          "name_es": "ASISA Completa ++",
+          "expats": "false"
+        },
+        {
+          "id": "salud-completa-plus",
+          "name_es": "ASISA Completa +",
+          "expats": "false"
+        },
+        {
+          "id": "salud-completa",
+          "name_es": "ASISA Completa",
+          "expats": "false"
+        },
+        {
+          "id": "salud-reembolso-100",
+          "name_es": "ASISA Reembolso 100.000",
+          "expats": "false"
+        },
+        {
+          "id": "salud-reembolso-180",
+          "name_es": "ASISA Reembolso 180.000",
+          "expats": "false"
+        },
+        {
+          "id": "salud-reembolso-240",
+          "name_es": "ASISA Reembolso 240.000",
+          "expats": "false"
+        },
+        {
+          "id": "salud-familiar",
+          "name_es": "Seguro familiar ASISA",
+          "expats": "false"
+        },
+        {
+          "id": "salud-internacional",
+          "name_es": "Seguros médicos internacionales (ASISA)",
+          "expats": "parcial"
+        }
+      ]
+    },
+    {
+      "line": "salud_extranjeros",
+      "count": 3,
+      "products": [
+        {
+          "id": "extranjeros-general",
+          "name_es": "Seguro médico para extranjeros en España (ASISA Extranjeros)",
+          "expats": "true"
+        },
+        {
+          "id": "extranjeros-residents",
+          "name_es": "ASISA Health Residents (seguro médico para residir en España)",
+          "expats": "true"
+        },
+        {
+          "id": "extranjeros-students",
+          "name_es": "ASISA Health Students (seguro médico para estudiantes extranjeros)",
+          "expats": "true"
+        }
+      ]
+    },
+    {
+      "line": "dental",
+      "count": 3,
+      "products": [
+        {
+          "id": "dental",
+          "name_es": "ASISA Dental",
+          "expats": "false"
+        },
+        {
+          "id": "dental-familiar",
+          "name_es": "ASISA Dental Familiar",
+          "expats": "false"
+        },
+        {
+          "id": "dental-todo-incluido",
+          "name_es": "ASISA Dental Todo Incluido",
+          "expats": "false"
+        }
+      ]
+    },
+    {
+      "line": "vida",
+      "count": 3,
+      "products": [
+        {
+          "id": "vida-tranquilidad",
+          "name_es": "ASISA Vida Tranquilidad",
+          "expats": "false"
+        },
+        {
+          "id": "vida-familiar",
+          "name_es": "ASISA Vida Familiar",
+          "expats": "false"
+        },
+        {
+          "id": "vida-hipoteca",
+          "name_es": "ASISA Vida Capital Decreciente (protección de hipoteca)",
+          "expats": "parcial"
+        }
+      ]
+    },
+    {
+      "line": "decesos",
+      "count": 1,
+      "products": [
+        {
+          "id": "decesos-ocaso",
+          "name_es": "OCASO Asistencia Familiar Plena (distribuido vía ASISA)",
+          "expats": "false"
+        }
+      ]
+    },
+    {
+      "line": "accidentes",
+      "count": 5,
+      "products": [
+        {
+          "id": "accidentes-personales",
+          "name_es": "ASISA Accidentes Personales",
+          "expats": "false"
+        },
+        {
+          "id": "accidentes-plus-1",
+          "name_es": "ASISA Accidentes Plus Tipo 1",
+          "expats": "false"
+        },
+        {
+          "id": "accidentes-plus-2",
+          "name_es": "ASISA Accidentes Plus Tipo 2",
+          "expats": "false"
+        },
+        {
+          "id": "accidentes-compromiso-10",
+          "name_es": "ASISA Vida Accidentes Compromiso 10",
+          "expats": "false"
+        },
+        {
+          "id": "accidentes-senior",
+          "name_es": "ASISA Vida Accidentes Senior",
+          "expats": "false"
+        }
+      ]
+    },
+    {
+      "line": "viaje",
+      "count": 5,
+      "products": [
+        {
+          "id": "viaje-flex",
+          "name_es": "ASISA Travel and You Flex",
+          "expats": "parcial"
+        },
+        {
+          "id": "viaje-cruise",
+          "name_es": "ASISA Travel and Cruise",
+          "expats": "false"
+        },
+        {
+          "id": "viaje-unlimited-60",
+          "name_es": "ASISA Travel Unlimited 60",
+          "expats": "false"
+        },
+        {
+          "id": "viaje-study",
+          "name_es": "ASISA Travel Study",
+          "expats": "parcial"
+        },
+        {
+          "id": "viaje-welcome",
+          "name_es": "ASISA Travel Welcome",
+          "expats": "parcial"
+        }
+      ]
+    },
+    {
+      "line": "mascotas",
+      "count": 2,
+      "products": [
+        {
+          "id": "mascotas",
+          "name_es": "ASISA Mascotas",
+          "expats": "false"
+        },
+        {
+          "id": "mascotas-rc",
+          "name_es": "ASISA Mascotas RC / Responsabilidad Civil para Perros (incl. PPP)",
+          "expats": "parcial"
+        }
+      ]
+    },
+    {
+      "line": "hospitalizacion",
+      "count": 1,
+      "products": [
+        {
+          "id": "hospitalizacion",
+          "name_es": "ASISA Hospitalización",
+          "expats": "false"
+        }
+      ]
+    }
+  ],
+  "residency_visa_products": [
+    "extranjeros-residents",
+    "extranjeros-students",
+    "extranjeros-general"
+  ]
+}

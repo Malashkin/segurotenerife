@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+### Added — База знаний ASISA + плавающий чат-бот
+- **База знаний ASISA** (`knowledge-base/asisa/`): каталог из **34 продуктов** по всем линиям ASISA в Испании (salud + модальности, salud для иностранцев/ВНЖ, dental, vida, decesos, accidentes, viaje, mascotas, hospitalización). Собрано с asisa.es со ссылками-источниками; `catalog.json` (+ `schema.json`, `index.json`), `residency-visa.md` (highlight для приезжих), `SOURCES.md` с дисклеймерами. Принципы: цены где не опубликованы — `null` (не выдумываем), покрытия на испанском (первоисточник) + краткие `summary_ru/en`. Задел под RAG (Postgres+эмбеддинги → ответы бота через Claude API).
+- **Плавающий чат-бот** на лендинге: чат вынесен из встроенной секции в виджет `ChatLauncher` (кнопка-пузырь в углу → всплывающее окно), секция #quiz стала CTA. uiStore.chatOpen, i18n `chat_fab`/`chat_close`, E2E обновлён (4/4).
+
 ### Added — Волна 4: деплой-конфиг + E2E (Playwright) + нагрузочный smoke (k6)
 - **Деплой.** `backend/railway.toml` (сборка по Dockerfile, healthcheck `/health`, restart-policy); Dockerfile собирает `--locked` с `Cargo.lock` (воспроизводимо). `docs/deploy.md` — полный гайд: backend+Postgres на Railway, две SPA на Vercel/Netlify, таблицы ENV, генерация `MANAGER_PASSWORD_HASH`, обязательные `COOKIE_SECURE=true` и конкретный `ALLOWED_ORIGINS` (не `*`) для cookie-логина, чек-лист после деплоя.
 - **E2E (Playwright)** в `frontend/e2e`: реальный браузер против собранных SPA, backend подменён стабами (`page.route`) — детерминированно, без БД. Покрытие: web — проход чат-подбора до экрана хендоффа + смена языка перерисовывает чат без перезагрузки; admin — нет сессии → форма входа, неверный пароль → ошибка, верный пароль → дашборд со списком лидов. **4/4 зелёные.**
