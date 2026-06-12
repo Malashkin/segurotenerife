@@ -21,6 +21,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import {
   CHAT_FLOW,
+  CHAT_STEP_COUNT,
   DEFAULT_MESSENGER,
   useChatStore,
   type ChatMessenger,
@@ -61,6 +62,7 @@ export function ChatWidget(): JSX.Element {
   const setConsent = useChatStore((s) => s.setConsent);
   const complete = useChatStore((s) => s.complete);
   const reset = useChatStore((s) => s.reset);
+  const back = useChatStore((s) => s.back);
 
   // --- Локальное UI-состояние формы (только ввод; «истина» по сабмиту в сторе) ---
   const [name, setNameLocal] = useState('');
@@ -196,6 +198,11 @@ export function ChatWidget(): JSX.Element {
   }
 
   // --- Производное для рендера ---
+  // Прогресс подбора: «шаг N из M» + ширина полосы. Снимает неизвестность —
+  // пользователь видит, сколько осталось (US-38). На экране 'done' — 100%.
+  const totalSteps = CHAT_STEP_COUNT;
+  const stepNumber = phase === 'done' ? totalSteps : Math.min(stepIndex + 1, totalSteps);
+  const progressPct = Math.round((stepNumber / totalSteps) * 100);
   const currentStep = CHAT_FLOW[stepIndex];
   const showTyping = phase === 'thinking';
   const showQuick = phase === 'quick' && currentStep?.kind === 'quick';
@@ -207,7 +214,7 @@ export function ChatWidget(): JSX.Element {
 
   return (
     <div
-      className="flex flex-col overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-xl"
+      className="flex h-full flex-col overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-xl sm:h-auto"
       role="region"
       aria-label={ct('title')}
     >
@@ -225,10 +232,25 @@ export function ChatWidget(): JSX.Element {
         </span>
       </div>
 
+      {/* Индикатор прогресса подбора (шаг N из M). Скрыт на завершающем экране. */}
+      {phase !== 'idle' && phase !== 'done' && (
+        <div className="flex items-center gap-2.5 border-b border-slate-100 bg-white px-[18px] py-2">
+          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+            <div
+              className="h-full rounded-full bg-brand transition-[width] duration-300"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
+          <span className="text-[0.72rem] font-semibold tabular-nums text-muted">
+            {stepNumber}/{totalSteps}
+          </span>
+        </div>
+      )}
+
       {/* Лента сообщений */}
       <div
         ref={bodyRef}
-        className="flex h-[360px] max-h-[56vh] flex-col gap-3 overflow-y-auto bg-[#f5f8f8] px-[18px] py-5"
+        className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto bg-[#f5f8f8] px-[18px] py-5 sm:h-[360px] sm:max-h-[56vh] sm:flex-none"
         aria-live="polite"
         aria-atomic="false"
       >
@@ -267,6 +289,17 @@ export function ChatWidget(): JSX.Element {
 
       {/* Подвал: интерактив текущей фазы (кнопки / форма / хендофф) */}
       <div className="border-t border-slate-200 bg-white px-4 py-[14px]">
+        {/* Шаг назад: поправить предыдущий ответ, не начиная заново (US-40). */}
+        {(showQuick || showForm) && stepIndex > 0 && (
+          <button
+            type="button"
+            onClick={() => back()}
+            className="mb-3 inline-flex items-center gap-1 text-[0.82rem] font-medium text-muted transition-colors hover:text-brand-dark"
+          >
+            {ct('q_back')}
+          </button>
+        )}
+
         {/* Быстрые ответы */}
         {showQuick && (
           <div className="flex flex-wrap gap-2">
@@ -276,6 +309,7 @@ export function ChatWidget(): JSX.Element {
                 <button
                   key={opt.optionKey ?? opt.value ?? i}
                   type="button"
+                  data-testid="chat-option"
                   onClick={() => handlePick(opt)}
                   className="rounded-full border-[1.5px] border-brand bg-white px-[15px] py-[9px] text-[0.92rem] font-semibold text-brand-dark transition-colors hover:bg-brand hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >

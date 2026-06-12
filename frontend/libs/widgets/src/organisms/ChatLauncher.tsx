@@ -10,6 +10,7 @@
  * чат и из CTA-секции лендинга (#quiz), и из самой кнопки. Сам чат-сценарий —
  * в ChatWidget (@features), он стартует при монтировании (т.е. при открытии окна).
  */
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUiStore } from '@shared/store';
 import { ChatWidget } from '@features';
@@ -60,19 +61,39 @@ export function ChatLauncher(): JSX.Element {
   const toggleChat = useUiStore((s) => s.toggleChat);
   const closeChat = useUiStore((s) => s.closeChat);
 
+  // Доступность (US-34/88): при открытии переводим фокус в диалог, Esc закрывает,
+  // при закрытии возвращаем фокус на кнопку-лончер.
+  const launcherRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!chatOpen) return;
+    dialogRef.current?.focus();
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') closeChat();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      launcherRef.current?.focus();
+    };
+  }, [chatOpen, closeChat]);
+
   return (
     <>
       {/* Всплывающее окно чата. Монтируется только когда открыто — чат стартует
           при открытии (ChatWidget сам инициирует сценарий на mount). */}
       {chatOpen && (
         <div
+          ref={dialogRef}
           role="dialog"
+          aria-modal="false"
           aria-label={t('chat_fab')}
+          tabIndex={-1}
           className={cn(
-            'fixed z-[60] flex flex-col',
-            // Мобильные: почти на весь экран; десктоп: карточка у нижнего правого угла.
-            'inset-x-3 bottom-[5.5rem] sm:inset-x-auto sm:right-6 sm:bottom-[6.5rem]',
-            'w-auto sm:w-[400px] sm:max-w-[calc(100vw-3rem)]',
+            'fixed z-[60] flex flex-col outline-none',
+            // Мобильные: bottom-sheet почти на весь экран (US-76); десктоп: карточка у угла.
+            'inset-x-2 top-16 bottom-2 sm:inset-x-auto sm:right-6 sm:top-auto sm:bottom-[6.5rem]',
+            'sm:w-[400px] sm:max-w-[calc(100vw-3rem)]',
           )}
         >
           {/* Кнопка закрытия в углу окна (дублирует тоггл FAB — для наглядности). */}
@@ -90,6 +111,7 @@ export function ChatLauncher(): JSX.Element {
 
       {/* Плавающая кнопка-лончер (FAB). Тоггл: пузырь ↔ ✕. */}
       <button
+        ref={launcherRef}
         type="button"
         onClick={toggleChat}
         aria-expanded={chatOpen}

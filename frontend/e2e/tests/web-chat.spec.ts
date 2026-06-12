@@ -24,6 +24,10 @@ async function openChat(page: Page) {
 }
 
 test.describe('web — плавающий чат-подбор', () => {
+  // Реалистичный десктоп-вьюпорт: на нём чат-карточка не перекрывает шапку
+  // (на коротких окнах <760px карточка дорастает до навигации — это ок для демо).
+  test.use({ viewport: { width: 1280, height: 900 } });
+
   test.beforeEach(async ({ page }) => {
     await page.route('**/api/events', (route) => route.fulfill({ status: 204, body: '' }));
     await page.route('**/api/leads', (route) => {
@@ -45,7 +49,7 @@ test.describe('web — плавающий чат-подбор', () => {
     // 5 быстрых шагов (lang, goal, who, city, urgency): первая опция каждого.
     // Кнопки опций — внутри region; кнопка закрытия попапа сюда не попадает.
     for (let i = 0; i < 5; i++) {
-      await chat.locator('button[type="button"]').first().click();
+      await chat.locator('[data-testid="chat-option"]').first().click();
     }
 
     // Контактная форма.
@@ -65,7 +69,7 @@ test.describe('web — плавающий чат-подбор', () => {
   test('смена языка перерисовывает открытый чат без перезагрузки', async ({ page }) => {
     await page.goto(WEB);
     const chat = await openChat(page);
-    await expect(chat.locator('button[type="button"]').first()).toBeVisible();
+    await expect(chat.locator('[data-testid="chat-option"]').first()).toBeVisible();
     const before = await chat.innerText();
 
     // Переключатель языка в шапке (EN·ES·UA·RU). Жмём ES.
