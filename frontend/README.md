@@ -53,18 +53,21 @@ Vite пробрасывает в бандл только переменные с
 Скопируйте `.env.example` в `apps/web/.env.local` / `apps/admin/.env.local`
 и при необходимости измените значения.
 
-### Admin API token
+### Аутентификация менеджера (Волна 3)
 
-Дашборд менеджера (`apps/admin`) запрашивает `GET {VITE_API_URL}/api/leads` с
-заголовком `Authorization: Bearer <ADMIN_API_TOKEN>`. Токен **не** хранится в
-переменных окружения и не вшивается в бандл: менеджер вводит его один раз в
-форме входа (`TokenGate`), после чего он сохраняется только в `localStorage`
-браузера (ключ `seguro_admin_token`) и подставляется в Bearer-заголовок каждого
-запроса. Неверный токен отбраковывает backend (401) — дашборд покажет ошибку и
-вернёт к форме входа. Кнопка «Sign out» очищает токен из браузера.
+Дашборд менеджера (`apps/admin`) логинится по паролю: форма входа (`LoginGate`)
+шлёт `POST {VITE_API_URL}/api/auth/login` и получает короткоживущий **access-токен
+в память** (не в localStorage — защита от XSS) и **refresh-токен в httpOnly-cookie**.
+Список лидов (`GET /api/leads`) запрашивается с `Authorization: Bearer <access>`.
 
-Значение `ADMIN_API_TOKEN` задаётся на стороне backend; на фронтенде его не
-конфигурируют.
+Сессия держится на refresh-cookie: при загрузке дашборд тихо дергает
+`POST /api/auth/refresh` и восстанавливает доступ без повторного ввода пароля; на
+`401` (access истёк) повтор refresh выполняется автоматически. «Sign out» зовёт
+`POST /api/auth/logout` (backend стирает cookie). Сам пароль на backend хранится
+только как argon2-хэш (`MANAGER_PASSWORD_HASH`) — на фронтенде не конфигурируется.
+
+> Для cookie-логина из браузера backend должен отдавать конкретный `ALLOWED_ORIGINS`
+> (домен дашборда, не `*`) — запросы идут с `credentials: 'include'`.
 
 ## Структура (Feature-Sliced Design)
 

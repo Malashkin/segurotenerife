@@ -1,12 +1,16 @@
 /**
  * Таблица лидов дашборда менеджера.
  *
- * Данные берутся из useLeads(token) (@shared/api → GET /api/leads, Bearer-токен).
+ * Данные берутся из useLeads(token) (@entities → GET /api/leads, Bearer-токен).
  * Компонент сам отрисовывает все состояния запроса:
  *   - loading  — спиннер «Loading leads…»;
  *   - error    — карточка ошибки с кнопкой Retry (и спец-текст для 401);
  *   - empty    — «No leads yet», когда массив пуст;
  *   - success  — доступная HTML-таблица лидов.
+ *
+ * Авторизация (Волна 3): на 401 (access-токен истёк) компонент один раз дергает
+ * onUnauthorized() — попытку продлить сессию по refresh-cookie. При успехе токен
+ * обновится в App и запрос повторится автоматически; иначе App уйдёт на логин.
  *
  * Колонки (по контракту LeadRow): created_at, name, contact, messenger, lang,
  * goal, city, urgency, status.
@@ -15,13 +19,20 @@
  * для шапки и <th scope="row"> для имени; даты — через <time dateTime>.
  * Интерфейс англоязычный (EN-only).
  */
-import { ApiError, useLeads, type LeadRow } from '@shared/api';
+import { useEffect, useRef } from 'react';
+import { ApiError } from '@shared/api';
+import { useLeads, type LeadRow } from '@entities';
 import { cn } from '@shared/ui';
 
 /** Пропсы таблицы лидов. */
 export interface LeadsTableProps {
-  /** Admin Bearer-токен (запрос идёт только при непустом токене). */
+  /** Access-токен менеджера (запрос идёт только при непустом токене). */
   token: string;
+  /**
+   * Попытка продлить сессию при 401 (access истёк). Возвращает true при успехе.
+   * Вызывается не более одного раза на каждый токен, чтобы не зациклиться.
+   */
+  onUnauthorized: () => Promise<boolean>;
 }
 
 /** Форматтер даты создания лида (локаль браузера, дата + время). */
@@ -84,8 +95,19 @@ function StateBox({ children }: { children: React.ReactNode }): JSX.Element {
 }
 
 /** Таблица лидов со всеми состояниями запроса. */
-export function LeadsTable({ token }: LeadsTableProps): JSX.Element {
+export function LeadsTable({ token, onUnauthorized }: LeadsTableProps): JSX.Element {
   const { data, isLoading, isError, error, refetch, isFetching } = useLeads(token);
+
+  // На 401 (access истёк) ровно один раз для данного токена пробуем продлить
+  // сессию по refresh-cookie. Успех → App обновит токен → запрос повторится сам.
+  const refreshedForToken = useRef<string | null>(null);
+  useEffect(() => {
+    const isAuthErr = isError && error instanceof ApiError && error.status === 401;
+    if (!isAuthErr) return;
+    if (refreshedForToken.current === token) return;
+    refreshedForToken.current = token;
+    void onUnauthorized();
+  }, [isError, error, token, onUnauthorized]);
 
   // --- Загрузка ---
   if (isLoading) {
@@ -108,11 +130,11 @@ export function LeadsTable({ token }: LeadsTableProps): JSX.Element {
     return (
       <StateBox>
         <p className="text-base font-semibold text-red-600">
-          {isAuth ? 'Access denied' : 'Could not load leads'}
+          {isAuth ? 'Session expired' : 'Could not load leads'}
         </p>
         <p className="max-w-md text-sm text-slate-500">
           {isAuth
-            ? 'The admin token was rejected by the server. Sign out and enter a valid token.'
+            ? 'Your session expired. Refreshing… if this keeps happening, sign out and sign in again.'
             : 'The server returned an error. Check that the API is running and try again.'}
         </p>
         <button

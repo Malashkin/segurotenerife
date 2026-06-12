@@ -8,23 +8,21 @@
  *                              НЕ напрямую в компонентах — там только хуки Query).
  *   - getApiBaseUrl          — базовый URL из VITE_API_URL.
  *   - Типы контракта лидов   — CreateLeadRequest/LeadInput, LeadRow и т.д.
- *   - createLead / listLeads — функции API-слоя поверх apiRequest.
- *   - useCreateLead / useLeads — хуки TanStack Query для компонентов.
- *   - leadKeys               — фабрика query-ключей.
+ *   - createLead / listLeads — функции API-слоя поверх apiRequest (использует entities/lead).
+ *   - trackEvent / getSessionId — лёгкая аналитика воронки (POST /api/events).
  *   - createLeadSchema / validateLead / MESSENGERS — zod-валидация payload лида.
+ *
+ * TanStack Query-хуки (useCreateLead / useLeads) и leadKeys переехали в
+ * `entities/lead` (Волна 3) — берите их оттуда (`@entities`), не из shared/api.
  */
 export { getApiBaseUrl } from './config';
 export { apiRequest, ApiError, type RequestOptions } from './client';
 export { createQueryClient } from './queryClient';
 export { QueryProvider, type QueryProviderProps } from './QueryProvider';
 
-export {
-  createLead,
-  listLeads,
-  leadKeys,
-  useCreateLead,
-  useLeads,
-} from './leads';
+export { createLead, listLeads } from './leads';
+
+export { trackEvent, getSessionId } from './events';
 
 export { createLeadSchema, validateLead, MESSENGERS } from './schema';
 

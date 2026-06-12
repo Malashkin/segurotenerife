@@ -25,7 +25,8 @@ import {
   useChatStore,
   type ChatMessenger,
 } from '@shared/store';
-import { useCreateLead, type CreateLeadRequest } from '@shared/api';
+import { useCreateLead, type CreateLeadRequest } from '@entities';
+import { trackEvent } from '@shared/api';
 import { Button } from '@shared/ui';
 import { useChatI18n } from '../model/useChatI18n';
 import { useChatMessages } from '../model/useChatMessages';
@@ -74,6 +75,9 @@ export function ChatWidget(): JSX.Element {
   const bodyRef = useRef<HTMLDivElement>(null);
   // Таймер «печати» — чистим при смене шага/размонтировании.
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Гард, чтобы событие `chat_started` ушло ровно один раз за монтирование
+  // (в т.ч. при двойном вызове эффектов в StrictMode на dev).
+  const startedRef = useRef(false);
 
   // 1. Старт чата при первом монтировании (как startChat() в init прототипа).
   useEffect(() => {
@@ -82,6 +86,14 @@ export function ChatWidget(): JSX.Element {
       if (typingTimer.current) clearTimeout(typingTimer.current);
     };
   }, [start]);
+
+  // 1b. Аналитика: фиксируем начало воронки один раз (вершина воронки —
+  //     с ним сравнивается handoff rate).
+  useEffect(() => {
+    if (startedRef.current) return;
+    startedRef.current = true;
+    void trackEvent('chat_started', { lang });
+  }, [lang]);
 
   // 2. Тайминг «печати»: когда фаза 'thinking', выждать паузу и раскрыть
   //    интерактив текущего шага (quick/form). Зеркало addBot()→cb прототипа.
@@ -107,7 +119,13 @@ export function ChatWidget(): JSX.Element {
 
   /** Выбор быстрого ответа на текущем шаге. */
   function handlePick(opt: StepOption): void {
+    // Ключ шага фиксируем ДО pick() — после него stepIndex уже сдвинется.
+    const stepKey = CHAT_FLOW[useChatStore.getState().stepIndex]?.key;
     pick(toPicked(opt, ct));
+    void trackEvent('step_completed', {
+      lang,
+      ...(stepKey ? { meta: { step: stepKey } } : {}),
+    });
   }
 
   /** Сабмит контактной формы: валидация → POST лида → экран хендоффа. */
@@ -156,6 +174,8 @@ export function ChatWidget(): JSX.Element {
     try {
       const res = await createLead.mutateAsync(payload);
       complete(); // фаза остаётся 'done'; фиксируем факт успеха
+      // Аналитика: лид доехал до backend (низ воронки до хендоффа).
+      void trackEvent('chat_completed', { lang, meta: { messenger } });
       void res;
     } catch {
       // Даже при сетевой ошибке показываем экран хендоффа: пользователь может
@@ -343,7 +363,7 @@ export function ChatWidget(): JSX.Element {
         )}
 
         {/* Экран хендоффа (после отправки) */}
-        {showDone && <HandoffActions ct={ct} onRestart={handleRestart} />}
+        {showDone && <HandoffActions ct={ct} lang={lang} onRestart={handleRestart} />}
       </div>
     </div>
   );
@@ -355,9 +375,11 @@ export function ChatWidget(): JSX.Element {
  */
 function HandoffActions({
   ct,
+  lang,
   onRestart,
 }: {
   ct: (key: string) => string;
+  lang: string;
   onRestart: () => void;
 }): JSX.Element {
   const answers = useChatStore((s) => s.answers);
@@ -387,6 +409,7 @@ function HandoffActions({
           href={buildHandoffLink(m, contacts, parts)}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => void trackEvent('handoff_clicked', { lang, meta: { messenger: m } })}
           className={
             idx === 0
               ? 'inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-6 py-3.5 font-semibold text-white transition-colors hover:bg-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand'

@@ -101,16 +101,9 @@ pub async fn list(
     State(state): State<AppState>,
     headers: HeaderMap,
 ) -> Result<Json<Value>, AppError> {
-    // Простая bearer-авторизация по статичному токену менеджера.
-    // На Волне 3 заменим на полноценный JWT/сессии (auth.md).
-    let token = headers
-        .get("authorization")
-        .and_then(|v| v.to_str().ok())
-        .and_then(|s| s.strip_prefix("Bearer "))
-        .unwrap_or("");
-    if token.is_empty() || token != state.config.admin_api_token {
-        return Err(AppError::Unauthorized);
-    }
+    // Авторизация по access-JWT менеджера (Волна 3 заменила статичный токен).
+    // Проверка инкапсулирована в auth-модуле: Bearer <access-jwt> с typ=access.
+    super::auth::verify_access(&headers, &state.config)?;
 
     let rows: Vec<LeadRow> = sqlx::query_as::<_, LeadRow>(
         "SELECT id, created_at, name, contact, messenger, comm_lang, goal, who, city, urgency, ui_lang, status \

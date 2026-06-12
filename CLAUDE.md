@@ -23,6 +23,6 @@
 ## Прогресс по волнам
 - ✅ **Волна 1 — фундамент:** структура монорепо, backend-скелет (config, logging, pool, миграции), вертикаль лидов (`POST/GET /api/leads`), health-check, rate-limit, Docker.
 - ✅ **Волна 2 — frontend:** pnpm-монорепо (Nx-совместимое) + FSD; `apps/web` (лендинг + чат, 4 языка) и `apps/admin` (дашборд лидов); i18next, Zustand, TanStack Query, Tailwind/shadcn. Чат на сабмите шлёт `POST /api/leads`; хендофф в WhatsApp/Telegram/Viber. typecheck + build зелёные; backend smoke пройден.
-- ⏳ **Волна 3:** события аналитики (`events`) из чата; замена статичного токена дашборда на JWT/сессии (`auth.md`); вынос lead-хуков в `entities`.
+- ✅ **Волна 3 — аналитика + auth:** `POST /api/events` + трекинг воронки из чата (`trackEvent`); JWT-аутентификация менеджера (login/refresh/logout, argon2-пароль из ENV, access в памяти + refresh httpOnly-cookie) вместо статичного токена; вход admin по паролю с авто-refresh; lead-хуки вынесены в `entities/lead`. typecheck + build зелёные; e2e smoke backend (Postgres) 15/15.
 - ⏳ **Волна 4:** деплой Railway, smoke + E2E (Playwright), нагрузочный smoke (k6).
 - ⏳ **Волна 5:** сверка с acceptance criteria, CHANGELOG релиза.

@@ -37,6 +37,12 @@ export interface RequestOptions {
   headers?: Record<string, string>;
   /** AbortSignal для отмены (TanStack Query передаёт его автоматически). */
   signal?: AbortSignal;
+  /**
+   * Политика отправки cookie. Для запросов auth менеджера (login/refresh/logout)
+   * нужно 'include' — иначе браузер не примет/не пошлёт httpOnly refresh-cookie
+   * при кросс-доменном запросе. По умолчанию не задаётся (same-origin).
+   */
+  credentials?: RequestCredentials;
 }
 
 /**
@@ -54,7 +60,7 @@ export interface RequestOptions {
  * @throws ApiError при не-2xx ответе
  */
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { method = 'GET', body, headers = {}, signal } = options;
+  const { method = 'GET', body, headers = {}, signal, credentials } = options;
 
   const finalHeaders: Record<string, string> = { ...headers };
   if (body !== undefined) {
@@ -69,6 +75,9 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   }
   if (signal !== undefined) {
     init.signal = signal;
+  }
+  if (credentials !== undefined) {
+    init.credentials = credentials;
   }
 
   const response = await fetch(`${getApiBaseUrl()}${path}`, init);

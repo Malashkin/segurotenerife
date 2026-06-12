@@ -56,11 +56,27 @@ async fn main() -> anyhow::Result<()> {
         limiter,
     };
 
-    // CORS: список доменов фронтенда (или * на время разработки).
-    let cors = CorsLayer::new()
-        .allow_origin(config.allowed_origins())
-        .allow_methods(tower_http::cors::Any)
-        .allow_headers(tower_http::cors::Any);
+    // CORS. Refresh-токен лежит в cookie, поэтому при заданном белом списке
+    // доменов включаем credentials — иначе браузер не пошлёт/не примет cookie.
+    // Спецификация запрещает сочетать credentials с wildcard (`*`/Any), поэтому:
+    //   - ALLOWED_ORIGINS=*           → Any, без credentials (только для dev/curl);
+    //   - ALLOWED_ORIGINS=<домены>    → конкретный список + credentials + явные
+    //                                   методы/заголовки (Authorization, Content-Type).
+    let cors = if config.allowed_origins_raw.trim() == "*" {
+        CorsLayer::new()
+            .allow_origin(tower_http::cors::AllowOrigin::any())
+            .allow_methods(tower_http::cors::Any)
+            .allow_headers(tower_http::cors::Any)
+    } else {
+        CorsLayer::new()
+            .allow_origin(config.allowed_origins())
+            .allow_methods([axum::http::Method::GET, axum::http::Method::POST])
+            .allow_headers([
+                axum::http::header::CONTENT_TYPE,
+                axum::http::header::AUTHORIZATION,
+            ])
+            .allow_credentials(true)
+    };
 
     let app = routes::router(state.clone())
         // Защита: per-IP rate limiting.

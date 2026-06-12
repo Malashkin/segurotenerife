@@ -16,6 +16,10 @@ pub enum AppError {
     #[error("unauthorized")]
     Unauthorized,
 
+    /// Внутренняя ошибка (крипто/JWT/конфиг): детали в логи, наружу — 500.
+    #[error("internal error: {0}")]
+    Internal(String),
+
     #[error(transparent)]
     Db(#[from] sqlx::Error),
 }
@@ -25,6 +29,14 @@ impl IntoResponse for AppError {
         let (status, message) = match &self {
             AppError::Validation(m) => (StatusCode::BAD_REQUEST, m.clone()),
             AppError::Unauthorized => (StatusCode::UNAUTHORIZED, "unauthorized".to_string()),
+            AppError::Internal(e) => {
+                // Внутреннюю причину — в логи, наружу — обобщённое сообщение.
+                tracing::error!(error = %e, "internal error");
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "internal server error".to_string(),
+                )
+            }
             AppError::Db(e) => {
                 // Внутреннюю причину — в логи, наружу — обобщённое сообщение.
                 tracing::error!(error = %e, "database error");

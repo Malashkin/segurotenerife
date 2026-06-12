@@ -20,7 +20,11 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-seguro}:${POSTGRES_PASSWORD:-seguro}@db:5432/${POSTGRES_DB:-seguro}
       PORT: "8080"
-      ADMIN_API_TOKEN: ${ADMIN_API_TOKEN:-dev-token-change-me}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+      MANAGER_PASSWORD_HASH: ${MANAGER_PASSWORD_HASH:?set MANAGER_PASSWORD_HASH (cargo run --bin hash_password -- <pass>)}
+      ACCESS_TTL_MIN: ${ACCESS_TTL_MIN:-30}
+      REFRESH_TTL_DAYS: ${REFRESH_TTL_DAYS:-7}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-*}
       RATE_LIMIT_PER_MIN: ${RATE_LIMIT_PER_MIN:-60}
       RUST_LOG: ${RUST_LOG:-info}

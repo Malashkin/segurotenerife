@@ -1,5 +1,6 @@
 //! Конфигурация сервиса из переменных окружения.
-//! Секреты (DATABASE_URL, ADMIN_API_TOKEN) — только из ENV, никогда не хардкодим.
+//! Секреты (DATABASE_URL, JWT_SECRET, MANAGER_PASSWORD_HASH) — только из ENV,
+//! никогда не хардкодим.
 
 use anyhow::Context;
 use tower_http::cors::AllowOrigin;
@@ -7,7 +8,17 @@ use tower_http::cors::AllowOrigin;
 pub struct Config {
     pub database_url: String,
     pub port: u16,
-    pub admin_api_token: String,
+    /// Секрет подписи JWT (HS256). Обязателен — на нём держится вся авторизация.
+    pub jwt_secret: String,
+    /// PHC-строка argon2-хэша пароля единственного менеджера (генерится скриптом).
+    /// Пароль в открытом виде в проде не хранится — только его argon2-хэш.
+    pub manager_password_hash: String,
+    /// Время жизни access-токена в минутах (короткое — он в памяти фронта).
+    pub access_ttl_min: i64,
+    /// Время жизни refresh-токена в днях (длинное — он в httpOnly-cookie).
+    pub refresh_ttl_days: i64,
+    /// Ставить ли флаг Secure на refresh-cookie (true в проде/HTTPS, false локально).
+    pub cookie_secure: bool,
     pub allowed_origins_raw: String,
     pub rate_limit_per_min: u32,
 }
@@ -22,8 +33,22 @@ impl Config {
                 .ok()
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(8080),
-            admin_api_token: std::env::var("ADMIN_API_TOKEN")
-                .context("ADMIN_API_TOKEN is required")?,
+            jwt_secret: std::env::var("JWT_SECRET")
+                .context("JWT_SECRET is required")?,
+            manager_password_hash: std::env::var("MANAGER_PASSWORD_HASH")
+                .context("MANAGER_PASSWORD_HASH is required")?,
+            access_ttl_min: std::env::var("ACCESS_TTL_MIN")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(30),
+            refresh_ttl_days: std::env::var("REFRESH_TTL_DAYS")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(7),
+            cookie_secure: std::env::var("COOKIE_SECURE")
+                .ok()
+                .map(|v| v == "true" || v == "1")
+                .unwrap_or(false),
             allowed_origins_raw: std::env::var("ALLOWED_ORIGINS")
                 .unwrap_or_else(|_| "*".into()),
             rate_limit_per_min: std::env::var("RATE_LIMIT_PER_MIN")
