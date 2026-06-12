@@ -1,0 +1,18 @@
+# Railway-конфиг backend-сервиса (Волна 4).
+#
+# Деплой из этого каталога как отдельный Railway-сервис: сборка по Dockerfile,
+# healthcheck по /health (проверяет и соединение с БД — миграции применяются при
+# старте). Postgres подключается как managed-плагин Railway; его DATABASE_URL и
+# остальные секреты задаются в переменных сервиса (см. docs/deploy.md).
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# Railway ждёт 200 на этом пути перед переключением трафика на новый релиз.
+healthcheckPath = "/health"
+healthcheckTimeout = 100
+# Перезапуск только при падении (не крутимся в цикле бесконечно).
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10

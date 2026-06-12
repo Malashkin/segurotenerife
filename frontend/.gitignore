@@ -11,3 +11,8 @@ dist/
 # Логи и кэши инструментов
 *.log
 .cache/
+
+# Playwright E2E
+playwright-report/
+test-results/
+/playwright/.cache/

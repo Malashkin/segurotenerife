@@ -4,6 +4,11 @@
 
 ## [Unreleased]
 
+### Added — Волна 4: деплой-конфиг + E2E (Playwright) + нагрузочный smoke (k6)
+- **Деплой.** `backend/railway.toml` (сборка по Dockerfile, healthcheck `/health`, restart-policy); Dockerfile собирает `--locked` с `Cargo.lock` (воспроизводимо). `docs/deploy.md` — полный гайд: backend+Postgres на Railway, две SPA на Vercel/Netlify, таблицы ENV, генерация `MANAGER_PASSWORD_HASH`, обязательные `COOKIE_SECURE=true` и конкретный `ALLOWED_ORIGINS` (не `*`) для cookie-логина, чек-лист после деплоя.
+- **E2E (Playwright)** в `frontend/e2e`: реальный браузер против собранных SPA, backend подменён стабами (`page.route`) — детерминированно, без БД. Покрытие: web — проход чат-подбора до экрана хендоффа + смена языка перерисовывает чат без перезагрузки; admin — нет сессии → форма входа, неверный пароль → ошибка, верный пароль → дашборд со списком лидов. **4/4 зелёные.**
+- **Нагрузочный smoke (k6)** `scripts/load/smoke.js` + оркестратор `run-local.sh` (поднимает временный Postgres+backend с высоким rate-limit). Пороги `p95<500ms`, `http_req_failed<1%`, `business_errors<1%`. Прогон локально: **450/450 проверок, 0 ошибок, p95 ≈ 5мс.**
+
 ### Added — Волна 3: аналитика воронки + JWT-аутентификация менеджера
 - **Аналитика воронки.** Backend `POST /api/events` (публичный, rate-limited) пишет события в таблицу `events`. Frontend (`features/chat`) шлёт `chat_started` / `step_completed` / `chat_completed` / `handoff_clicked` через `shared/api.trackEvent` (fire-and-forget, не влияет на UX; `session_id` в sessionStorage). Это даёт измеримый **handoff rate** — ключевую метрику гипотезы.
 - **JWT-аутентификация менеджера** (lightweight single-manager, `auth.md`): `POST /api/auth/login|refresh|logout`. Пароль одного менеджера хранится как **argon2-хэш** в ENV (`MANAGER_PASSWORD_HASH`, утилита `cargo run --bin hash_password`). Access-JWT (короткий, в памяти фронта) + refresh-JWT (httpOnly `Path=/ SameSite=Strict` cookie). `GET /api/leads` теперь под access-токеном — **статичный `ADMIN_API_TOKEN` удалён**. CORS включает credentials при заданном белом списке доменов.

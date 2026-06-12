@@ -2,14 +2,15 @@
 FROM rust:1.88 AS builder
 WORKDIR /app
 
-# Сначала только манифест — чтобы кэшировать слой зависимостей
-COPY Cargo.toml ./
-RUN mkdir src && echo "fn main() {}" > src/main.rs && cargo build --release || true
+# Сначала только манифест + lock — чтобы кэшировать слой зависимостей и собирать
+# ровно те версии, что зафиксированы локально (воспроизводимая сборка).
+COPY Cargo.toml Cargo.lock ./
+RUN mkdir src && echo "fn main() {}" > src/main.rs && cargo build --release --locked || true
 
 # Теперь реальный код и миграции
 COPY src ./src
 COPY migrations ./migrations
-RUN touch src/main.rs && cargo build --release
+RUN touch src/main.rs && cargo build --release --locked
 
 # ── Финальный минимальный образ ───────────────────────────
 FROM debian:bookworm-slim
