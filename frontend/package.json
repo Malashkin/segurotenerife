@@ -1,0 +1,23 @@
+{
+  "name": "seguro-tenerife-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Seguro Tenerife frontend monorepo (pnpm workspaces + Feature-Sliced Design)",
+  "type": "module",
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "scripts": {
+    "dev:web": "pnpm --filter @seguro/web dev",
+    "dev:admin": "pnpm --filter @seguro/admin dev",
+    "build": "pnpm --filter @seguro/web build && pnpm --filter @seguro/admin build",
+    "build:web": "pnpm --filter @seguro/web build",
+    "build:admin": "pnpm --filter @seguro/admin build",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "lint": "pnpm -r --if-present lint"
+  },
+  "devDependencies": {
+    "typescript": "5.6.3"
+  }
+}

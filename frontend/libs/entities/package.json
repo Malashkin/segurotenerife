@@ -1,0 +1,16 @@
+{
+  "name": "@seguro/entities",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "//": "FSD entities — доменные сущности (lead, ...). Слой пока пустой (скелет).",
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": { "typecheck": "tsc --noEmit" },
+  "dependencies": {
+    "@seguro/shared-api": "workspace:*"
+  },
+  "devDependencies": { "typescript": "5.6.3" }
+}

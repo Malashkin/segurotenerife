@@ -1,0 +1,36 @@
+{
+  "name": "@seguro/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "//": "Публичное приложение: лендинг + чат-подбор страховки.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@seguro/shared-api": "workspace:*",
+    "@seguro/shared-i18n": "workspace:*",
+    "@seguro/shared-store": "workspace:*",
+    "@seguro/shared-ui": "workspace:*",
+    "@seguro/entities": "workspace:*",
+    "@seguro/features": "workspace:*",
+    "@seguro/widgets": "workspace:*",
+    "@seguro/pages": "workspace:*",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "@vitejs/plugin-react": "4.3.3",
+    "autoprefixer": "10.4.20",
+    "postcss": "8.4.47",
+    "tailwindcss": "3.4.14",
+    "typescript": "5.6.3",
+    "vite": "5.4.10",
+    "vite-tsconfig-paths": "5.0.1"
+  }
+}

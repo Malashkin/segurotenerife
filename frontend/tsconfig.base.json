@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "useDefineForClassFields": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+
+    "strict": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "forceConsistentCasingInFileNames": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+
+    "baseUrl": ".",
+    "paths": {
+      "@shared/ui": ["libs/shared/ui/src/index.ts"],
+      "@shared/i18n": ["libs/shared/i18n/src/index.ts"],
+      "@shared/api": ["libs/shared/api/src/index.ts"],
+      "@shared/store": ["libs/shared/store/src/index.ts"],
+      "@entities": ["libs/entities/src/index.ts"],
+      "@features": ["libs/features/src/index.ts"],
+      "@widgets": ["libs/widgets/src/index.ts"],
+      "@pages": ["libs/pages/src/index.ts"]
+    }
+  }
+}

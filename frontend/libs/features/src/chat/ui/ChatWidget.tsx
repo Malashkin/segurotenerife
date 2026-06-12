@@ -1,0 +1,411 @@
+/**
+ * ChatWidget — встроенный в страницу чат-подбор страховки.
+ *
+ * Порт виджета из прототипа /Users/mike/Desktop/fun/index.html (пузырьки бота/
+ * пользователя, индикатор «печатает», кнопки быстрых ответов, 6-шаговый сценарий,
+ * контактная форма, экран «подбираем менеджера» → «менеджер получил заявку» с
+ * deep-link'ами на WhatsApp/Telegram/Viber).
+ *
+ * Архитектура (FSD/SOUL):
+ *  - Состояние сценария — в @shared/store (useChatStore: stepIndex/phase/answers/picked).
+ *  - Все строки — через @shared/i18n (+ самодостаточный namespace `chat` фичи),
+ *    поэтому смена языка переключателем перерисовывает чат БЕЗ перезагрузки.
+ *  - Отправка лида — через @shared/api useCreateLead (POST /api/leads). «Голый
+ *    fetch» в компоненте запрещён (api.md) — только хук-мутация.
+ *  - Примитивы (кнопка) — из @shared/ui.
+ *
+ * Тайминг «печати»: фаза 'thinking' держится короткой паузой, затем переходит в
+ * 'quick'/'form' (зеркало addBot()→setTimeout 650мс прототипа). Таймеры чистятся
+ * при размонтировании и при смене шага, чтобы не было гонок.
+ */
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import {
+  CHAT_FLOW,
+  DEFAULT_MESSENGER,
+  useChatStore,
+  type ChatMessenger,
+} from '@shared/store';
+import { useCreateLead, type CreateLeadRequest } from '@shared/api';
+import { Button } from '@shared/ui';
+import { useChatI18n } from '../model/useChatI18n';
+import { useChatMessages } from '../model/useChatMessages';
+import { STEP_OPTIONS, toPicked, type StepOption } from '../model/options';
+import {
+  buildHandoffLink,
+  continueLabelKey,
+  getOfficeContacts,
+  type HandoffMessageParts,
+} from '../model/handoff';
+
+/** Пауза «печати» бота перед показом вопроса (мс), как в прототипе (650). */
+const TYPING_MS = 650;
+
+/** Мессенджеры, предлагаемые на хендоффе (Instagram НЕ предлагаем). */
+const MESSENGERS: readonly ChatMessenger[] = ['WhatsApp', 'Telegram', 'Viber'];
+
+export function ChatWidget(): JSX.Element {
+  const { ct, lang } = useChatI18n();
+  const messages = useChatMessages(ct);
+
+  // --- Доменное состояние чата (селекторы, чтобы не ловить лишние ре-рендеры) ---
+  const phase = useChatStore((s) => s.phase);
+  const stepIndex = useChatStore((s) => s.stepIndex);
+  const answers = useChatStore((s) => s.answers);
+  const start = useChatStore((s) => s.start);
+  const pick = useChatStore((s) => s.pick);
+  const setPhase = useChatStore((s) => s.setPhase);
+  const setName = useChatStore((s) => s.setName);
+  const setContactValue = useChatStore((s) => s.setContact);
+  const setMessenger = useChatStore((s) => s.setMessenger);
+  const setConsent = useChatStore((s) => s.setConsent);
+  const complete = useChatStore((s) => s.complete);
+  const reset = useChatStore((s) => s.reset);
+
+  // --- Локальное UI-состояние формы (только ввод; «истина» по сабмиту в сторе) ---
+  const [name, setNameLocal] = useState('');
+  const [contact, setContactLocal] = useState('');
+  const [messenger, setMessengerLocal] = useState<ChatMessenger>(DEFAULT_MESSENGER);
+  const [consent, setConsentLocal] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const createLead = useCreateLead();
+
+  // Контейнер ленты — для автоскролла вниз (как scrollDown() прототипа).
+  const bodyRef = useRef<HTMLDivElement>(null);
+  // Таймер «печати» — чистим при смене шага/размонтировании.
+  const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 1. Старт чата при первом монтировании (как startChat() в init прототипа).
+  useEffect(() => {
+    if (useChatStore.getState().phase === 'idle') start();
+    return () => {
+      if (typingTimer.current) clearTimeout(typingTimer.current);
+    };
+  }, [start]);
+
+  // 2. Тайминг «печати»: когда фаза 'thinking', выждать паузу и раскрыть
+  //    интерактив текущего шага (quick/form). Зеркало addBot()→cb прототипа.
+  useEffect(() => {
+    if (phase !== 'thinking') return;
+    if (typingTimer.current) clearTimeout(typingTimer.current);
+    typingTimer.current = setTimeout(() => {
+      const cur = CHAT_FLOW[useChatStore.getState().stepIndex];
+      setPhase(cur?.kind === 'form' ? 'form' : 'quick');
+    }, TYPING_MS);
+    return () => {
+      if (typingTimer.current) clearTimeout(typingTimer.current);
+    };
+  }, [phase, stepIndex, setPhase]);
+
+  // 3. Автоскролл ленты вниз при появлении новых сообщений/фазы.
+  useEffect(() => {
+    const el = bodyRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [messages.length, phase]);
+
+  // --- Обработчики ---
+
+  /** Выбор быстрого ответа на текущем шаге. */
+  function handlePick(opt: StepOption): void {
+    pick(toPicked(opt, ct));
+  }
+
+  /** Сабмит контактной формы: валидация → POST лида → экран хендоффа. */
+  async function handleSubmit(e: FormEvent<HTMLFormElement>): Promise<void> {
+    e.preventDefault();
+    const trimmedName = name.trim();
+    const trimmedContact = contact.trim();
+
+    if (!trimmedName) {
+      setFormError(ct('val_name'));
+      return;
+    }
+    if (!trimmedContact) {
+      setFormError(ct('val_contact'));
+      return;
+    }
+    if (!consent) {
+      setFormError(ct('val_consent'));
+      return;
+    }
+    setFormError(null);
+
+    // Зафиксировать данные формы в сторе (для перерисовки истории/хендоффа).
+    setName(trimmedName);
+    setContactValue(trimmedContact);
+    setMessenger(messenger);
+    setConsent(true);
+
+    // Перейти на экран «подбираем менеджера» (load_h) сразу.
+    setPhase('done');
+
+    // Собрать payload по контракту лида и отправить.
+    const payload: CreateLeadRequest = {
+      name: trimmedName,
+      contact: trimmedContact,
+      messenger,
+      consent: true,
+      comm_lang: answers.lang ?? lang,
+      ui_lang: lang,
+    };
+    if (answers.goal) payload.goal = answers.goal;
+    if (answers.who) payload.who = answers.who;
+    if (answers.city) payload.city = answers.city;
+    if (answers.urgency) payload.urgency = answers.urgency;
+
+    try {
+      const res = await createLead.mutateAsync(payload);
+      complete(); // фаза остаётся 'done'; фиксируем факт успеха
+      void res;
+    } catch {
+      // Даже при сетевой ошибке показываем экран хендоффа: пользователь может
+      // написать менеджеру сам по deep-link. Контекст лида не теряется.
+      complete();
+    }
+  }
+
+  /** Полный перезапуск чата (кнопка «пройти заново»). */
+  function handleRestart(): void {
+    setNameLocal('');
+    setContactLocal('');
+    setMessengerLocal(DEFAULT_MESSENGER);
+    setConsentLocal(false);
+    setFormError(null);
+    reset();
+    start();
+  }
+
+  // --- Производное для рендера ---
+  const currentStep = CHAT_FLOW[stepIndex];
+  const showTyping = phase === 'thinking';
+  const showQuick = phase === 'quick' && currentStep?.kind === 'quick';
+  const showForm = phase === 'form' && currentStep?.kind === 'form';
+  const showDone = phase === 'done';
+  const quickOptions: readonly StepOption[] = currentStep
+    ? (STEP_OPTIONS[currentStep.key] ?? [])
+    : [];
+
+  return (
+    <div
+      className="flex flex-col overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-xl"
+      role="region"
+      aria-label={ct('title')}
+    >
+      {/* Шапка чата */}
+      <div className="flex items-center gap-3 bg-gradient-to-br from-brand-dark to-brand px-[18px] py-[14px] text-white">
+        <div className="grid h-10 w-10 place-items-center rounded-xl bg-white/20 font-extrabold">
+          ST
+        </div>
+        <div className="flex flex-col leading-tight">
+          <b className="text-[0.98rem]">{ct('title')}</b>
+          <span className="text-[0.78rem] opacity-90">{ct('status')}</span>
+        </div>
+        <span className="ml-auto rounded-full bg-white/20 px-3 py-1 text-[0.74rem]">
+          {ct('q_free')}
+        </span>
+      </div>
+
+      {/* Лента сообщений */}
+      <div
+        ref={bodyRef}
+        className="flex h-[360px] max-h-[56vh] flex-col gap-3 overflow-y-auto bg-[#f5f8f8] px-[18px] py-5"
+        aria-live="polite"
+        aria-atomic="false"
+      >
+        {messages.map((m) => (
+          <div
+            key={m.id}
+            className={
+              m.author === 'user'
+                ? 'max-w-[84%] self-end'
+                : 'max-w-[84%] self-start'
+            }
+          >
+            <div
+              className={
+                m.author === 'user'
+                  ? 'rounded-2xl rounded-br-sm bg-brand px-[15px] py-[11px] text-[0.96rem] leading-normal text-white'
+                  : 'rounded-2xl rounded-bl-sm border border-slate-200 bg-white px-[15px] py-[11px] text-[0.96rem] leading-normal text-ink'
+              }
+            >
+              {m.text}
+            </div>
+          </div>
+        ))}
+
+        {/* Индикатор «печатает» (typing) */}
+        {showTyping && (
+          <div className="max-w-[84%] self-start" aria-label="…" role="status">
+            <div className="inline-flex items-center gap-1 rounded-2xl rounded-bl-sm border border-slate-200 bg-white px-[15px] py-[13px]">
+              <span className="h-[7px] w-[7px] animate-pulse rounded-full bg-slate-300" />
+              <span className="h-[7px] w-[7px] animate-pulse rounded-full bg-slate-300 [animation-delay:0.2s]" />
+              <span className="h-[7px] w-[7px] animate-pulse rounded-full bg-slate-300 [animation-delay:0.4s]" />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Подвал: интерактив текущей фазы (кнопки / форма / хендофф) */}
+      <div className="border-t border-slate-200 bg-white px-4 py-[14px]">
+        {/* Быстрые ответы */}
+        {showQuick && (
+          <div className="flex flex-wrap gap-2">
+            {quickOptions.map((opt, i) => {
+              const label = opt.optionKey ? ct(opt.optionKey) : (opt.value ?? '');
+              return (
+                <button
+                  key={opt.optionKey ?? opt.value ?? i}
+                  type="button"
+                  onClick={() => handlePick(opt)}
+                  className="rounded-full border-[1.5px] border-brand bg-white px-[15px] py-[9px] text-[0.92rem] font-semibold text-brand-dark transition-colors hover:bg-brand hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Контактная форма (последний шаг) */}
+        {showForm && (
+          <form className="flex flex-col" onSubmit={handleSubmit} noValidate>
+            <div className="mb-3">
+              <label htmlFor="chat-name" className="mb-[7px] block text-[0.9rem] font-semibold">
+                {ct('f_name_l')}
+              </label>
+              <input
+                id="chat-name"
+                type="text"
+                value={name}
+                onChange={(e) => setNameLocal(e.target.value)}
+                placeholder={ct('f_name_ph')}
+                autoComplete="name"
+                className="w-full rounded-xl border-[1.5px] border-slate-200 px-[15px] py-[14px] text-base focus:border-brand focus:outline-none"
+              />
+            </div>
+
+            <div className="mb-3">
+              <span className="mb-[7px] block text-[0.9rem] font-semibold">{ct('f_msgr_l')}</span>
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3" role="radiogroup" aria-label={ct('f_msgr_l')}>
+                {MESSENGERS.map((m) => (
+                  <label
+                    key={m}
+                    className="flex cursor-pointer items-center gap-2.5 rounded-xl border-[1.5px] border-slate-200 px-3.5 py-3 font-medium hover:border-brand"
+                  >
+                    <input
+                      type="radio"
+                      name="chat-messenger"
+                      value={m}
+                      checked={messenger === m}
+                      onChange={() => setMessengerLocal(m)}
+                      className="accent-brand"
+                    />
+                    {m}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-3">
+              <label htmlFor="chat-contact" className="mb-[7px] block text-[0.9rem] font-semibold">
+                {ct('f_contact_l')}
+              </label>
+              <input
+                id="chat-contact"
+                type="text"
+                value={contact}
+                onChange={(e) => setContactLocal(e.target.value)}
+                placeholder={ct('f_contact_ph')}
+                className="w-full rounded-xl border-[1.5px] border-slate-200 px-[15px] py-[14px] text-base focus:border-brand focus:outline-none"
+              />
+            </div>
+
+            <label className="mb-[18px] mt-1.5 flex items-start gap-2.5 text-[0.85rem] text-slate-500">
+              <input
+                type="checkbox"
+                checked={consent}
+                onChange={(e) => setConsentLocal(e.target.checked)}
+                className="mt-[3px] accent-brand"
+              />
+              <span>{ct('consent_text')}</span>
+            </label>
+
+            {formError && (
+              <p role="alert" className="mb-3 text-[0.85rem] font-medium text-red-600">
+                {formError}
+              </p>
+            )}
+
+            <Button type="submit" className="w-full" disabled={createLead.isPending}>
+              {ct('btn_send')}
+            </Button>
+          </form>
+        )}
+
+        {/* Экран хендоффа (после отправки) */}
+        {showDone && <HandoffActions ct={ct} onRestart={handleRestart} />}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Блок действий после отправки лида: deep-link'и на предпочтённый и
+ * альтернативные мессенджеры + текст «можете продолжить здесь» + рестарт.
+ */
+function HandoffActions({
+  ct,
+  onRestart,
+}: {
+  ct: (key: string) => string;
+  onRestart: () => void;
+}): JSX.Element {
+  const answers = useChatStore((s) => s.answers);
+  const contacts = getOfficeContacts();
+
+  const preferred: ChatMessenger = answers.messenger ?? DEFAULT_MESSENGER;
+  // Порядок кнопок: предпочтённый мессенджер первым, затем остальные.
+  const ordered: ChatMessenger[] = [
+    preferred,
+    ...MESSENGERS.filter((m) => m !== preferred),
+  ];
+
+  const parts: HandoffMessageParts = {
+    intro: ct('lead_msg'),
+    goalLine: `${ct('s2_h')} ${answers.goal ?? '-'}`,
+    whoLine: `${ct('s3_h')} ${answers.who ?? '-'}`,
+    cityLine: `${ct('s4_h')} ${answers.city ?? '-'}`,
+    urgencyLine: `${ct('s5_h')} ${answers.urgency ?? '-'}`,
+    nameLine: `${ct('f_name_l')}: ${answers.name ?? '-'}`,
+  };
+
+  return (
+    <div className="flex flex-col gap-2.5">
+      {ordered.map((m, idx) => (
+        <a
+          key={m}
+          href={buildHandoffLink(m, contacts, parts)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={
+            idx === 0
+              ? 'inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-6 py-3.5 font-semibold text-white transition-colors hover:bg-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand'
+              : 'inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3.5 font-semibold text-ink transition-colors hover:border-brand hover:text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand'
+          }
+        >
+          {ct(continueLabelKey(m))}
+        </a>
+      ))}
+
+      <span className="text-center text-[0.84rem] text-slate-500">{ct('here')}</span>
+
+      <button
+        type="button"
+        onClick={onRestart}
+        className="mt-1 text-[0.85rem] text-slate-500 underline hover:text-ink"
+      >
+        {ct('done_restart')}
+      </button>
+    </div>
+  );
+}

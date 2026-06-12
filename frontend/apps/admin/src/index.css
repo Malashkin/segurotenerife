@@ -1,0 +1,15 @@
+/**
+ * Глобальные стили web-приложения.
+ * Директивы Tailwind подключают базовый слой, компоненты и утилиты.
+ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Базовый фон/шрифт страницы (бренд-нейтральный, как в прототипе). */
+body {
+  margin: 0;
+  background: #f8fafc;
+  color: #0f172a;
+  font-family: 'Inter', system-ui, sans-serif;
+}

@@ -1,0 +1,258 @@
+/**
+ * Самодостаточный словарь чат-подбора (4 языка), портированный из прототипа
+ * /Users/mike/Desktop/fun/index.html (объекты I18N[*] — чат-подмножество — и
+ * CHAT_I18N[*]).
+ *
+ * ЗАЧЕМ ОТДЕЛЬНЫЙ СЛОВАРЬ ВНУТРИ ФИЧИ:
+ * Все строки чата живут в общем i18n-namespace `common` (его наполняет
+ * i18n-агент). Но чтобы фича была самодостаточной и работала независимо от того,
+ * успел ли тот агент портировать ВСЕ ключи на ВСЕ языки (на момент написания
+ * есть только ru/common.json, а CHAT_I18N-ключей greeting/here/contWa/… там ещё
+ * нет), мы регистрируем эти строки в ОТДЕЛЬНОМ namespace `chat` через
+ * i18n.addResourceBundle (см. useChatI18n). Чтение идёт с фоллбэком
+ * [common, chat]: если перевод уже есть в common — берём его; иначе берём из
+ * нашего бандла. Так чат всегда полностью переведён и реактивен к смене языка.
+ *
+ * Ключи 1-в-1 совпадают с прототипом и с common-namespace, поэтому при появлении
+ * перевода в common ничего менять не нужно.
+ */
+import type { AppLocale } from '@shared/i18n';
+
+/** Плоский словарь «ключ → строка» одного языка. */
+export type ChatDict = Record<string, string>;
+
+/**
+ * Чат-строки по языкам. Включает:
+ *  - вопросы шагов s1_h..s6_h (+ подсказки s*_hint);
+ *  - подписи опций o_* (которые переводятся);
+ *  - подписи формы f_* и согласия consent_text;
+ *  - экран загрузки/готово load_* / done_*;
+ *  - валидационные сообщения val_* и базовое сообщение лида lead_msg;
+ *  - CHAT_I18N: title / status / greeting / here / contWa / contTg / contVb.
+ *
+ * contVb (Viber) добавлен по требованию продукта (предлагаем WhatsApp/Telegram/
+ * Viber). В прототипе было только contWa/contTg — формулировка Viber выдержана
+ * в том же стиле на каждом языке.
+ */
+export const CHAT_DICT: Record<AppLocale, ChatDict> = {
+  en: {
+    s1_h: 'Which language is comfortable for you?',
+    s1_hint: "We'll find a manager who speaks your language.",
+    s2_h: 'What insurance do you need?',
+    s2_hint: 'Pick the main goal — the manager will clarify the details.',
+    o_med: 'Health for visa / residency',
+    o_dental: 'Dental',
+    o_family: 'Family health',
+    o_biz: 'For self-employed / business',
+    o_other: 'Pet, life or other',
+    s3_h: 'Who are we insuring?',
+    s3_hint: 'This affects the coverage.',
+    o_one: 'One person',
+    o_pair: 'A couple',
+    o_familyk: 'Family with children',
+    s4_h: 'Where in Tenerife are you?',
+    s4_hint: "We'll find the nearest office and manager.",
+    o_othercity: 'Another area',
+    s5_h: 'How urgent is it?',
+    s5_hint: "We'll help set the priority.",
+    o_urgent: 'Urgent — I need it for a visa now',
+    o_soon: 'Within the next 1–3 months',
+    o_browsing: 'Just exploring for now',
+    s6_h: 'Where should the manager message you?',
+    s6_hint: "Pick a messenger — that's where your match arrives. No calls.",
+    f_name_l: 'Your name',
+    f_name_ph: 'For example, Anna',
+    f_msgr_l: 'Preferred messenger',
+    f_contact_l: 'Phone or @username',
+    f_contact_ph: '+34 600 000 000 or @username',
+    consent_text:
+      'I agree to the processing of my data to find insurance and contact me.',
+    btn_send: 'Send request',
+    q_back: '← Back',
+    q_free: 'Free, no obligations',
+    load_h: 'Finding a manager for you…',
+    load_p: 'Sending your request to a Tenerife office',
+    done_h: 'The manager has received your request',
+    done_p:
+      "A personal manager already sees your request and context. Message them now to speed things up — or just wait, they'll contact you.",
+    done_restart: 'Start over',
+    val_name: 'Please enter your name',
+    val_contact: 'Enter a phone or username',
+    val_consent: 'Consent to data processing is required',
+    lead_msg: 'Hi! I filled out the insurance finder on the website.',
+    // CHAT_I18N
+    title: 'Online insurance finder',
+    status: '● online',
+    greeting:
+      "Hi! 👋 I'll help you find insurance in a couple of minutes. Just answer a few questions.",
+    here: 'You can keep chatting right here — the manager will reply as soon as they join.',
+    contWa: 'Continue in WhatsApp',
+    contTg: 'Continue in Telegram',
+    contVb: 'Continue in Viber',
+  },
+  es: {
+    s1_h: '¿En qué idioma te resulta cómodo hablar?',
+    s1_hint: 'Buscaremos un gestor que hable tu idioma.',
+    s2_h: '¿Qué seguro necesitas?',
+    s2_hint: 'Elige el objetivo principal — el gestor aclarará los detalles.',
+    o_med: 'Salud para visado / residencia',
+    o_dental: 'Dental',
+    o_family: 'Salud familiar',
+    o_biz: 'Para autónomo / empresa',
+    o_other: 'Mascota, vida u otro',
+    s3_h: '¿A quién aseguramos?',
+    s3_hint: 'Esto afecta a la cobertura.',
+    o_one: 'Una persona',
+    o_pair: 'Una pareja',
+    o_familyk: 'Familia con hijos',
+    s4_h: '¿En qué zona de Tenerife estás?',
+    s4_hint: 'Buscaremos la oficina y el gestor más cercanos.',
+    o_othercity: 'Otra zona',
+    s5_h: '¿Qué tan urgente es?',
+    s5_hint: 'Te ayudamos a priorizar.',
+    o_urgent: 'Urgente — lo necesito para un visado ya',
+    o_soon: 'En los próximos 1–3 meses',
+    o_browsing: 'Solo estoy informándome',
+    s6_h: '¿Dónde quieres que te escriba el gestor?',
+    s6_hint: 'Elige una mensajería — ahí llegará tu propuesta. Sin llamadas.',
+    f_name_l: 'Tu nombre',
+    f_name_ph: 'Por ejemplo, Ana',
+    f_msgr_l: 'Mensajería preferida',
+    f_contact_l: 'Teléfono o @usuario',
+    f_contact_ph: '+34 600 000 000 o @usuario',
+    consent_text:
+      'Acepto el tratamiento de mis datos para buscar un seguro y contactarme.',
+    btn_send: 'Enviar solicitud',
+    q_back: '← Atrás',
+    q_free: 'Gratis y sin compromiso',
+    load_h: 'Buscando un gestor para ti…',
+    load_p: 'Enviando tu solicitud a una oficina en Tenerife',
+    done_h: 'El gestor ha recibido tu solicitud',
+    done_p:
+      'Un gestor personal ya ve tu solicitud y tu contexto. Escríbele ahora para agilizar — o simplemente espera, te contactará.',
+    done_restart: 'Empezar de nuevo',
+    val_name: 'Por favor, indica tu nombre',
+    val_contact: 'Indica un teléfono o usuario',
+    val_consent: 'Se requiere el consentimiento de datos',
+    lead_msg: '¡Hola! He completado el buscador de seguros en la web.',
+    title: 'Buscador de seguros online',
+    status: '● en línea',
+    greeting:
+      '¡Hola! 👋 Te ayudo a encontrar un seguro en un par de minutos. Responde unas preguntas.',
+    here: 'Puedes seguir chateando aquí mismo — el gestor responderá en cuanto se conecte.',
+    contWa: 'Continuar en WhatsApp',
+    contTg: 'Continuar en Telegram',
+    contVb: 'Continuar en Viber',
+  },
+  uk: {
+    s1_h: 'Якою мовою вам зручно спілкуватися?',
+    s1_hint: 'Підберемо менеджера, який говорить вашою мовою.',
+    s2_h: 'Яка страховка вам потрібна?',
+    s2_hint: 'Оберіть головну мету — деталі уточнить менеджер.',
+    o_med: 'Медична для візи / ВНЖ',
+    o_dental: 'Стоматологія',
+    o_family: 'Сімейна медична',
+    o_biz: 'Для ФОП / бізнесу',
+    o_other: 'Улюбленець, життя або інше',
+    s3_h: 'Кого страхуємо?',
+    s3_hint: 'Це впливає на підбір покриття.',
+    o_one: 'Одна людина',
+    o_pair: 'Пара',
+    o_familyk: 'Родина з дітьми',
+    s4_h: 'У якому районі Тенеріфе ви перебуваєте?',
+    s4_hint: 'Підберемо найближчий офіс і менеджера.',
+    o_othercity: 'Інший район',
+    s5_h: 'Наскільки терміново?',
+    s5_hint: 'Допоможемо розставити пріоритет.',
+    o_urgent: 'Терміново — потрібна для візи зараз',
+    o_soon: 'Найближчі 1–3 місяці',
+    o_browsing: 'Поки просто дізнаюся умови',
+    s6_h: 'Куди менеджеру написати вам?',
+    s6_hint: 'Оберіть месенджер — туди прийде підбір. Без дзвінків.',
+    f_name_l: "Ваше ім'я",
+    f_name_ph: 'Наприклад, Анна',
+    f_msgr_l: 'Зручний месенджер',
+    f_contact_l: 'Телефон або @username',
+    f_contact_ph: '+34 600 000 000 або @username',
+    consent_text:
+      'Я погоджуюсь на обробку моїх даних для підбору страховки і зв’язку зі мною.',
+    btn_send: 'Надіслати заявку',
+    q_back: '← Назад',
+    q_free: 'Безкоштовно і ні до чого не зобов’язує',
+    load_h: 'Підбираємо для вас менеджера…',
+    load_p: 'Передаємо вашу заявку в офіс на Тенеріфе',
+    done_h: 'Менеджер отримав вашу заявку',
+    done_p:
+      'Особистий менеджер уже бачить ваш запит і контекст. Напишіть йому зараз, щоб прискорити, — або просто зачекайте, він зв’яжеться з вами.',
+    done_restart: 'Пройти підбір заново',
+    val_name: "Будь ласка, вкажіть ім'я",
+    val_contact: 'Вкажіть телефон або username',
+    val_consent: 'Потрібна згода на обробку даних',
+    lead_msg: 'Вітаю! Заповнив підбір страховки на сайті.',
+    title: 'Онлайн-підбір страховки',
+    status: '● онлайн',
+    greeting:
+      'Вітаю! 👋 Допоможу підібрати страховку за пару хвилин. Дайте відповідь на кілька питань.',
+    here: 'Можете продовжити листування просто тут — менеджер відповість, щойно підключиться.',
+    contWa: 'Продовжити у WhatsApp',
+    contTg: 'Продовжити у Telegram',
+    contVb: 'Продовжити у Viber',
+  },
+  ru: {
+    s1_h: 'На каком языке вам удобно общаться?',
+    s1_hint: 'Подберём менеджера, говорящего на вашем языке.',
+    s2_h: 'Какая страховка вам нужна?',
+    s2_hint: 'Выберите главную цель — детали уточнит менеджер.',
+    o_med: 'Медицинская для визы / ВНЖ',
+    o_dental: 'Стоматология',
+    o_family: 'Семейная медицинская',
+    o_biz: 'Для ИП / бизнеса',
+    o_other: 'Питомец, жизнь или другое',
+    s3_h: 'Кого страхуем?',
+    s3_hint: 'Это влияет на подбор покрытия.',
+    o_one: 'Один человек',
+    o_pair: 'Пара',
+    o_familyk: 'Семья с детьми',
+    s4_h: 'В каком районе Тенерифе вы находитесь?',
+    s4_hint: 'Подберём ближайший офис и менеджера.',
+    o_othercity: 'Другой район',
+    s5_h: 'Насколько срочно?',
+    s5_hint: 'Поможем расставить приоритет.',
+    o_urgent: 'Срочно — нужна для визы прямо сейчас',
+    o_soon: 'В ближайшие 1–3 месяца',
+    o_browsing: 'Пока просто узнаю условия',
+    s6_h: 'Куда менеджеру написать вам?',
+    s6_hint: 'Выберите мессенджер — туда придёт подбор. Без звонков.',
+    f_name_l: 'Ваше имя',
+    f_name_ph: 'Например, Анна',
+    f_msgr_l: 'Удобный мессенджер',
+    f_contact_l: 'Телефон или @username',
+    f_contact_ph: '+34 600 000 000 или @username',
+    consent_text:
+      'Я согласен на обработку моих данных для подбора страховки и связи со мной.',
+    btn_send: 'Отправить заявку',
+    q_back: '← Назад',
+    q_free: 'Бесплатно и ни к чему не обязывает',
+    load_h: 'Подбираем для вас менеджера…',
+    load_p: 'Передаём вашу заявку в офис на Тенерифе',
+    done_h: 'Менеджер получил вашу заявку',
+    done_p:
+      'Личный менеджер уже видит ваш запрос и контекст. Напишите ему сейчас, чтобы ускорить, — или просто дождитесь, он свяжется с вами.',
+    done_restart: 'Пройти подбор заново',
+    val_name: 'Пожалуйста, укажите имя',
+    val_contact: 'Укажите телефон или username',
+    val_consent: 'Нужно согласие на обработку данных',
+    lead_msg: 'Здравствуйте! Заполнил подбор страховки на сайте.',
+    title: 'Онлайн-подбор страховки',
+    status: '● онлайн',
+    greeting:
+      'Здравствуйте! 👋 Помогу подобрать страховку за пару минут. Ответьте на несколько вопросов.',
+    here: 'Можете продолжить переписку прямо здесь — менеджер ответит, как только подключится.',
+    contWa: 'Продолжить в WhatsApp',
+    contTg: 'Продолжить в Telegram',
+    contVb: 'Продолжить в Viber',
+  },
+};
+
+/** Namespace, под которым бандл регистрируется в i18next. */
+export const CHAT_NS = 'chat';

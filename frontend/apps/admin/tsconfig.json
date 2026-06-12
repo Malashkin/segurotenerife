@@ -1,0 +1,9 @@
+{
+  "//": "TS-конфиг admin-приложения. Наследует строгие правила и path-алиасы из tsconfig.base.json.",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["vite/client"]
+  },
+  "include": ["src", "vite.config.ts"]
+}
