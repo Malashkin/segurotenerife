@@ -1,6 +1,7 @@
 //! Сборка HTTP-роутера приложения.
 
 pub mod auth;
+pub mod chat;
 pub mod events;
 pub mod health;
 pub mod leads;
@@ -18,6 +19,8 @@ pub fn router(state: AppState) -> Router {
         // Публичные эндпоинты воронки.
         .route("/api/leads", post(leads::create).get(leads::list))
         .route("/api/events", post(events::create))
+        // Чат-консультант по базе знаний ASISA (Claude API; 503 если не настроен).
+        .route("/api/chat", post(chat::ask))
         // Аутентификация менеджера (JWT).
         .route("/api/auth/login", post(auth::login))
         .route("/api/auth/refresh", post(auth::refresh))

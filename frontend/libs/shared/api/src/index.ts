@@ -24,6 +24,8 @@ export { createLead, listLeads } from './leads';
 
 export { trackEvent, getSessionId } from './events';
 
+export { askQuestion } from './chat';
+
 export { createLeadSchema, validateLead, MESSENGERS } from './schema';
 
 export type {

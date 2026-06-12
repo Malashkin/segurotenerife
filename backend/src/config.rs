@@ -21,6 +21,15 @@ pub struct Config {
     pub cookie_secure: bool,
     pub allowed_origins_raw: String,
     pub rate_limit_per_min: u32,
+
+    /// Ключ Claude API (ANTHROPIC_API_KEY). Опционален: без него чат-консультант
+    /// выключен (POST /api/chat вернёт 503), остальной сервис работает как обычно.
+    pub anthropic_api_key: Option<String>,
+    /// Модель Claude для ответов бота (по умолчанию claude-opus-4-8). Для большого
+    /// трафика можно переключить на claude-haiku-4-5 / claude-sonnet-4-6 ради цены.
+    pub anthropic_model: String,
+    /// Путь к каталогу базы знаний ASISA (грузится в системный промпт при старте).
+    pub knowledge_path: String,
 }
 
 impl Config {
@@ -55,6 +64,13 @@ impl Config {
                 .ok()
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(60),
+            anthropic_api_key: std::env::var("ANTHROPIC_API_KEY")
+                .ok()
+                .filter(|s| !s.is_empty()),
+            anthropic_model: std::env::var("ANTHROPIC_MODEL")
+                .unwrap_or_else(|_| "claude-opus-4-8".into()),
+            knowledge_path: std::env::var("KNOWLEDGE_PATH")
+                .unwrap_or_else(|_| "../knowledge-base/asisa/catalog.json".into()),
         })
     }
 

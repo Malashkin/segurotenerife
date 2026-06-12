@@ -20,6 +20,10 @@ pub enum AppError {
     #[error("internal error: {0}")]
     Internal(String),
 
+    /// Сервис/фича временно недоступны (напр. чат-консультант без ключа/каталога) — 503.
+    #[error("service unavailable: {0}")]
+    Unavailable(String),
+
     #[error(transparent)]
     Db(#[from] sqlx::Error),
 }
@@ -37,6 +41,7 @@ impl IntoResponse for AppError {
                     "internal server error".to_string(),
                 )
             }
+            AppError::Unavailable(m) => (StatusCode::SERVICE_UNAVAILABLE, m.clone()),
             AppError::Db(e) => {
                 // Внутреннюю причину — в логи, наружу — обобщённое сообщение.
                 tracing::error!(error = %e, "database error");

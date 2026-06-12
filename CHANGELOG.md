@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+### Added — Чат-консультант на базе знаний (RAG + Claude API, Волна C)
+- **Backend `POST /api/chat`**: отвечает на свободные вопросы по каталогу ASISA. Каталог (34 продукта) грузится в системный промпт при старте и кэшируется (`cache_control: ephemeral`, prompt caching → дешёвые повторы). Прямой HTTP к Claude API (reqwest; у Anthropic нет Rust-SDK), модель из `ANTHROPIC_MODEL` (дефолт `claude-opus-4-8`). Бот строго по фактам: **цены не выдумывает** (где `pricing_notes: null` — «считается индивидуально/уточнит менеджер»), при незнании — передаёт менеджеру, отвечает на языке пользователя. Без `ANTHROPIC_API_KEY`/каталога фича выключена (**503 graceful**) — остальной сервис не затронут.
+- **Frontend**: `askQuestion` (shared/api) + компонент `AskAssistant` на экране хендоффа («пока ждёте менеджера — спросите про страховки»). На 503 молча откатывается к фолбэку (ответит менеджер).
+- **Стоимость:** каждый вопрос = платный вызов Claude API — отмечено в `.env.example`/`docs/deploy.md`; для трафика модель переключаема на Haiku/Sonnet.
+
+**Проверено:** backend компилируется (clippy 0 warnings); каталог грузится при старте; `POST /api/chat` без ключа → 503 graceful; frontend typecheck (10 пакетов) + build + E2E (4/4) зелёные.
+
 ### Added — База знаний ASISA + плавающий чат-бот
 - **База знаний ASISA** (`knowledge-base/asisa/`): каталог из **34 продуктов** по всем линиям ASISA в Испании (salud + модальности, salud для иностранцев/ВНЖ, dental, vida, decesos, accidentes, viaje, mascotas, hospitalización). Собрано с asisa.es со ссылками-источниками; `catalog.json` (+ `schema.json`, `index.json`), `residency-visa.md` (highlight для приезжих), `SOURCES.md` с дисклеймерами. Принципы: цены где не опубликованы — `null` (не выдумываем), покрытия на испанском (первоисточник) + краткие `summary_ru/en`. Задел под RAG (Postgres+эмбеддинги → ответы бота через Claude API).
 - **Плавающий чат-бот** на лендинге: чат вынесен из встроенной секции в виджет `ChatLauncher` (кнопка-пузырь в углу → всплывающее окно), секция #quiz стала CTA. uiStore.chatOpen, i18n `chat_fab`/`chat_close`, E2E обновлён (4/4).

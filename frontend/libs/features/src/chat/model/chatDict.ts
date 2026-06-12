@@ -36,6 +36,10 @@ export type ChatDict = Record<string, string>;
  */
 export const CHAT_DICT: Record<AppLocale, ChatDict> = {
   en: {
+    ask_title: "Have a question? Ask the assistant",
+    ask_ph: "e.g. Which policy works for a residency visa?",
+    ask_send: "Ask",
+    ask_thinking: "Assistant is typing…",
     s1_h: 'Which language is comfortable for you?',
     s1_hint: "We'll find a manager who speaks your language.",
     s2_h: 'What insurance do you need?',
@@ -91,6 +95,10 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     contVb: 'Continue in Viber',
   },
   es: {
+    ask_title: "¿Tienes una pregunta? Pregunta al asistente",
+    ask_ph: "p. ej. ¿Qué seguro sirve para el visado de residencia?",
+    ask_send: "Preguntar",
+    ask_thinking: "El asistente está escribiendo…",
     s1_h: '¿En qué idioma te resulta cómodo hablar?',
     s1_hint: 'Buscaremos un gestor que hable tu idioma.',
     s2_h: '¿Qué seguro necesitas?',
@@ -145,6 +153,10 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     contVb: 'Continuar en Viber',
   },
   uk: {
+    ask_title: "Є питання? Запитайте асистента",
+    ask_ph: "напр. Який поліс підходить для візи на ВНЖ?",
+    ask_send: "Запитати",
+    ask_thinking: "Асистент друкує…",
     s1_h: 'Якою мовою вам зручно спілкуватися?',
     s1_hint: 'Підберемо менеджера, який говорить вашою мовою.',
     s2_h: 'Яка страховка вам потрібна?',
@@ -199,6 +211,10 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     contVb: 'Продовжити у Viber',
   },
   ru: {
+    ask_title: "Остались вопросы? Спросите ассистента",
+    ask_ph: "напр. Какой полис подходит для визы на ВНЖ?",
+    ask_send: "Спросить",
+    ask_thinking: "Ассистент печатает…",
     s1_h: 'На каком языке вам удобно общаться?',
     s1_hint: 'Подберём менеджера, говорящего на вашем языке.',
     s2_h: 'Какая страховка вам нужна?',

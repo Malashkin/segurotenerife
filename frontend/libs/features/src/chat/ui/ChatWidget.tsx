@@ -29,6 +29,7 @@ import {
 import { useCreateLead, type CreateLeadRequest } from '@entities';
 import { trackEvent } from '@shared/api';
 import { Button } from '@shared/ui';
+import { AskAssistant } from './AskAssistant';
 import { useChatI18n } from '../model/useChatI18n';
 import { useChatMessages } from '../model/useChatMessages';
 import { STEP_OPTIONS, toPicked, type StepOption } from '../model/options';
@@ -462,6 +463,9 @@ function HandoffActions({
       ))}
 
       <span className="text-center text-[0.84rem] text-slate-500">{ct('here')}</span>
+
+      {/* Свободный вопрос ассистенту по базе знаний ASISA (пока ждём менеджера). */}
+      <AskAssistant ct={ct} lang={lang} />
 
       <button
         type="button"

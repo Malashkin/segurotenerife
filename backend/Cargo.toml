@@ -18,6 +18,10 @@ tower-http = { version = "0.6", features = ["cors", "trace", "limit"] }
 jsonwebtoken = "9"
 argon2 = { version = "0.5", features = ["std"] }
 
+# HTTP-клиент к Claude API (у Anthropic нет официального Rust SDK → прямой HTTP).
+# rustls-tls, чтобы не тянуть OpenSSL и совпадать с TLS-стеком sqlx.
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+
 sqlx = { version = "0.8", features = ["runtime-tokio", "tls-rustls", "postgres", "uuid", "chrono", "migrate"] }
 
 serde = { version = "1", features = ["derive"] }
