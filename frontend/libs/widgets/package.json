@@ -12,6 +12,7 @@
   "peerDependencies": { "react": "^18.3.1" },
   "dependencies": {
     "@seguro/shared-i18n": "workspace:*",
+    "@seguro/shared-store": "workspace:*",
     "@seguro/shared-ui": "workspace:*",
     "@seguro/features": "workspace:*",
     "@seguro/entities": "workspace:*",

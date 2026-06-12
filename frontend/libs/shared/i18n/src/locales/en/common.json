@@ -171,5 +171,7 @@
   "chat_greeting": "Hi! 👋 I'll help you find insurance in a couple of minutes. Just answer a few questions.",
   "chat_here": "You can keep chatting right here — the manager will reply as soon as they join.",
   "chat_contWa": "Continue in WhatsApp",
-  "chat_contTg": "Continue in Telegram"
+  "chat_contTg": "Continue in Telegram",
+  "chat_fab": "Find your insurance",
+  "chat_close": "Close"
 }

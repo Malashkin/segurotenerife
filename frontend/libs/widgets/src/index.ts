@@ -32,3 +32,4 @@ export { HowItWorks } from './organisms/HowItWorks';
 export { Articles } from './organisms/Articles';
 export { Faq } from './organisms/Faq';
 export { Footer } from './organisms/Footer';
+export { ChatLauncher } from './organisms/ChatLauncher';

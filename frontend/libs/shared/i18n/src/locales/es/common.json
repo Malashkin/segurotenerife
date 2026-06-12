@@ -171,5 +171,7 @@
   "chat_greeting": "¡Hola! 👋 Te ayudo a encontrar un seguro en un par de minutos. Responde unas preguntas.",
   "chat_here": "Puedes seguir chateando aquí mismo — el gestor responderá en cuanto se conecte.",
   "chat_contWa": "Continuar en WhatsApp",
-  "chat_contTg": "Continuar en Telegram"
+  "chat_contTg": "Continuar en Telegram",
+  "chat_fab": "Encuentra tu seguro",
+  "chat_close": "Cerrar"
 }

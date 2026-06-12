@@ -195,12 +195,12 @@ importers:
 
   libs/pages:
     dependencies:
-      '@seguro/features':
-        specifier: workspace:*
-        version: link:../features
       '@seguro/shared-i18n':
         specifier: workspace:*
         version: link:../shared/i18n
+      '@seguro/shared-store':
+        specifier: workspace:*
+        version: link:../shared/store
       '@seguro/shared-ui':
         specifier: workspace:*
         version: link:../shared/ui
@@ -308,6 +308,9 @@ importers:
       '@seguro/shared-i18n':
         specifier: workspace:*
         version: link:../shared/i18n
+      '@seguro/shared-store':
+        specifier: workspace:*
+        version: link:../shared/store
       '@seguro/shared-ui':
         specifier: workspace:*
         version: link:../shared/ui

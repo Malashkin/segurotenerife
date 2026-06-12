@@ -21,8 +21,9 @@ import {
   Articles,
   Faq,
   Footer,
+  ChatLauncher,
 } from '@widgets';
-import { ChatWidget } from '@features';
+import { useUiStore } from '@shared/store';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -34,10 +35,14 @@ import { useTranslation } from 'react-i18next';
  */
 function QuizSection(): JSX.Element {
   const { t } = useTranslation();
+  // Чат теперь — плавающий виджет (ChatLauncher). Эта секция стала CTA, которая
+  // его открывает, поэтому пользователь не теряет контекст и видит привычный
+  // чат-бот в углу страницы.
+  const openChat = useUiStore((s) => s.openChat);
   return (
     <section id="quiz" className="bg-gradient-to-b from-white to-brand-tint2 py-16">
       <div className="mx-auto w-[min(720px,calc(100vw-40px))]">
-        <div className="mb-8 text-center">
+        <div className="text-center">
           <span className="inline-flex items-center gap-2 rounded-full bg-brand-tint px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-brand-dark">
             {t('quiz_eyebrow')}
           </span>
@@ -45,9 +50,15 @@ function QuizSection(): JSX.Element {
             {t('quiz_h2')}
           </h2>
           <p className="mx-auto mt-3 max-w-[52ch] text-lg text-slate">{t('quiz_p')}</p>
+          <button
+            type="button"
+            onClick={openChat}
+            className="mt-7 inline-flex items-center gap-2 rounded-full bg-brand px-7 py-3.5 text-base font-semibold text-white shadow-lg transition-colors hover:bg-brand-dark focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/30"
+          >
+            {t('chat_fab')}
+          </button>
+          <p className="mt-5 text-[0.86rem] text-muted">{t('quiz_note')}</p>
         </div>
-        <ChatWidget />
-        <p className="mt-5 text-center text-[0.86rem] text-muted">{t('quiz_note')}</p>
       </div>
     </section>
   );
@@ -67,6 +78,8 @@ export function LandingPage(): JSX.Element {
         <Faq />
       </main>
       <Footer />
+      {/* Плавающий чат-бот: кнопка в углу + всплывающее окно подбора. */}
+      <ChatLauncher />
     </div>
   );
 }

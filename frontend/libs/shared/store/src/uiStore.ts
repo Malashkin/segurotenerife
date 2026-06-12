@@ -19,6 +19,15 @@ interface UiState {
   toggleMobileMenu: () => void;
   /** Явно задаёт состояние мобильного меню. */
   setMobileMenuOpen: (open: boolean) => void;
+
+  /** Открыт ли плавающий чат-виджет (попап чат-подбора). */
+  chatOpen: boolean;
+  /** Открыть чат-виджет. */
+  openChat: () => void;
+  /** Закрыть чат-виджет (свернуть к кнопке-лончеру). */
+  closeChat: () => void;
+  /** Переключить чат-виджет. */
+  toggleChat: () => void;
 }
 
 /**
@@ -31,4 +40,9 @@ export const useUiStore = create<UiState>((set) => ({
   mobileMenuOpen: false,
   toggleMobileMenu: () => set((state) => ({ mobileMenuOpen: !state.mobileMenuOpen })),
   setMobileMenuOpen: (open: boolean) => set({ mobileMenuOpen: open }),
+
+  chatOpen: false,
+  openChat: () => set({ chatOpen: true }),
+  closeChat: () => set({ chatOpen: false }),
+  toggleChat: () => set((state) => ({ chatOpen: !state.chatOpen })),
 }));
