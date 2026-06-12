@@ -46,9 +46,9 @@ test.describe('web — плавающий чат-подбор', () => {
     await page.goto(WEB);
     const chat = await openChat(page);
 
-    // 5 быстрых шагов (lang, goal, who, city, urgency): первая опция каждого.
-    // Кнопки опций — внутри region; кнопка закрытия попапа сюда не попадает.
-    for (let i = 0; i < 5; i++) {
+    // 4 быстрых шага (goal, who, city, urgency): первая опция каждого.
+    // (Шаг языка убран — берётся из языка страницы.) Кнопки опций — внутри region.
+    for (let i = 0; i < 4; i++) {
       await chat.locator('[data-testid="chat-option"]').first().click();
     }
 

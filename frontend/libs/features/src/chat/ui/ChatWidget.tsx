@@ -279,9 +279,9 @@ export function ChatWidget(): JSX.Element {
         {showTyping && (
           <div className="max-w-[84%] self-start" aria-label="…" role="status">
             <div className="inline-flex items-center gap-1 rounded-2xl rounded-bl-sm border border-slate-200 bg-white px-[15px] py-[13px]">
-              <span className="h-[7px] w-[7px] animate-pulse rounded-full bg-slate-300" />
-              <span className="h-[7px] w-[7px] animate-pulse rounded-full bg-slate-300 [animation-delay:0.2s]" />
-              <span className="h-[7px] w-[7px] animate-pulse rounded-full bg-slate-300 [animation-delay:0.4s]" />
+              <span className="h-[7px] w-[7px] rounded-full bg-slate-300 motion-safe:animate-pulse" />
+              <span className="h-[7px] w-[7px] rounded-full bg-slate-300 [animation-delay:0.2s] motion-safe:animate-pulse" />
+              <span className="h-[7px] w-[7px] rounded-full bg-slate-300 [animation-delay:0.4s] motion-safe:animate-pulse" />
             </div>
           </div>
         )}
@@ -334,6 +334,8 @@ export function ChatWidget(): JSX.Element {
                 onChange={(e) => setNameLocal(e.target.value)}
                 placeholder={ct('f_name_ph')}
                 autoComplete="name"
+                autoCapitalize="words"
+                enterKeyHint="next"
                 className="w-full rounded-xl border-[1.5px] border-slate-200 px-[15px] py-[14px] text-base focus:border-brand focus:outline-none"
               />
             </div>
@@ -370,6 +372,11 @@ export function ChatWidget(): JSX.Element {
                 value={contact}
                 onChange={(e) => setContactLocal(e.target.value)}
                 placeholder={ct('f_contact_ph')}
+                inputMode="text"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                enterKeyHint="send"
                 className="w-full rounded-xl border-[1.5px] border-slate-200 px-[15px] py-[14px] text-base focus:border-brand focus:outline-none"
               />
             </div>

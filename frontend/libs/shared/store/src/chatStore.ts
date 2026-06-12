@@ -76,7 +76,8 @@ export interface ChatStep {
  * опции и их подписи — забота UI/словарей, стор хранит только выбранное значение).
  */
 export const CHAT_FLOW: readonly ChatStep[] = [
-  { key: 'lang', kind: 'quick', questionKey: 's1_h' },
+  // Шаг выбора языка убран (Волна B, F2): язык общения берётся из языка страницы
+  // (comm_lang = текущая локаль), чтобы не спрашивать дважды и сократить путь.
   { key: 'goal', kind: 'quick', questionKey: 's2_h' },
   { key: 'who', kind: 'quick', questionKey: 's3_h' },
   { key: 'city', kind: 'quick', questionKey: 's4_h' },
