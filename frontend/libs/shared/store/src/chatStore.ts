@@ -161,6 +161,14 @@ export interface ChatState {
   start: () => void;
 
   /**
+   * Запустить чат с уже выбранной целью (из карточки «Виды страховок»):
+   * записывает goal как ответ шага 0 и сразу переходит к следующему шагу,
+   * минуя вопрос «какая страховка нужна». goalLabel — готовая подпись (i18n
+   * резолвит UI-слой, стор остаётся i18n-агностичным).
+   */
+  startWithGoal: (goalLabel: string) => void;
+
+  /**
    * Выбрать опцию на текущем «quick»-шаге: записать ответ, сохранить picked,
    * перейти к следующему шагу. Зеркало pick(o) прототипа.
    * Принимает либо готовую опцию, либо короткие формы (см. перегрузку логики).
@@ -238,6 +246,16 @@ export const useChatStore = create<ChatState>((set, get) => ({
       phase: 'thinking',
       answers: {},
       picked: [],
+    }),
+
+  startWithGoal: (goalLabel) =>
+    set({
+      // Шаг 0 (goal) предзаполнен из карточки: записываем ответ и выбор, затем
+      // сразу переходим к следующему шагу (бот «печатает» релевантный вопрос).
+      stepIndex: 1,
+      phase: 'thinking',
+      answers: { goal: goalLabel },
+      picked: [{ label: goalLabel }],
     }),
 
   pick: (option) =>

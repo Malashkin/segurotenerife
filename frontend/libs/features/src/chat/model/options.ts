@@ -34,11 +34,11 @@ export const STEP_OPTIONS: Partial<Record<ChatStepKey, readonly StepOption[]>> =
     { value: '🇷🇺 Русский' },
   ],
   // Шаг 2 — цель страхования.
+  // (Бизнес/autónomos пока не консультируем — опции o_biz нет.)
   goal: [
     { optionKey: 'o_med' },
     { optionKey: 'o_dental' },
     { optionKey: 'o_family' },
-    { optionKey: 'o_biz' },
     { optionKey: 'o_other' },
   ],
   // Шаг 3 — кого страхуем.

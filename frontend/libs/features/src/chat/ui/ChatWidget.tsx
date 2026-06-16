@@ -24,6 +24,7 @@ import {
   CHAT_STEP_COUNT,
   DEFAULT_MESSENGER,
   useChatStore,
+  useUiStore,
   type ChatMessenger,
 } from '@shared/store';
 import { useCreateLead, type CreateLeadRequest } from '@entities';
@@ -33,6 +34,7 @@ import { AskAssistant } from './AskAssistant';
 import { useChatI18n } from '../model/useChatI18n';
 import { useChatMessages } from '../model/useChatMessages';
 import { STEP_OPTIONS, toPicked, type StepOption } from '../model/options';
+import { CHAT_INTENTS, type ChatIntent } from '../model/intents';
 import {
   buildHandoffLink,
   continueLabelKey,
@@ -48,7 +50,6 @@ const MESSENGERS: readonly ChatMessenger[] = ['WhatsApp', 'Telegram', 'Viber'];
 
 export function ChatWidget(): JSX.Element {
   const { ct, lang } = useChatI18n();
-  const messages = useChatMessages(ct);
 
   // --- Доменное состояние чата (селекторы, чтобы не ловить лишние ре-рендеры) ---
   const phase = useChatStore((s) => s.phase);
@@ -64,6 +65,21 @@ export function ChatWidget(): JSX.Element {
   const complete = useChatStore((s) => s.complete);
   const reset = useChatStore((s) => s.reset);
   const back = useChatStore((s) => s.back);
+  const startWithGoal = useChatStore((s) => s.startWithGoal);
+
+  // --- Интент карточки «Виды страховок»: предвыбранный тип + релевантный вопрос ---
+  const chatIntent = useUiStore((s) => s.chatIntent);
+  const clearChatIntent = useUiStore((s) => s.clearChatIntent);
+  const [activeIntent, setActiveIntent] = useState<ChatIntent | null>(null);
+
+  // Индекс шага 'who' и override его вопроса для активного интента (напр. питомцы:
+  // «какой у вас питомец?» вместо «кого страхуем»).
+  const whoIndex = CHAT_FLOW.findIndex((s) => s.key === 'who');
+  const questionOverrides =
+    activeIntent?.customWho && whoIndex >= 0
+      ? { [whoIndex]: ct(activeIntent.customWho.askKey) }
+      : undefined;
+  const messages = useChatMessages(ct, questionOverrides);
 
   // --- Локальное UI-состояние формы (только ввод; «истина» по сабмиту в сторе) ---
   const [name, setNameLocal] = useState('');
@@ -82,13 +98,24 @@ export function ChatWidget(): JSX.Element {
   // (в т.ч. при двойном вызове эффектов в StrictMode на dev).
   const startedRef = useRef(false);
 
-  // 1. Старт чата при первом монтировании (как startChat() в init прототипа).
+  // 1. Старт чата при монтировании попапа. Если открыт из карточки «Виды
+  //    страховок» (chatIntent) — стартуем с предвыбранным типом и релевантным
+  //    вопросом; иначе обычный старт (если чат ещё не идёт).
   useEffect(() => {
-    if (useChatStore.getState().phase === 'idle') start();
+    const intent = chatIntent ? CHAT_INTENTS[chatIntent] : undefined;
+    if (intent) {
+      setActiveIntent(intent);
+      startWithGoal(ct(intent.goalKey));
+      clearChatIntent();
+    } else if (useChatStore.getState().phase === 'idle') {
+      start();
+    }
     return () => {
       if (typingTimer.current) clearTimeout(typingTimer.current);
     };
-  }, [start]);
+    // Запуск один раз при монтировании (интент читается на момент открытия).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 1b. Аналитика: фиксируем начало воронки один раз (вершина воронки —
   //     с ним сравнивается handoff rate).
@@ -187,13 +214,14 @@ export function ChatWidget(): JSX.Element {
     }
   }
 
-  /** Полный перезапуск чата (кнопка «пройти заново»). */
+  /** Полный перезапуск чата (кнопка «пройти заново») — сбрасывает и интент. */
   function handleRestart(): void {
     setNameLocal('');
     setContactLocal('');
     setMessengerLocal(DEFAULT_MESSENGER);
     setConsentLocal(false);
     setFormError(null);
+    setActiveIntent(null);
     reset();
     start();
   }
@@ -209,9 +237,14 @@ export function ChatWidget(): JSX.Element {
   const showQuick = phase === 'quick' && currentStep?.kind === 'quick';
   const showForm = phase === 'form' && currentStep?.kind === 'form';
   const showDone = phase === 'done';
-  const quickOptions: readonly StepOption[] = currentStep
-    ? (STEP_OPTIONS[currentStep.key] ?? [])
-    : [];
+  // Опции текущего шага. Для интента с кастомным шагом 'who' (питомцы) — свои
+  // быстрые ответы (собака/кошка/другой) вместо общих «один/пара/семья».
+  const quickOptions: readonly StepOption[] =
+    activeIntent?.customWho && currentStep?.key === 'who'
+      ? activeIntent.customWho.options
+      : currentStep
+        ? (STEP_OPTIONS[currentStep.key] ?? [])
+        : [];
 
   return (
     <div

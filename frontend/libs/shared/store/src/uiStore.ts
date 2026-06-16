@@ -22,8 +22,19 @@ interface UiState {
 
   /** Открыт ли плавающий чат-виджет (попап чат-подбора). */
   chatOpen: boolean;
-  /** Открыть чат-виджет. */
+  /**
+   * Активный интент открытия чата (id карточки «Виды страховок»: med|pet|...).
+   * Если задан — чат стартует с предвыбранным типом и релевантным вопросом.
+   * null — обычный старт (вопрос «какая страховка нужна»). Сбрасывается чатом
+   * после применения.
+   */
+  chatIntent: string | null;
+  /** Открыть чат-виджет (обычный старт, без интента). */
   openChat: () => void;
+  /** Открыть чат с интентом карточки (предвыбранный тип + релевантный вопрос). */
+  openChatWithIntent: (intentId: string) => void;
+  /** Сбросить интент (вызывает чат после старта). */
+  clearChatIntent: () => void;
   /** Закрыть чат-виджет (свернуть к кнопке-лончеру). */
   closeChat: () => void;
   /** Переключить чат-виджет. */
@@ -42,7 +53,10 @@ export const useUiStore = create<UiState>((set) => ({
   setMobileMenuOpen: (open: boolean) => set({ mobileMenuOpen: open }),
 
   chatOpen: false,
-  openChat: () => set({ chatOpen: true }),
+  chatIntent: null,
+  openChat: () => set({ chatOpen: true, chatIntent: null }),
+  openChatWithIntent: (intentId: string) => set({ chatOpen: true, chatIntent: intentId }),
+  clearChatIntent: () => set({ chatIntent: null }),
   closeChat: () => set({ chatOpen: false }),
   toggleChat: () => set((state) => ({ chatOpen: !state.chatOpen })),
 }));

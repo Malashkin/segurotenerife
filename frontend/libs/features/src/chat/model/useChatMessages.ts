@@ -42,10 +42,19 @@ function contactSummary(answers: ChatAnswers): string | null {
 /**
  * Строит полный список сообщений по текущему состоянию чата.
  * @param ct - переводчик чата (useChatI18n().ct)
+ * @param questionOverrides - переопределение текста вопроса по индексу шага
+ *   (для интентов карточек: напр. шаг `who` → «какой у вас питомец?»).
  */
-export function useChatMessages(ct: (key: string) => string): ChatMessage[] {
+export function useChatMessages(
+  ct: (key: string) => string,
+  questionOverrides?: Record<number, string>,
+): ChatMessage[] {
   // Подписка на react-i18next, чтобы пересобирать подписи при смене языка.
   useTranslation();
+
+  /** Текст вопроса шага i: override (интент) или стандартный по questionKey. */
+  const questionText = (i: number, questionKey: string): string =>
+    questionOverrides?.[i] ?? ct(questionKey);
 
   const stepIndex = useChatStore((s) => s.stepIndex);
   const phase = useChatStore((s) => s.phase);
@@ -63,7 +72,7 @@ export function useChatMessages(ct: (key: string) => string): ChatMessage[] {
   for (let i = 0; i < passed; i++) {
     const step = CHAT_FLOW[i];
     if (!step) continue;
-    messages.push({ id: `q-${i}`, author: 'bot', text: ct(step.questionKey) });
+    messages.push({ id: `q-${i}`, author: 'bot', text: questionText(i, step.questionKey) });
 
     const choice: PickedOption | undefined = picked[i];
     if (choice) {
@@ -83,7 +92,11 @@ export function useChatMessages(ct: (key: string) => string): ChatMessage[] {
   if (phase !== 'done' && stepIndex < CHAT_STEP_COUNT) {
     const cur = CHAT_FLOW[stepIndex];
     if (cur) {
-      messages.push({ id: `q-cur-${stepIndex}`, author: 'bot', text: ct(cur.questionKey) });
+      messages.push({
+        id: `q-cur-${stepIndex}`,
+        author: 'bot',
+        text: questionText(stepIndex, cur.questionKey),
+      });
     }
   }
 
