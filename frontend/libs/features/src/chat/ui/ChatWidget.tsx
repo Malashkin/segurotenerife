@@ -219,18 +219,19 @@ export function ChatWidget(): JSX.Element {
       role="region"
       aria-label={ct('title')}
     >
-      {/* Шапка чата */}
-      <div className="flex items-center gap-3 bg-gradient-to-br from-brand-dark to-brand px-[18px] py-[14px] text-white">
-        <div className="grid h-10 w-10 place-items-center rounded-xl bg-white/20 font-extrabold">
+      {/* Шапка чата. Справа зарезервировано место (pr-14) под кнопку закрытия
+          попапа (✕ из ChatLauncher — абсолют в правом верхнем углу). Плашку
+          «бесплатно/ни к чему не обязывает» в шапке не показываем: на узком
+          попапе она наслаивалась на ✕, а сам месседж уже есть на лендинге
+          (trust-чипы в hero и подпись под секцией подбора). */}
+      <div className="flex items-center gap-3 bg-gradient-to-br from-brand-dark to-brand py-[14px] pl-[18px] pr-14 text-white">
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/20 font-extrabold">
           ST
         </div>
-        <div className="flex flex-col leading-tight">
+        <div className="flex min-w-0 flex-col leading-tight">
           <b className="text-[0.98rem]">{ct('title')}</b>
           <span className="text-[0.78rem] opacity-90">{ct('status')}</span>
         </div>
-        <span className="ml-auto rounded-full bg-white/20 px-3 py-1 text-[0.74rem]">
-          {ct('q_free')}
-        </span>
       </div>
 
       {/* Индикатор прогресса подбора (шаг N из M). Скрыт на завершающем экране. */}
