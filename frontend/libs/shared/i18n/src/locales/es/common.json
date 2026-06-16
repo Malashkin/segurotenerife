@@ -173,5 +173,9 @@
   "chat_contWa": "Continuar en WhatsApp",
   "chat_contTg": "Continuar en Telegram",
   "chat_fab": "Encuentra tu seguro",
-  "chat_close": "Cerrar"
+  "chat_close": "Cerrar",
+  "cookie_msg": "Usamos solo las cookies necesarias para el sitio y analítica anónima, que activamos solo con tu consentimiento. Si rechazas, el sitio sigue funcionando por completo.",
+  "cookie_accept": "Aceptar todo",
+  "cookie_necessary": "Solo necesarias",
+  "cookie_more": "Más información"
 }

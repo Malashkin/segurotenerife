@@ -22,6 +22,7 @@ import {
   Faq,
   Footer,
   ChatLauncher,
+  CookieConsent,
   LegalModal,
 } from '@widgets';
 import { useUiStore } from '@shared/store';
@@ -96,6 +97,8 @@ export function LandingPage(): JSX.Element {
       <ChatLauncher />
       {/* Правовые страницы (privacy/terms/cookies) в модалке из футера. */}
       <LegalModal />
+      {/* Баннер согласия на куки/аналитику (отказ не блокирует сайт). */}
+      <CookieConsent />
     </div>
   );
 }

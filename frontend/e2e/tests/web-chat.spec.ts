@@ -29,6 +29,14 @@ test.describe('web — плавающий чат-подбор', () => {
   test.use({ viewport: { width: 1280, height: 900 } });
 
   test.beforeEach(async ({ page }) => {
+    // Согласие на куки — чтобы баннер не перекрывал элементы в тестах.
+    await page.addInitScript(() => {
+      try {
+        localStorage.setItem('seguro_cookie_consent', 'accepted');
+      } catch {
+        /* игнор */
+      }
+    });
     await page.route('**/api/events', (route) => route.fulfill({ status: 204, body: '' }));
     await page.route('**/api/leads', (route) => {
       if (route.request().method() === 'POST') {

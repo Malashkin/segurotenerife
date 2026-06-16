@@ -33,4 +33,5 @@ export { Articles } from './organisms/Articles';
 export { Faq } from './organisms/Faq';
 export { Footer } from './organisms/Footer';
 export { ChatLauncher } from './organisms/ChatLauncher';
+export { CookieConsent } from './organisms/CookieConsent';
 export { LegalModal } from './legal/LegalModal';

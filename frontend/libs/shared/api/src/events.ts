@@ -21,6 +21,22 @@ const EVENTS_PATH = '/api/events';
 /** Ключ session_id в sessionStorage. */
 const SESSION_ID_KEY = 'seguro_session_id';
 
+/** Ключ согласия на куки/аналитику (localStorage). */
+const CONSENT_KEY = 'seguro_cookie_consent';
+
+/**
+ * Разрешена ли аналитика. Аналитика воронки — НЕОБЯЗАТЕЛЬНАЯ, поэтому включается
+ * только при явном согласии ('accepted'). До согласия и при отказе ('necessary')
+ * аналитика не работает (но сайт функционирует полностью — это требование GDPR).
+ */
+function analyticsAllowed(): boolean {
+  try {
+    return window.localStorage.getItem(CONSENT_KEY) === 'accepted';
+  } catch {
+    return false;
+  }
+}
+
 /** Известные типы событий воронки (для автодополнения и единообразия). */
 export type FunnelEvent =
   | 'chat_started'
@@ -42,6 +58,8 @@ export interface TrackOptions {
  * Безопасен вне браузера / в приватном режиме (тогда отдаёт пустую строку).
  */
 export function getSessionId(): string {
+  // Без согласия не создаём и не храним идентификатор сессии для аналитики.
+  if (!analyticsAllowed()) return '';
   try {
     const existing = window.sessionStorage.getItem(SESSION_ID_KEY);
     if (existing) return existing;
@@ -65,6 +83,8 @@ export function getSessionId(): string {
  * @param opts  - язык и произвольный meta-контекст.
  */
 export async function trackEvent(event: FunnelEvent, opts: TrackOptions = {}): Promise<void> {
+  // Аналитика только при согласии — иначе событие не отправляем.
+  if (!analyticsAllowed()) return;
   const sessionId = getSessionId();
   const body: Record<string, unknown> = { event };
   if (sessionId) body.session_id = sessionId;

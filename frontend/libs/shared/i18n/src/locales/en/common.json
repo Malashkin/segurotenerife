@@ -173,5 +173,9 @@
   "chat_contWa": "Continue in WhatsApp",
   "chat_contTg": "Continue in Telegram",
   "chat_fab": "Find your insurance",
-  "chat_close": "Close"
+  "chat_close": "Close",
+  "cookie_msg": "We use only the cookies needed to run the site, plus anonymous analytics — enabled only with your consent. Declining keeps the full site working.",
+  "cookie_accept": "Accept all",
+  "cookie_necessary": "Only necessary",
+  "cookie_more": "Learn more"
 }
