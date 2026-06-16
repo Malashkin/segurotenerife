@@ -83,9 +83,10 @@ test.describe('admin — аутентификация', () => {
     await page.locator('#manager-password').fill('correct-password');
     await page.getByRole('button', { name: /sign in/i }).click();
 
-    // Дашборд: шапка + строка лида + выход.
+    // Дашборд: шапка + строка лида + выход. «Анна» рендерится и в таблице
+    // (десктоп), и в мобильной карточке (одна из двух скрыта по CSS), поэтому .first().
     await expect(page.getByText('Leads dashboard')).toBeVisible();
-    await expect(page.getByText('Анна')).toBeVisible();
+    await expect(page.getByText('Анна').first()).toBeVisible();
     await expect(page.getByRole('button', { name: /sign out/i })).toBeVisible();
   });
 });

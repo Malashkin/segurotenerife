@@ -19,7 +19,7 @@
  * для шапки и <th scope="row"> для имени; даты — через <time dateTime>.
  * Интерфейс англоязычный (EN-only).
  */
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ApiError } from '@shared/api';
 import { useLeads, type LeadRow } from '@entities';
 import { cn } from '@shared/ui';
@@ -85,6 +85,20 @@ function CellValue({ value }: { value: string | null }): JSX.Element {
   return <>{value}</>;
 }
 
+/** Статус-бейдж лида (единый вид в таблице и в мобильных карточках). */
+function StatusBadge({ status }: { status: string }): JSX.Element {
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold capitalize',
+        statusClasses(status),
+      )}
+    >
+      {status}
+    </span>
+  );
+}
+
 /** Обёртка-контейнер для любого состояния (центрированная карточка). */
 function StateBox({ children }: { children: React.ReactNode }): JSX.Element {
   return (
@@ -97,6 +111,14 @@ function StateBox({ children }: { children: React.ReactNode }): JSX.Element {
 /** Таблица лидов со всеми состояниями запроса. */
 export function LeadsTable({ token, onUnauthorized }: LeadsTableProps): JSX.Element {
   const { data, isLoading, isError, error, refetch, isFetching } = useLeads(token);
+
+  // Фильтр по статусу ('all' = все). Список статусов — из самих данных, чтобы
+  // не зашивать значения и не расходиться с backend. Хуки до ранних return.
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const statuses = useMemo(
+    () => Array.from(new Set((data ?? []).map((l) => l.status))).sort(),
+    [data],
+  );
 
   // На 401 (access истёк) ровно один раз для данного токена пробуем продлить
   // сессию по refresh-cookie. Успех → App обновит токен → запрос повторится сам.
@@ -169,79 +191,191 @@ export function LeadsTable({ token, onUnauthorized }: LeadsTableProps): JSX.Elem
     );
   }
 
-  // --- Успех: таблица ---
+  // --- Успех: фильтр + таблица (десктоп) / карточки (мобайл) ---
+  const filteredLeads =
+    statusFilter === 'all' ? leads : leads.filter((lead) => lead.status === statusFilter);
+
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      {/* Полоса прогресса при фоновом рефетче (refetch/refresh), чтобы было видно обновление. */}
-      {isFetching ? (
+    <div className="flex flex-col gap-4">
+      {/* Фильтр по статусу: чипсы «All» + по статусу из данных. На мобиле скроллятся
+          по горизонтали, не ломая раскладку. */}
+      {statuses.length > 1 && (
         <div
-          role="status"
-          aria-label="Refreshing leads"
-          className="h-1 w-full animate-pulse bg-brand/40"
-        />
-      ) : null}
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-left text-sm">
-          <caption className="sr-only">Leads submitted from the website</caption>
-          <thead>
-            <tr className="border-b border-slate-200 bg-slate-50">
-              {COLUMNS.map((col) => (
-                <th
-                  key={col}
-                  scope="col"
-                  className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500"
-                >
-                  {col}
-                </th>
+          role="group"
+          aria-label="Filter leads by status"
+          className="-mx-1 flex flex-nowrap gap-2 overflow-x-auto px-1 pb-1 sm:flex-wrap sm:overflow-visible"
+        >
+          <FilterChip
+            label="All"
+            count={leads.length}
+            active={statusFilter === 'all'}
+            onClick={() => setStatusFilter('all')}
+          />
+          {statuses.map((s) => (
+            <FilterChip
+              key={s}
+              label={s}
+              count={leads.filter((lead) => lead.status === s).length}
+              active={statusFilter === s}
+              onClick={() => setStatusFilter(s)}
+            />
+          ))}
+        </div>
+      )}
+
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        {/* Полоса прогресса при фоновом рефетче (refetch/refresh), чтобы было видно обновление. */}
+        {isFetching ? (
+          <div
+            role="status"
+            aria-label="Refreshing leads"
+            className="h-1 w-full animate-pulse bg-brand/40"
+          />
+        ) : null}
+
+        {filteredLeads.length === 0 ? (
+          <p className="px-4 py-10 text-center text-sm text-slate-500">
+            No leads with status “{statusFilter}”.
+          </p>
+        ) : (
+          <>
+            {/* Десктоп/планшет: классическая таблица с горизонтальным скроллом. */}
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full border-collapse text-left text-sm">
+                <caption className="sr-only">Leads submitted from the website</caption>
+                <thead>
+                  <tr className="border-b border-slate-200 bg-slate-50">
+                    {COLUMNS.map((col) => (
+                      <th
+                        key={col}
+                        scope="col"
+                        className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500"
+                      >
+                        {col}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredLeads.map((lead) => (
+                    <tr
+                      key={lead.id}
+                      className="border-b border-slate-100 align-top transition-colors last:border-b-0 hover:bg-slate-50"
+                    >
+                      <td className="whitespace-nowrap px-4 py-3 text-slate-500">
+                        <time dateTime={lead.created_at}>{formatCreatedAt(lead.created_at)}</time>
+                      </td>
+                      <th
+                        scope="row"
+                        className="whitespace-nowrap px-4 py-3 text-left font-medium text-slate-900"
+                      >
+                        <CellValue value={lead.name} />
+                      </th>
+                      <td className="whitespace-nowrap px-4 py-3 text-slate-700">
+                        <CellValue value={lead.contact} />
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-slate-700">{lead.messenger}</td>
+                      <td className="whitespace-nowrap px-4 py-3 text-slate-700">
+                        <CellValue value={lead.comm_lang ?? lead.ui_lang} />
+                      </td>
+                      <td className="px-4 py-3 text-slate-700">
+                        <CellValue value={lead.goal} />
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-slate-700">
+                        <CellValue value={lead.city} />
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-slate-700">
+                        <CellValue value={lead.urgency} />
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3">
+                        <StatusBadge status={lead.status} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Мобайл: карточки вместо горизонтального скролла таблицы. */}
+            <ul className="divide-y divide-slate-100 md:hidden">
+              {filteredLeads.map((lead) => (
+                <li key={lead.id} className="flex flex-col gap-2 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-slate-900">
+                        <CellValue value={lead.name} />
+                      </p>
+                      <p className="truncate text-sm text-slate-600">
+                        <CellValue value={lead.contact} />
+                      </p>
+                    </div>
+                    <StatusBadge status={lead.status} />
+                  </div>
+                  <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-sm">
+                    <LeadField label="Messenger" value={lead.messenger} />
+                    <LeadField label="Lang" value={lead.comm_lang ?? lead.ui_lang} />
+                    <LeadField label="Goal" value={lead.goal} />
+                    <LeadField label="City" value={lead.city} />
+                    <LeadField label="Urgency" value={lead.urgency} />
+                  </dl>
+                  <time dateTime={lead.created_at} className="text-xs text-slate-400">
+                    {formatCreatedAt(lead.created_at)}
+                  </time>
+                </li>
               ))}
-            </tr>
-          </thead>
-          <tbody>
-            {leads.map((lead) => (
-              <tr
-                key={lead.id}
-                className="border-b border-slate-100 align-top transition-colors last:border-b-0 hover:bg-slate-50"
-              >
-                <td className="whitespace-nowrap px-4 py-3 text-slate-500">
-                  <time dateTime={lead.created_at}>{formatCreatedAt(lead.created_at)}</time>
-                </td>
-                <th
-                  scope="row"
-                  className="whitespace-nowrap px-4 py-3 text-left font-medium text-slate-900"
-                >
-                  <CellValue value={lead.name} />
-                </th>
-                <td className="whitespace-nowrap px-4 py-3 text-slate-700">
-                  <CellValue value={lead.contact} />
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-slate-700">{lead.messenger}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-slate-700">
-                  <CellValue value={lead.comm_lang ?? lead.ui_lang} />
-                </td>
-                <td className="px-4 py-3 text-slate-700">
-                  <CellValue value={lead.goal} />
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-slate-700">
-                  <CellValue value={lead.city} />
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-slate-700">
-                  <CellValue value={lead.urgency} />
-                </td>
-                <td className="whitespace-nowrap px-4 py-3">
-                  <span
-                    className={cn(
-                      'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold capitalize',
-                      statusClasses(lead.status),
-                    )}
-                  >
-                    {lead.status}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+            </ul>
+          </>
+        )}
       </div>
+    </div>
+  );
+}
+
+/** Чип-фильтр статуса с счётчиком. */
+function FilterChip({
+  label,
+  count,
+  active,
+  onClick,
+}: {
+  label: string;
+  count: number;
+  active: boolean;
+  onClick: () => void;
+}): JSX.Element {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        'inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium capitalize transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
+        active
+          ? 'border-brand bg-brand text-white'
+          : 'border-slate-200 bg-white text-slate-600 hover:border-brand hover:text-brand-dark',
+      )}
+    >
+      {label}
+      <span
+        className={cn(
+          'rounded-full px-1.5 text-xs font-semibold tabular-nums',
+          active ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-500',
+        )}
+      >
+        {count}
+      </span>
+    </button>
+  );
+}
+
+/** Поле «лейбл + значение» в мобильной карточке лида. */
+function LeadField({ label, value }: { label: string; value: string | null }): JSX.Element {
+  return (
+    <div className="flex flex-col">
+      <dt className="text-[0.7rem] font-semibold uppercase tracking-wide text-slate-400">{label}</dt>
+      <dd className="text-slate-700">
+        <CellValue value={value} />
+      </dd>
     </div>
   );
 }

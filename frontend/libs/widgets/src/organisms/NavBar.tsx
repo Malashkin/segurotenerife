@@ -6,13 +6,14 @@
  * Как это работает / Статьи / Вопросы), переключатель языков и CTA-кнопка.
  *
  * Все тексты — через @shared/i18n (namespace common). Якоря ведут на секции
- * лендинга по id (#types, #how, #articles, #faq, #quiz) — id выставляют сами
- * виджеты-секции и интеграционная страница.
+ * лендинга по id (#types, #how, #articles, #faq) — id выставляют сами виджеты-
+ * секции. CTA-кнопка открывает чат-попап (подбор), а не якорь.
  *
  * Доступность: семантический <header> + <nav aria-label>, мобильная навигация
  * скрывается (как в прототипе), переключатель языков и CTA остаются.
  */
 import { useTranslation } from 'react-i18next';
+import { useUiStore } from '@shared/store';
 import { buttonVariants, cn } from '@shared/ui';
 import { LangSwitcher } from '../molecules/LangSwitcher';
 
@@ -27,6 +28,7 @@ const NAV_LINKS: ReadonlyArray<{ href: string; key: string }> = [
 /** Sticky-шапка с логотипом, навигацией, переключателем языка и CTA. */
 export function NavBar() {
   const { t } = useTranslation();
+  const openChat = useUiStore((s) => s.openChat);
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-bg/85 backdrop-blur-md">
@@ -64,19 +66,20 @@ export function NavBar() {
         <div className="ml-auto flex shrink-0 items-center gap-2.5 sm:gap-3.5">
           <LangSwitcher />
           {/*
-            CTA-якорь, стилизованный как primary-кнопка: переиспользуем
-            buttonVariants() из @shared/ui, чтобы внешний вид совпадал с Button,
-            но семантически это ссылка на секцию подбора (#quiz).
+            CTA, стилизованный как primary-кнопка: переиспользуем buttonVariants()
+            из @shared/ui, чтобы внешний вид совпадал с Button. По клику открывает
+            чат-попап подбора (openChat), отдельной секции #quiz больше нет.
           */}
-          <a
-            href="#quiz"
+          <button
+            type="button"
+            onClick={openChat}
             className={cn(
               buttonVariants({ variant: 'primary' }),
               'hidden whitespace-nowrap px-5 py-2.5 text-[0.95rem] md:inline-flex',
             )}
           >
             {t('nav_cta')}
-          </a>
+          </button>
         </div>
       </div>
     </header>

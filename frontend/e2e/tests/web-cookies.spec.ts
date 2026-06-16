@@ -38,7 +38,7 @@ test.describe('web — согласие на куки', () => {
     await expect(banner).toBeHidden();
     expect(await page.evaluate(() => localStorage.getItem('seguro_cookie_consent'))).toBe('necessary');
     // Сайт работает: чат открывается.
-    await page.locator('#quiz button').click();
+    await page.getByTestId('chat-fab').click();
     await expect(page.getByRole('dialog')).toBeVisible();
   });
 });

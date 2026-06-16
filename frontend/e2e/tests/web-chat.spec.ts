@@ -2,8 +2,8 @@
  * E2E web: плавающий чат-бот и подбор страховки (Волна 4, обновлено под Волну с
  * плавающим виджетом).
  *
- * Чат теперь — попап (ChatLauncher): открывается кнопкой в углу или CTA в секции
- * #quiz. Проверяем:
+ * Чат теперь — попап (ChatLauncher): открывается плавающей кнопкой (FAB) в углу
+ * или CTA в шапке/hero. Проверяем:
  *  1. CTA открывает чат-окно; посетитель проходит быстрые шаги, заполняет форму
  *     и доходит до экрана хендоффа со ссылками на мессенджеры;
  *  2. смена языка в шапке перерисовывает открытый чат вживую, без перезагрузки.
@@ -14,9 +14,9 @@ import { test, expect, type Page } from '@playwright/test';
 
 const WEB = 'http://localhost:4173';
 
-/** Открывает чат через CTA-кнопку в секции #quiz (одна кнопка, без зависимости от языка). */
+/** Открывает чат через плавающую кнопку (FAB) — стабильный data-testid, без зависимости от языка. */
 async function openChat(page: Page) {
-  await page.locator('#quiz button').click();
+  await page.getByTestId('chat-fab').click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
   // Внутри попапа сам чат — это region (ChatWidget); кнопка закрытия — вне region.

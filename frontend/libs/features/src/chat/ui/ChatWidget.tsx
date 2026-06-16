@@ -45,6 +45,9 @@ import {
 /** Пауза «печати» бота перед показом вопроса (мс), как в прототипе (650). */
 const TYPING_MS = 650;
 
+/** Стартовые вопросы-подсказки на первом экране чата (ключи словаря `chat`). */
+const STARTER_KEYS = ['starter_visa', 'starter_price', 'starter_dental'] as const;
+
 /** Мессенджеры, предлагаемые на хендоффе (Instagram НЕ предлагаем). */
 const MESSENGERS: readonly ChatMessenger[] = ['WhatsApp', 'Telegram', 'Viber'];
 
@@ -274,7 +277,7 @@ export function ChatWidget(): JSX.Element {
 
   return (
     <div
-      className="flex h-full flex-col overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-xl sm:h-auto"
+      className="flex h-full flex-col overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-xl"
       role="region"
       aria-label={ct('title')}
     >
@@ -333,7 +336,7 @@ export function ChatWidget(): JSX.Element {
       {/* Лента сообщений */}
       <div
         ref={bodyRef}
-        className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto bg-[#f5f8f8] px-[18px] py-5 sm:h-[360px] sm:max-h-[56vh] sm:flex-none"
+        className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto bg-[#f5f8f8] px-[18px] py-5"
         aria-live="polite"
         aria-atomic="false"
       >
@@ -520,6 +523,27 @@ export function ChatWidget(): JSX.Element {
             ответит инлайн). На шаге контактной формы не показываем, чтобы не мешать. */}
         {(showQuick || showDone) && (
           <div className="mt-3 border-t border-slate-100 pt-3">
+            {/* Стартовые подсказки: на самом первом экране, пока пользователь
+                ещё ничего не спросил. Снимают «чистый лист» — сразу видно, что
+                можно спросить. Тап = свободный вопрос к ИИ. */}
+            {showQuick && stepIndex === 0 && freeItems.length === 0 && !asking && (
+              <div className="mb-3">
+                <p className="mb-2 text-[0.78rem] font-medium text-muted">{ct('starters_label')}</p>
+                <div className="flex flex-wrap gap-2">
+                  {STARTER_KEYS.map((key) => (
+                    <button
+                      key={key}
+                      type="button"
+                      data-testid="chat-starter"
+                      onClick={() => void handleAsk(ct(key))}
+                      className="rounded-full border border-slate-200 bg-slate-50 px-3.5 py-2 text-left text-[0.85rem] font-medium text-slate-600 transition-colors hover:border-brand hover:bg-brand-tint hover:text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                    >
+                      {ct(key)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <p className="mb-2 text-center text-[0.78rem] text-muted">{ct('ask_or')}</p>
             <FreeAsk ct={ct} onAsk={handleAsk} pending={asking} />
           </div>

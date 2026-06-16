@@ -2,12 +2,13 @@
  * Секция «Виды страховки» — 9 карточек типов полисов.
  *
  * Портирована из секции `#types` прототипа /Users/mike/Desktop/fun/index.html.
- * Девять карточек (медицинская для ВНЖ/визы, студенты, международная, стоматология,
- * с возмещением, жизнь, похоронная, питомцы, бизнес) с эмодзи-иконкой, заголовком,
- * описанием и ссылкой «Подобрать →» на секцию подбора (#quiz).
+ * Восемь карточек (медицинская для ВНЖ/визы, студенты, международная, стоматология,
+ * с возмещением, жизнь, похоронная, питомцы) с эмодзи-иконкой, заголовком и
+ * описанием. Вся карточка кликабельна и открывает чат-попап с релевантным
+ * интентом (дедуп по UX-обзору: отдельный текст «Подобрать →» убран).
  *
- * Все тексты — через @shared/i18n (ключи c1_t..c9_d, ins_pick). Иконки-эмодзи
- * берём 1:1 из прототипа (декоративные, помечены aria-hidden).
+ * Все тексты — через @shared/i18n (ключи c1_t..c8_d). Иконки-эмодзи берём 1:1
+ * из прототипа (декоративные, помечены aria-hidden).
  */
 import { useTranslation } from 'react-i18next';
 import { useUiStore } from '@shared/store';
@@ -50,7 +51,7 @@ export function InsuranceTypes() {
               key={type.titleKey}
               type="button"
               onClick={() => openChatWithIntent(type.intent)}
-              className="flex flex-col items-start gap-2.5 rounded-card border border-slate-200 bg-white p-6 text-left shadow-sm transition-all hover:-translate-y-[3px] hover:border-[#cfeae6] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              className="group flex flex-col items-start gap-2.5 rounded-card border border-slate-200 bg-white p-6 text-left shadow-sm transition-all hover:-translate-y-[3px] hover:border-[#cfeae6] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
             >
               <span
                 aria-hidden
@@ -58,11 +59,12 @@ export function InsuranceTypes() {
               >
                 {type.icon}
               </span>
-              <h3 className="font-heading text-[1.14rem] font-bold text-ink">{t(type.titleKey)}</h3>
+              {/* Вся карточка кликабельна → отдельный текст «Подобрать» убран
+                  (дедуп); понятный hover: заголовок подсвечивается бренд-цветом. */}
+              <h3 className="font-heading text-[1.14rem] font-bold text-ink transition-colors group-hover:text-brand-dark">
+                {t(type.titleKey)}
+              </h3>
               <p className="text-[0.94rem] text-muted">{t(type.descKey)}</p>
-              <span className="mt-auto pt-2 text-[0.9rem] font-semibold text-brand-dark">
-                {t('ins_pick')}
-              </span>
             </button>
           ))}
         </div>

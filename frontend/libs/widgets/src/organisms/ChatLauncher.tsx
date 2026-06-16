@@ -7,8 +7,9 @@
  * экран, на десктопе — аккуратная карточка у нижнего правого угла.
  *
  * Состояние открыт/закрыт — в @shared/store (useUiStore.chatOpen), чтобы открывать
- * чат и из CTA-секции лендинга (#quiz), и из самой кнопки. Сам чат-сценарий —
- * в ChatWidget (@features), он стартует при монтировании (т.е. при открытии окна).
+ * чат и из CTA в шапке/hero, и из карточек видов страховки, и из самой кнопки.
+ * Сам чат-сценарий — в ChatWidget (@features), он стартует при монтировании
+ * (т.е. при открытии окна).
  */
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -91,8 +92,11 @@ export function ChatLauncher(): JSX.Element {
           tabIndex={-1}
           className={cn(
             'fixed z-[60] flex flex-col outline-none',
-            // Мобильные: bottom-sheet почти на весь экран (US-76); десктоп: карточка у угла.
-            'inset-x-2 top-16 bottom-2 sm:inset-x-auto sm:right-6 sm:top-auto sm:bottom-[6.5rem]',
+            // Мобильные: bottom-sheet почти на весь экран (US-76); десктоп: панель
+            // у правого края. Верх зафиксирован (sm:top-20, ниже шапки 68px), низ —
+            // над FAB → высота определена, лента прокручивается внутри, попап не
+            // налезает на шапку с переключателем языка даже на низких окнах.
+            'inset-x-2 top-16 bottom-2 sm:inset-x-auto sm:right-6 sm:top-20 sm:bottom-[6.5rem]',
             'sm:w-[400px] sm:max-w-[calc(100vw-3rem)]',
           )}
         >
@@ -109,21 +113,28 @@ export function ChatLauncher(): JSX.Element {
         </div>
       )}
 
-      {/* Плавающая кнопка-лончер (FAB). Тоггл: пузырь ↔ ✕. */}
+      {/* Плавающая кнопка-лончер (FAB). Компактная: по умолчанию иконка-кружок,
+          на ховере (десктоп) раскрывается с подписью. Тоггл: пузырь ↔ ✕. */}
       <button
         ref={launcherRef}
         type="button"
+        data-testid="chat-fab"
         onClick={toggleChat}
         aria-expanded={chatOpen}
         aria-label={chatOpen ? t('chat_close') : t('chat_fab')}
         className={cn(
-          'fixed bottom-5 right-5 z-[60] flex items-center gap-2 rounded-full shadow-xl transition-all',
+          'group fixed bottom-5 right-5 z-[60] flex h-14 w-14 items-center justify-center gap-2 rounded-full shadow-xl transition-all',
           'bg-brand text-white hover:bg-brand-dark focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/30',
-          chatOpen ? 'h-14 w-14 justify-center' : 'h-14 px-5',
+          // Раскрытие с подписью — только когда закрыт и только на десктоп-ховере.
+          !chatOpen && 'sm:hover:w-auto sm:hover:justify-start sm:hover:px-5',
         )}
       >
         {chatOpen ? <CloseIcon /> : <ChatBubbleIcon />}
-        {!chatOpen && <span className="hidden font-semibold sm:inline">{t('chat_fab')}</span>}
+        {!chatOpen && (
+          <span className="hidden whitespace-nowrap font-semibold sm:group-hover:inline">
+            {t('chat_fab')}
+          </span>
+        )}
       </button>
     </>
   );
