@@ -13,3 +13,21 @@ body {
   color: #0f172a;
   font-family: 'Inter', system-ui, sans-serif;
 }
+
+/* Плавная прокрутка по якорям (nav/footer) — убирает «рывок» при переходе
+   между блоками. Отключается для prefers-reduced-motion. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Отступ при скролле к секции, чтобы её не перекрывала липкая шапка. */
+#top,
+#types,
+#how,
+#quiz,
+#articles,
+#faq {
+  scroll-margin-top: 5.5rem;
+}

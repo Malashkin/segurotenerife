@@ -87,6 +87,8 @@ export function ChatWidget(): JSX.Element {
   const [messenger, setMessengerLocal] = useState<ChatMessenger>(DEFAULT_MESSENGER);
   const [consent, setConsentLocal] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  // Поповер «ⓘ»: пометка, что подбор выполняет ИИ.
+  const [aiNoteOpen, setAiNoteOpen] = useState(false);
 
   const createLead = useCreateLead();
 
@@ -257,7 +259,7 @@ export function ChatWidget(): JSX.Element {
           «бесплатно/ни к чему не обязывает» в шапке не показываем: на узком
           попапе она наслаивалась на ✕, а сам месседж уже есть на лендинге
           (trust-чипы в hero и подпись под секцией подбора). */}
-      <div className="flex items-center gap-3 bg-gradient-to-br from-brand-dark to-brand py-[14px] pl-[18px] pr-14 text-white">
+      <div className="relative flex items-center gap-3 bg-gradient-to-br from-brand-dark to-brand py-[14px] pl-[18px] pr-14 text-white">
         <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/20 font-extrabold">
           ST
         </div>
@@ -265,6 +267,28 @@ export function ChatWidget(): JSX.Element {
           <b className="text-[0.98rem]">{ct('title')}</b>
           <span className="text-[0.78rem] opacity-90">{ct('status')}</span>
         </div>
+
+        {/* «ⓘ» — пометка, что подбор выполняет ИИ (по клику — поясняющий поповер). */}
+        <button
+          type="button"
+          onClick={() => setAiNoteOpen((v) => !v)}
+          aria-label={ct('ai_label')}
+          aria-expanded={aiNoteOpen}
+          className="ml-auto grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/20 text-white transition-colors hover:bg-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 16v-4M12 8h.01" />
+          </svg>
+        </button>
+        {aiNoteOpen && (
+          <div
+            role="status"
+            className="absolute right-2 top-full z-20 mt-1 w-[min(300px,calc(100%-1rem))] rounded-xl border border-slate-200 bg-white p-3 text-[0.8rem] leading-snug text-ink shadow-lg motion-safe:animate-fadeIn"
+          >
+            🤖 {ct('ai_note')}
+          </div>
+        )}
       </div>
 
       {/* Индикатор прогресса подбора (шаг N из M). Скрыт на завершающем экране. */}

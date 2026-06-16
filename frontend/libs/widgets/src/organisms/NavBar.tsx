@@ -33,10 +33,12 @@ export function NavBar() {
       <div className="mx-auto flex h-[68px] w-[min(1160px,calc(100vw-40px))] items-center gap-4">
         {/* Логотип */}
         <a href="#top" className="flex items-center gap-2.5">
-          <span className="grid h-[34px] w-[34px] place-items-center rounded-[10px] bg-gradient-to-br from-brand to-sky font-heading text-sm font-extrabold text-white">
+          <span className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[10px] bg-gradient-to-br from-brand to-sky font-heading text-sm font-extrabold text-white">
             ST
           </span>
-          <span className="font-heading text-lg font-bold leading-tight text-ink">
+          {/* Текст бренда скрыт на узких экранах (иначе шапка переполняется);
+              на мобиле остаётся знак «ST». */}
+          <span className="hidden font-heading text-lg font-bold leading-tight text-ink sm:block">
             Seguro Tenerife
             <small className="block font-sans text-[0.68rem] font-medium tracking-wide text-muted">
               {t('logo_sub')}
@@ -44,8 +46,8 @@ export function NavBar() {
           </span>
         </a>
 
-        {/* Навигация (скрыта на мобильных, как в прототипе) */}
-        <nav aria-label="Primary" className="ml-[18px] hidden gap-6 md:flex">
+        {/* Навигация — на десктопе (lg), иначе перекрывается с языком/CTA. */}
+        <nav aria-label="Primary" className="ml-[18px] hidden gap-6 lg:flex">
           {NAV_LINKS.map((link) => (
             <a
               key={link.href}
@@ -57,8 +59,9 @@ export function NavBar() {
           ))}
         </nav>
 
-        {/* Правый блок: язык + CTA */}
-        <div className="ml-auto flex items-center gap-3.5">
+        {/* Правый блок: язык + CTA. CTA скрыта на мобиле (есть плавающий чат и
+            CTA в секции подбора) — это убирает переполнение шапки. */}
+        <div className="ml-auto flex shrink-0 items-center gap-2.5 sm:gap-3.5">
           <LangSwitcher />
           {/*
             CTA-якорь, стилизованный как primary-кнопка: переиспользуем
@@ -69,7 +72,7 @@ export function NavBar() {
             href="#quiz"
             className={cn(
               buttonVariants({ variant: 'primary' }),
-              'whitespace-nowrap px-5 py-2.5 text-[0.95rem]',
+              'hidden whitespace-nowrap px-5 py-2.5 text-[0.95rem] md:inline-flex',
             )}
           >
             {t('nav_cta')}

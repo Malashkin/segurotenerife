@@ -37,6 +37,27 @@ module.exports = {
       borderRadius: {
         card: '18px',
       },
+      // Плавные анимации появления (используются с motion-safe:, чтобы уважать
+      // prefers-reduced-motion). fadeInUp — мягкое всплытие секций/карточек.
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        fadeInUp: {
+          '0%': { opacity: '0', transform: 'translateY(16px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        slideUp: {
+          '0%': { opacity: '0', transform: 'translateY(100%)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+      },
+      animation: {
+        fadeIn: 'fadeIn 150ms ease-out',
+        fadeInUp: 'fadeInUp 500ms cubic-bezier(0.22, 1, 0.36, 1) both',
+        slideUp: 'slideUp 260ms cubic-bezier(0.22, 1, 0.36, 1)',
+      },
     },
   },
   plugins: [],

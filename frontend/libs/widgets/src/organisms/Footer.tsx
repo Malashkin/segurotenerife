@@ -1,50 +1,55 @@
 /**
- * Подвал лендинга (Footer) с нейтральным дисклеймером.
+ * Подвал лендинга (Footer) с нейтральным дисклеймером и РАБОЧИМИ ссылками.
  *
- * Портирован из `footer` прототипа /Users/mike/Desktop/fun/index.html.
- * КЛЮЧЕВОЕ требование продукта — дисклеймер `foot_disclaimer`: сервис
- * информационный, НЕ страховая компания и НЕ брокер; заявки передаются
- * лицензированному офису-партнёру, который делает расчёт и оформление полиса.
+ * Ключевое требование продукта — дисклеймер `foot_disclaimer`: сервис
+ * информационный, НЕ страховая компания и НЕ брокер.
  *
- * Четыре колонки: бренд+дисклеймер, «Страховки», «Сайт», «Правовое».
- * Все ссылки — якоря на секции лендинга (#types, #how, ...). Все тексты —
- * через @shared/i18n.
+ * Колонки и действия ссылок:
+ *  - «Страховки» → открывают чат с релевантным интентом (тип предвыбран).
+ *  - «Сайт» → якоря на секции лендинга (#how/#articles/#faq) и открытие чата.
+ *  - «Правовое» → открывают правовую модалку (privacy/terms/cookies).
+ * Контакты и «Для бизнеса» убраны (бизнес пока не консультируем; контактов нет).
  */
 import { useTranslation } from 'react-i18next';
+import { useUiStore } from '@shared/store';
 
-/** Ссылка в колонке footer: якорь + i18n-ключ подписи. */
-interface FootLink {
-  href: string;
-  key: string;
-}
+/**
+ * Ссылка футера — действие зависит от типа:
+ *  - anchor: переход по якорю на секцию;
+ *  - intent: открыть чат с интентом карточки;
+ *  - chat:   открыть чат (обычный старт);
+ *  - legal:  открыть правовую модалку.
+ */
+type FootLink =
+  | { kind: 'anchor'; href: string; key: string }
+  | { kind: 'intent'; intent: string; key: string }
+  | { kind: 'chat'; key: string }
+  | { kind: 'legal'; doc: string; key: string };
 
-/** Колонка ссылок: ключ заголовка + список ссылок. */
-const COLUMNS: ReadonlyArray<{ headingKey: string; links: ReadonlyArray<FootLink> }> = [
+const COLUMNS: ReadonlyArray<{ headingKey: string; links: readonly FootLink[] }> = [
   {
     headingKey: 'foot_h1', // «Страховки»
     links: [
-      { href: '#types', key: 'foot_l1' }, // Для визы и ВНЖ
-      { href: '#types', key: 'c4_t' }, // Стоматология
-      { href: '#types', key: 'foot_l2' }, // Семейная
-      { href: '#types', key: 'foot_l3' }, // Для бизнеса
+      { kind: 'intent', intent: 'med', key: 'foot_l1' }, // Для визы и ВНЖ
+      { kind: 'intent', intent: 'dental', key: 'c4_t' }, // Стоматология
+      { kind: 'intent', intent: 'family', key: 'foot_l2' }, // Семейная
     ],
   },
   {
     headingKey: 'foot_h2', // «Сайт»
     links: [
-      { href: '#how', key: 'nav_how' },
-      { href: '#articles', key: 'nav_articles' },
-      { href: '#faq', key: 'nav_faq' },
-      { href: '#quiz', key: 'foot_l4' }, // Подобрать
+      { kind: 'anchor', href: '#how', key: 'nav_how' },
+      { kind: 'anchor', href: '#articles', key: 'nav_articles' },
+      { kind: 'anchor', href: '#faq', key: 'nav_faq' },
+      { kind: 'chat', key: 'foot_l4' }, // Подобрать
     ],
   },
   {
     headingKey: 'foot_h3', // «Правовое»
     links: [
-      { href: '#privacy', key: 'foot_l5' }, // Политика конфиденциальности
-      { href: '#terms', key: 'foot_l6' }, // Условия использования
-      { href: '#cookies', key: 'foot_cookies' }, // Cookies
-      { href: '#contact', key: 'foot_l7' }, // Контакты
+      { kind: 'legal', doc: 'privacy', key: 'foot_l5' },
+      { kind: 'legal', doc: 'terms', key: 'foot_l6' },
+      { kind: 'legal', doc: 'cookies', key: 'foot_cookies' },
     ],
   },
 ];
@@ -52,6 +57,13 @@ const COLUMNS: ReadonlyArray<{ headingKey: string; links: ReadonlyArray<FootLink
 /** Подвал с дисклеймером, колонками ссылок и копирайтом. */
 export function Footer() {
   const { t } = useTranslation();
+  const openChat = useUiStore((s) => s.openChat);
+  const openChatWithIntent = useUiStore((s) => s.openChatWithIntent);
+  const openLegal = useUiStore((s) => s.openLegal);
+
+  /** Единый стиль ссылки/кнопки в колонке. */
+  const linkClass =
+    'block w-full py-1 text-left text-[0.92rem] text-[#94a3b8] transition-colors hover:text-white focus-visible:text-white focus-visible:outline-none';
 
   return (
     <footer className="mt-16 bg-[#0b1220] py-[54px] pb-[30px] text-[#cbd5e1]">
@@ -72,15 +84,26 @@ export function Footer() {
           {COLUMNS.map((column) => (
             <nav key={column.headingKey} aria-label={t(column.headingKey)}>
               <h4 className="mb-3.5 font-heading text-base text-white">{t(column.headingKey)}</h4>
-              {column.links.map((link, i) => (
-                <a
-                  key={`${link.key}-${i}`}
-                  href={link.href}
-                  className="block py-1 text-[0.92rem] text-[#94a3b8] transition-colors hover:text-white"
-                >
-                  {t(link.key)}
-                </a>
-              ))}
+              {column.links.map((link) => {
+                if (link.kind === 'anchor') {
+                  return (
+                    <a key={link.key} href={link.href} className={linkClass}>
+                      {t(link.key)}
+                    </a>
+                  );
+                }
+                const onClick =
+                  link.kind === 'intent'
+                    ? () => openChatWithIntent(link.intent)
+                    : link.kind === 'legal'
+                      ? () => openLegal(link.doc)
+                      : () => openChat();
+                return (
+                  <button key={link.key} type="button" onClick={onClick} className={linkClass}>
+                    {t(link.key)}
+                  </button>
+                );
+              })}
             </nav>
           ))}
         </div>

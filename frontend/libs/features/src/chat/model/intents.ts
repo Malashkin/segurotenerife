@@ -25,6 +25,7 @@ export interface ChatIntent {
 /** id интентов = соответствуют карточкам InsuranceTypes (c1…c9). */
 export const CHAT_INTENTS: Record<string, ChatIntent> = {
   med: { goalKey: 'o_med' },
+  family: { goalKey: 'o_family' },
   student: { goalKey: 'o_student' },
   travel: { goalKey: 'o_travel' },
   dental: { goalKey: 'o_dental' },

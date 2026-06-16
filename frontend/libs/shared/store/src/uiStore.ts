@@ -39,6 +39,13 @@ interface UiState {
   closeChat: () => void;
   /** Переключить чат-виджет. */
   toggleChat: () => void;
+
+  /** Открытая правовая страница в модалке (privacy|terms|cookies) или null. */
+  legalDoc: string | null;
+  /** Открыть правовую страницу в модалке. */
+  openLegal: (id: string) => void;
+  /** Закрыть правовую модалку. */
+  closeLegal: () => void;
 }
 
 /**
@@ -59,4 +66,8 @@ export const useUiStore = create<UiState>((set) => ({
   clearChatIntent: () => set({ chatIntent: null }),
   closeChat: () => set({ chatOpen: false }),
   toggleChat: () => set((state) => ({ chatOpen: !state.chatOpen })),
+
+  legalDoc: null,
+  openLegal: (id: string) => set({ legalDoc: id }),
+  closeLegal: () => set({ legalDoc: null }),
 }));

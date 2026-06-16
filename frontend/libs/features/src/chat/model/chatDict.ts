@@ -36,6 +36,8 @@ export type ChatDict = Record<string, string>;
  */
 export const CHAT_DICT: Record<AppLocale, ChatDict> = {
   en: {
+    ai_label: "How matching works",
+    ai_note: "Insurance matching here is done by an AI assistant based on ASISA’s public catalogue. A manager always confirms the details and the quote.",
     o_student: "Student insurance",
     o_travel: "Travel / international",
     o_reembolso: "With reimbursement",
@@ -105,6 +107,8 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     contVb: 'Continue in Viber',
   },
   es: {
+    ai_label: "Cómo funciona",
+    ai_note: "La orientación aquí la realiza un asistente de IA según el catálogo público de ASISA. Un gestor confirma siempre los detalles y el presupuesto.",
     o_student: "Seguro para estudiantes",
     o_travel: "Viajes / internacional",
     o_reembolso: "Con reembolso",
@@ -173,6 +177,8 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     contVb: 'Continuar en Viber',
   },
   uk: {
+    ai_label: "Як працює підбір",
+    ai_note: "Підбір тут виконує ШІ-асистент за публічним каталогом ASISA. Менеджер завжди підтверджує деталі та розрахунок.",
     o_student: "Студентська страховка",
     o_travel: "Подорожі / міжнародна",
     o_reembolso: "З відшкодуванням",
@@ -241,6 +247,8 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     contVb: 'Продовжити у Viber',
   },
   ru: {
+    ai_label: "Как работает подбор",
+    ai_note: "Подбор здесь выполняет ИИ-ассистент по публичному каталогу ASISA. Менеджер всегда подтверждает детали и расчёт.",
     o_student: "Студенческая страховка",
     o_travel: "Путешествия / международная",
     o_reembolso: "С возмещением расходов",

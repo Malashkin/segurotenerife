@@ -19,6 +19,7 @@ export { cn } from './lib/cn';
 
 // --- Atoms ---
 export { Button, buttonVariants, type ButtonProps } from './atoms/Button';
+export { Reveal, type RevealProps } from './atoms/Reveal';
 export { Input, type InputProps } from './atoms/Input';
 export {
   Card,

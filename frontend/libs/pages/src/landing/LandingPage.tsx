@@ -22,8 +22,10 @@ import {
   Faq,
   Footer,
   ChatLauncher,
+  LegalModal,
 } from '@widgets';
 import { useUiStore } from '@shared/store';
+import { Reveal } from '@shared/ui';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -70,16 +72,30 @@ export function LandingPage(): JSX.Element {
     <div id="top" className="min-h-screen bg-bg text-ink">
       <NavBar />
       <main>
+        {/* Мягкое появление секций при прокрутке (Reveal) — без рывков.
+            Hero без Reveal: он над сгибом и должен показываться сразу. */}
         <Hero />
-        <InsuranceTypes />
-        <HowItWorks />
-        <QuizSection />
-        <Articles />
-        <Faq />
+        <Reveal>
+          <InsuranceTypes />
+        </Reveal>
+        <Reveal>
+          <HowItWorks />
+        </Reveal>
+        <Reveal>
+          <QuizSection />
+        </Reveal>
+        <Reveal>
+          <Articles />
+        </Reveal>
+        <Reveal>
+          <Faq />
+        </Reveal>
       </main>
       <Footer />
       {/* Плавающий чат-бот: кнопка в углу + всплывающее окно подбора. */}
       <ChatLauncher />
+      {/* Правовые страницы (privacy/terms/cookies) в модалке из футера. */}
+      <LegalModal />
     </div>
   );
 }
