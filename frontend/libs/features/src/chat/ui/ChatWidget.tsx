@@ -28,9 +28,9 @@ import {
   type ChatMessenger,
 } from '@shared/store';
 import { useCreateLead, type CreateLeadRequest } from '@entities';
-import { trackEvent } from '@shared/api';
+import { trackEvent, askQuestion } from '@shared/api';
 import { Button } from '@shared/ui';
-import { AskAssistant } from './AskAssistant';
+import { FreeAsk } from './FreeAsk';
 import { useChatI18n } from '../model/useChatI18n';
 import { useChatMessages } from '../model/useChatMessages';
 import { STEP_OPTIONS, toPicked, type StepOption } from '../model/options';
@@ -89,6 +89,29 @@ export function ChatWidget(): JSX.Element {
   const [formError, setFormError] = useState<string | null>(null);
   // Поповер «ⓘ»: пометка, что подбор выполняет ИИ.
   const [aiNoteOpen, setAiNoteOpen] = useState(false);
+  // Свободные вопросы ассистенту (инлайн, рядом с чипсами) и индикатор ответа.
+  const [freeItems, setFreeItems] = useState<
+    { id: number; author: 'user' | 'bot'; text: string }[]
+  >([]);
+  const [asking, setAsking] = useState(false);
+  const freeIdRef = useRef(0);
+
+  /** Свободный вопрос: добавляем реплику пользователя, спрашиваем ИИ, добавляем ответ. */
+  async function handleAsk(question: string): Promise<void> {
+    setFreeItems((prev) => [...prev, { id: freeIdRef.current++, author: 'user', text: question }]);
+    setAsking(true);
+    void trackEvent('question_asked', { lang });
+    try {
+      const answer = await askQuestion(question, lang);
+      // null → ассистент недоступен (503): мягкий фолбэк на менеджера.
+      const text = answer ?? ct('here');
+      setFreeItems((prev) => [...prev, { id: freeIdRef.current++, author: 'bot', text }]);
+    } catch {
+      setFreeItems((prev) => [...prev, { id: freeIdRef.current++, author: 'bot', text: ct('here') }]);
+    } finally {
+      setAsking(false);
+    }
+  }
 
   const createLead = useCreateLead();
 
@@ -141,11 +164,11 @@ export function ChatWidget(): JSX.Element {
     };
   }, [phase, stepIndex, setPhase]);
 
-  // 3. Автоскролл ленты вниз при появлении новых сообщений/фазы.
+  // 3. Автоскролл ленты вниз при появлении новых сообщений/фазы/свободных Q&A.
   useEffect(() => {
     const el = bodyRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [messages.length, phase]);
+  }, [messages.length, phase, freeItems.length, asking]);
 
   // --- Обработчики ---
 
@@ -334,8 +357,23 @@ export function ChatWidget(): JSX.Element {
           </div>
         ))}
 
-        {/* Индикатор «печатает» (typing) */}
-        {showTyping && (
+        {/* Свободные вопросы ассистенту (инлайн, помимо гайдового сценария). */}
+        {freeItems.map((m) => (
+          <div key={`free-${m.id}`} className={m.author === 'user' ? 'max-w-[84%] self-end' : 'max-w-[84%] self-start'}>
+            <div
+              className={
+                m.author === 'user'
+                  ? 'rounded-2xl rounded-br-sm bg-brand px-[15px] py-[11px] text-[0.96rem] leading-normal text-white'
+                  : 'rounded-2xl rounded-bl-sm border border-slate-200 bg-white px-[15px] py-[11px] text-[0.96rem] leading-normal text-ink'
+              }
+            >
+              {m.text}
+            </div>
+          </div>
+        ))}
+
+        {/* Индикатор «печатает»: гайдовый шаг (thinking) ИЛИ ответ ассистента (asking). */}
+        {(showTyping || asking) && (
           <div className="max-w-[84%] self-start" aria-label="…" role="status">
             <div className="inline-flex items-center gap-1 rounded-2xl rounded-bl-sm border border-slate-200 bg-white px-[15px] py-[13px]">
               <span className="h-[7px] w-[7px] rounded-full bg-slate-300 motion-safe:animate-pulse" />
@@ -464,6 +502,16 @@ export function ChatWidget(): JSX.Element {
 
         {/* Экран хендоффа (после отправки) */}
         {showDone && <HandoffActions ct={ct} lang={lang} onRestart={handleRestart} />}
+
+        {/* Свободный ввод вопроса — рядом с чипсами на шагах подбора и на хендоффе.
+            Пользователь может тапнуть чипс (вести сценарий) ИЛИ спросить своё (ИИ
+            ответит инлайн). На шаге контактной формы не показываем, чтобы не мешать. */}
+        {(showQuick || showDone) && (
+          <div className="mt-3 border-t border-slate-100 pt-3">
+            <p className="mb-2 text-center text-[0.78rem] text-muted">{ct('ask_or')}</p>
+            <FreeAsk ct={ct} onAsk={handleAsk} pending={asking} />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -521,9 +569,6 @@ function HandoffActions({
       ))}
 
       <span className="text-center text-[0.84rem] text-slate-500">{ct('here')}</span>
-
-      {/* Свободный вопрос ассистенту по базе знаний ASISA (пока ждём менеджера). */}
-      <AskAssistant ct={ct} lang={lang} />
 
       <button
         type="button"

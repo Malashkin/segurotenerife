@@ -26,7 +26,8 @@ export type FunnelEvent =
   | 'chat_started'
   | 'step_completed'
   | 'chat_completed'
-  | 'handoff_clicked';
+  | 'handoff_clicked'
+  | 'question_asked';
 
 /** Необязательный контекст события. */
 export interface TrackOptions {
