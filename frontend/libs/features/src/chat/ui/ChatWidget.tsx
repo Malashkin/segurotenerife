@@ -70,6 +70,7 @@ export function ChatWidget(): JSX.Element {
   // --- Интент карточки «Виды страховок»: предвыбранный тип + релевантный вопрос ---
   const chatIntent = useUiStore((s) => s.chatIntent);
   const clearChatIntent = useUiStore((s) => s.clearChatIntent);
+  const openLegal = useUiStore((s) => s.openLegal);
   const [activeIntent, setActiveIntent] = useState<ChatIntent | null>(null);
 
   // Индекс шага 'who' и override его вопроса для активного интента (напр. питомцы:
@@ -478,15 +479,26 @@ export function ChatWidget(): JSX.Element {
               />
             </div>
 
-            <label className="mb-[18px] mt-1.5 flex items-start gap-2.5 text-[0.85rem] text-slate-500">
-              <input
-                type="checkbox"
-                checked={consent}
-                onChange={(e) => setConsentLocal(e.target.checked)}
-                className="mt-[3px] accent-brand"
-              />
-              <span>{ct('consent_text')}</span>
-            </label>
+            {/* Согласие: текст в <label>, а ссылка на политику — отдельной кнопкой
+                вне label (иначе клик по ссылке переключал бы чекбокс). */}
+            <div className="mb-[18px] mt-1.5 text-[0.85rem] text-slate-500">
+              <label className="flex items-start gap-2.5">
+                <input
+                  type="checkbox"
+                  checked={consent}
+                  onChange={(e) => setConsentLocal(e.target.checked)}
+                  className="mt-[3px] accent-brand"
+                />
+                <span>{ct('consent_text')}</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => openLegal('privacy')}
+                className="ml-[30px] mt-1 text-left text-[0.82rem] font-medium text-brand-dark underline underline-offset-2 hover:text-brand"
+              >
+                {ct('consent_privacy')}
+              </button>
+            </div>
 
             {formError && (
               <p role="alert" className="mb-3 text-[0.85rem] font-medium text-red-600">

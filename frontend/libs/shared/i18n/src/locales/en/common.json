@@ -98,7 +98,7 @@
   "f_msgr_l": "Preferred messenger",
   "f_contact_l": "Phone or @username",
   "f_contact_ph": "+34 600 000 000 or @username",
-  "consent_text": "I agree to the processing of my data to find insurance and contact me. <a href=\"#privacy\">Privacy policy</a>.",
+  "consent_text": "I agree to the processing of my data to find insurance and contact me.",
   "btn_send": "Send request",
   "q_back": "← Back",
   "load_h": "Finding a manager for you…",
@@ -177,5 +177,6 @@
   "cookie_msg": "We use only the cookies needed to run the site, plus anonymous analytics — enabled only with your consent. Declining keeps the full site working.",
   "cookie_accept": "Accept all",
   "cookie_necessary": "Only necessary",
-  "cookie_more": "Learn more"
+  "cookie_more": "Learn more",
+  "consent_privacy": "Privacy policy"
 }

@@ -98,7 +98,7 @@
   "f_msgr_l": "Mensajería preferida",
   "f_contact_l": "Teléfono o @usuario",
   "f_contact_ph": "+34 600 000 000 o @usuario",
-  "consent_text": "Acepto el tratamiento de mis datos para buscar un seguro y contactarme. <a href=\"#privacy\">Política de privacidad</a>.",
+  "consent_text": "Acepto el tratamiento de mis datos para buscar un seguro y contactarme.",
   "btn_send": "Enviar solicitud",
   "q_back": "← Atrás",
   "load_h": "Buscando un gestor para ti…",
@@ -177,5 +177,6 @@
   "cookie_msg": "Usamos solo las cookies necesarias para el sitio y analítica anónima, que activamos solo con tu consentimiento. Si rechazas, el sitio sigue funcionando por completo.",
   "cookie_accept": "Aceptar todo",
   "cookie_necessary": "Solo necesarias",
-  "cookie_more": "Más información"
+  "cookie_more": "Más información",
+  "consent_privacy": "Política de privacidad"
 }
