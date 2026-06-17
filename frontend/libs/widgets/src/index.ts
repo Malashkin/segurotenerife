@@ -27,6 +27,7 @@ export { LangSwitcher, type LangSwitcherProps } from './molecules/LangSwitcher';
 // --- Organisms (секции лендинга) ---
 export { NavBar } from './organisms/NavBar';
 export { Hero } from './organisms/Hero';
+export { TrustBar } from './organisms/TrustBar';
 export { InsuranceTypes } from './organisms/InsuranceTypes';
 export { HowItWorks } from './organisms/HowItWorks';
 export { Articles } from './organisms/Articles';

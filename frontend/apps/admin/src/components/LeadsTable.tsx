@@ -85,16 +85,22 @@ function CellValue({ value }: { value: string | null }): JSX.Element {
   return <>{value}</>;
 }
 
+/** Человекочитаемый ярлык статуса: `in_progress` → `In progress`. */
+function humanizeStatus(status: string): string {
+  const spaced = status.replace(/[_-]+/g, ' ').trim();
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
 /** Статус-бейдж лида (единый вид в таблице и в мобильных карточках). */
 function StatusBadge({ status }: { status: string }): JSX.Element {
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold capitalize',
+        'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold',
         statusClasses(status),
       )}
     >
-      {status}
+      {humanizeStatus(status)}
     </span>
   );
 }
@@ -214,7 +220,7 @@ export function LeadsTable({ token, onUnauthorized }: LeadsTableProps): JSX.Elem
           {statuses.map((s) => (
             <FilterChip
               key={s}
-              label={s}
+              label={humanizeStatus(s)}
               count={leads.filter((lead) => lead.status === s).length}
               active={statusFilter === s}
               onClick={() => setStatusFilter(s)}

@@ -52,6 +52,7 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     ask_title: "Have a question? Ask the assistant",
     ask_ph: "e.g. Which policy works for a residency visa?",
     ask_send: "Ask",
+    ask_cta: "Ask your own question",
     starters_label: "Popular questions",
     starter_visa: "Which policy works for a residency visa?",
     starter_price: "How much does health insurance cost?",
@@ -106,6 +107,7 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     status: '● online',
     greeting:
       "Hi! 👋 I'll help you find insurance in a couple of minutes. Just answer a few questions.",
+    reply_time: 'We usually reply within an hour during working hours.',
     here: 'You can keep chatting right here — the manager will reply as soon as they join.',
     contWa: 'Continue in WhatsApp',
     contTg: 'Continue in Telegram',
@@ -128,6 +130,7 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     ask_title: "¿Tienes una pregunta? Pregunta al asistente",
     ask_ph: "p. ej. ¿Qué seguro sirve para el visado de residencia?",
     ask_send: "Preguntar",
+    ask_cta: "Haz tu propia pregunta",
     starters_label: "Preguntas frecuentes",
     starter_visa: "¿Qué seguro sirve para el visado de residencia?",
     starter_price: "¿Cuánto cuesta el seguro de salud?",
@@ -181,6 +184,7 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     status: '● en línea',
     greeting:
       '¡Hola! 👋 Te ayudo a encontrar un seguro en un par de minutos. Responde unas preguntas.',
+    reply_time: 'Solemos responder en menos de una hora en horario laboral.',
     here: 'Puedes seguir chateando aquí mismo — el gestor responderá en cuanto se conecte.',
     contWa: 'Continuar en WhatsApp',
     contTg: 'Continuar en Telegram',
@@ -203,6 +207,7 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     ask_title: "Є питання? Запитайте асистента",
     ask_ph: "напр. Який поліс підходить для візи на ВНЖ?",
     ask_send: "Запитати",
+    ask_cta: "Поставити своє запитання",
     starters_label: "Популярні питання",
     starter_visa: "Який поліс підходить для візи на ВНЖ?",
     starter_price: "Скільки коштує медичне страхування?",
@@ -256,6 +261,7 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     status: '● онлайн',
     greeting:
       'Вітаю! 👋 Допоможу підібрати страховку за пару хвилин. Дайте відповідь на кілька питань.',
+    reply_time: 'Зазвичай відповідаємо протягом години в робочий час.',
     here: 'Можете продовжити листування просто тут — менеджер відповість, щойно підключиться.',
     contWa: 'Продовжити у WhatsApp',
     contTg: 'Продовжити у Telegram',
@@ -278,6 +284,7 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     ask_title: "Остались вопросы? Спросите ассистента",
     ask_ph: "напр. Какой полис подходит для визы на ВНЖ?",
     ask_send: "Спросить",
+    ask_cta: "Задать свой вопрос",
     starters_label: "Частые вопросы",
     starter_visa: "Какой полис подходит для визы на ВНЖ?",
     starter_price: "Сколько стоит медицинская страховка?",
@@ -331,6 +338,7 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     status: '● онлайн',
     greeting:
       'Здравствуйте! 👋 Помогу подобрать страховку за пару минут. Ответьте на несколько вопросов.',
+    reply_time: 'Обычно отвечаем в течение часа в рабочее время.',
     here: 'Можете продолжить переписку прямо здесь — менеджер ответит, как только подключится.',
     contWa: 'Продолжить в WhatsApp',
     contTg: 'Продолжить в Telegram',

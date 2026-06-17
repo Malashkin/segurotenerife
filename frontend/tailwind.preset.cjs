@@ -9,6 +9,8 @@
  * Используем CSS-переменные как источник правды, чтобы shadcn-style примитивы
  * и обычные классы ссылались на одни и те же значения.
  */
+const colors = require('tailwindcss/colors');
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: ['class'],
@@ -23,10 +25,15 @@ module.exports = {
           tint2: '#f0fdfa',
         },
         sky: '#0ea5e9',
-        amber: '#f59e0b',
         ink: '#0f172a',
-        slate: '#334155',
         muted: '#64748b',
+        // ВАЖНО: задаём И плоский DEFAULT (text-slate / text-amber, как в
+        // прототипе), И полную шкалу Tailwind (slate-50…950, amber-100…900).
+        // Иначе строковый токен затирал бы дефолтную шкалу, и все *-slate-NNN /
+        // *-amber-NNN молча превращались бы в no-op (серый текст → почти чёрный,
+        // bg-slate-100 → прозрачный, border-slate-200 → дефолтный #e5e7eb).
+        slate: { ...colors.slate, DEFAULT: '#334155' },
+        amber: { ...colors.amber, DEFAULT: '#f59e0b' },
       },
       fontFamily: {
         // Заголовки — Sora, текст — Inter (как в прототипе). Подключение шрифтов

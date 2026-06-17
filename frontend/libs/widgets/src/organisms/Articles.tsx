@@ -3,11 +3,14 @@
  *
  * Портирована из секции `#articles` прототипа /Users/mike/Desktop/fun/index.html.
  * Шесть карточек-статей (ВНЖ/визы, цифровой кочевник, частная медицина,
- * сравнение полисов, семья, бизнес) с тегом-категорией, заголовком, превью и
- * ссылкой «Читать →». Ссылки пока ведут на «#» (контент статей вне MVP),
- * как и в прототипе.
+ * сравнение полисов, семья, бизнес) с тегом-категорией, заголовком и превью.
  *
- * Все тексты — через @shared/i18n (a1_tag..a6_p, art_read).
+ * UX-обзор: контент статей ещё не написан, поэтому карточки НЕ кликабельны и
+ * НЕ ведут на «#» (битые ссылки бьют по доверию и SEO). Вместо ложного
+ * «Читать →» — нейтральная пометка «Скоро» (art_soon). Когда контент появится,
+ * карточки снова станут ссылками на реальные URL.
+ *
+ * Все тексты — через @shared/i18n (a1_tag..a6_p, art_soon).
  */
 import { useTranslation } from 'react-i18next';
 import { SectionHead } from '../lib/SectionHead';
@@ -36,10 +39,9 @@ export function Articles() {
 
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {ARTICLES.map((article) => (
-            <a
+            <article
               key={article.titleKey}
-              href="#"
-              className="flex flex-col overflow-hidden rounded-card border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-[3px] hover:shadow-md"
+              className="flex flex-col overflow-hidden rounded-card border border-slate-200 bg-white shadow-sm"
             >
               {/* Декоративная градиентная «обложка» статьи */}
               <span aria-hidden className="h-2 bg-gradient-to-r from-brand to-sky" />
@@ -51,11 +53,12 @@ export function Articles() {
                   {t(article.titleKey)}
                 </h3>
                 <p className="text-[0.92rem] text-muted">{t(article.descKey)}</p>
-                <span className="mt-auto pt-1.5 text-[0.9rem] font-semibold text-brand-dark">
-                  {t('art_read')}
+                {/* Контента ещё нет → нейтральная пометка вместо ложной ссылки. */}
+                <span className="mt-auto inline-flex w-fit items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 pt-1 text-[0.78rem] font-semibold text-slate-500">
+                  {t('art_soon')}
                 </span>
               </div>
-            </a>
+            </article>
           ))}
         </div>
       </div>

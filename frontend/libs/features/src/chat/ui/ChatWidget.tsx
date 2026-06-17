@@ -98,6 +98,9 @@ export function ChatWidget(): JSX.Element {
     { id: number; author: 'user' | 'bot'; text: string }[]
   >([]);
   const [asking, setAsking] = useState(false);
+  // Раскрыт ли блок свободного вопроса на шагах подбора (по умолчанию свёрнут,
+  // чтобы не перегружать первый экран — основной путь это быстрые кнопки).
+  const [freeAskOpen, setFreeAskOpen] = useState(false);
   const freeIdRef = useRef(0);
 
   /** Свободный вопрос: добавляем реплику пользователя, спрашиваем ИИ, добавляем ответ. */
@@ -523,29 +526,53 @@ export function ChatWidget(): JSX.Element {
             ответит инлайн). На шаге контактной формы не показываем, чтобы не мешать. */}
         {(showQuick || showDone) && (
           <div className="mt-3 border-t border-slate-100 pt-3">
-            {/* Стартовые подсказки: на самом первом экране, пока пользователь
-                ещё ничего не спросил. Снимают «чистый лист» — сразу видно, что
-                можно спросить. Тап = свободный вопрос к ИИ. */}
-            {showQuick && stepIndex === 0 && freeItems.length === 0 && !asking && (
-              <div className="mb-3">
-                <p className="mb-2 text-[0.78rem] font-medium text-muted">{ct('starters_label')}</p>
-                <div className="flex flex-wrap gap-2">
-                  {STARTER_KEYS.map((key) => (
-                    <button
-                      key={key}
-                      type="button"
-                      data-testid="chat-starter"
-                      onClick={() => void handleAsk(ct(key))}
-                      className="rounded-full border border-slate-200 bg-slate-50 px-3.5 py-2 text-left text-[0.85rem] font-medium text-slate-600 transition-colors hover:border-brand hover:bg-brand-tint hover:text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                    >
-                      {ct(key)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            <p className="mb-2 text-center text-[0.78rem] text-muted">{ct('ask_or')}</p>
-            <FreeAsk ct={ct} onAsk={handleAsk} pending={asking} />
+            {/* На экране хендоффа и после первого вопроса блок ввода всегда открыт;
+                на шагах подбора он свёрнут до одной кнопки-тоггла, чтобы первый
+                экран оставался про быстрые кнопки и не выглядел перегруженным. */}
+            {(() => {
+              const askOpen = showDone || freeAskOpen || freeItems.length > 0 || asking;
+              if (!askOpen) {
+                return (
+                  <button
+                    type="button"
+                    data-testid="chat-ask-toggle"
+                    onClick={() => setFreeAskOpen(true)}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-2.5 text-[0.88rem] font-semibold text-brand-dark transition-colors hover:border-brand hover:bg-brand-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  >
+                    <span aria-hidden>💬</span>
+                    {ct('ask_cta')}
+                  </button>
+                );
+              }
+              return (
+                <>
+                  {/* Стартовые подсказки: только когда пользователь раскрыл ввод и
+                      ещё ничего не спросил — снимают «чистый лист». */}
+                  {freeItems.length === 0 && !asking && (
+                    <div className="mb-3">
+                      <p className="mb-2 text-[0.78rem] font-medium text-muted">
+                        {ct('starters_label')}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {STARTER_KEYS.map((key) => (
+                          <button
+                            key={key}
+                            type="button"
+                            data-testid="chat-starter"
+                            onClick={() => void handleAsk(ct(key))}
+                            className="rounded-full border border-slate-200 bg-slate-50 px-3.5 py-2 text-left text-[0.85rem] font-medium text-slate-600 transition-colors hover:border-brand hover:bg-brand-tint hover:text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                          >
+                            {ct(key)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <p className="mb-2 text-center text-[0.78rem] text-muted">{ct('ask_or')}</p>
+                  <FreeAsk ct={ct} onAsk={handleAsk} pending={asking} />
+                </>
+              );
+            })()}
           </div>
         )}
       </div>
@@ -603,6 +630,12 @@ function HandoffActions({
           {ct(continueLabelKey(m))}
         </a>
       ))}
+
+      {/* Явное ожидание по времени ответа — снимает неизвестность и снижает отвал. */}
+      <p className="flex items-center justify-center gap-1.5 text-center text-[0.84rem] font-medium text-brand-dark">
+        <span aria-hidden>⏱️</span>
+        {ct('reply_time')}
+      </p>
 
       <span className="text-center text-[0.84rem] text-slate-500">{ct('here')}</span>
 

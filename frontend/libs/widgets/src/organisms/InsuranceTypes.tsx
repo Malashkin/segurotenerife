@@ -39,6 +39,7 @@ const TYPES: ReadonlyArray<{
 export function InsuranceTypes() {
   const { t } = useTranslation();
   const openChatWithIntent = useUiStore((s) => s.openChatWithIntent);
+  const openChat = useUiStore((s) => s.openChat);
 
   return (
     <section id="types" className="py-16">
@@ -67,6 +68,25 @@ export function InsuranceTypes() {
               <p className="text-[0.94rem] text-muted">{t(type.descKey)}</p>
             </button>
           ))}
+
+          {/* 9-я карточка-CTA: добивает сетку (8 карточек в 3 колонках оставляли
+              пустую ячейку) и ловит тех, кто не нашёл свой тип → открывает чат. */}
+          <button
+            type="button"
+            onClick={() => openChat()}
+            className="group flex flex-col items-start justify-center gap-2.5 rounded-card border-2 border-dashed border-[#cfeae6] bg-brand-tint2 p-6 text-left transition-all hover:-translate-y-[3px] hover:border-brand hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          >
+            <span
+              aria-hidden
+              className="grid h-[46px] w-[46px] place-items-center rounded-xl bg-white text-[1.4rem] shadow-sm"
+            >
+              💬
+            </span>
+            <h3 className="font-heading text-[1.14rem] font-bold text-ink transition-colors group-hover:text-brand-dark">
+              {t('ins_more_t')}
+            </h3>
+            <p className="text-[0.94rem] text-muted">{t('ins_more_d')}</p>
+          </button>
         </div>
       </div>
     </section>

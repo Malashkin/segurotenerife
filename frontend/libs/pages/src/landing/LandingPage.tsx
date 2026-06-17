@@ -17,6 +17,7 @@
 import {
   NavBar,
   Hero,
+  TrustBar,
   InsuranceTypes,
   HowItWorks,
   Articles,
@@ -43,6 +44,8 @@ export function LandingPage(): JSX.Element {
         {/* Reveal — мягкое появление секций (CSS-усиление, контент видим всегда).
             Hero без Reveal: он над сгибом и показывается сразу. */}
         <Hero />
+        {/* Полоса доверия сразу под Hero (без Reveal: короткая, видна на сгибе). */}
+        <TrustBar />
         <Reveal>
           <InsuranceTypes />
         </Reveal>

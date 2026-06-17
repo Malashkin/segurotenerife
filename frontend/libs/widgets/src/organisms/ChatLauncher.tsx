@@ -127,6 +127,9 @@ export function ChatLauncher(): JSX.Element {
           'bg-brand text-white hover:bg-brand-dark focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/30',
           // Раскрытие с подписью — только когда закрыт и только на десктоп-ховере.
           !chatOpen && 'sm:hover:w-auto sm:hover:justify-start sm:hover:px-5',
+          // На мобиле при открытом чате FAB прячем: он налезал на кнопку «Спросить»
+          // во вводе и дублировал ✕ в шапке попапа (там закрытие уже есть).
+          chatOpen && 'max-sm:hidden',
         )}
       >
         {chatOpen ? <CloseIcon /> : <ChatBubbleIcon />}
