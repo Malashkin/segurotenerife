@@ -6,7 +6,7 @@
   "//": "Публичное приложение: лендинг + чат-подбор страховки.",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node ../../scripts/seo-prerender.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit"
   },

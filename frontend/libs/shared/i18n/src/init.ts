@@ -20,7 +20,26 @@ import {
   resources,
 } from './resources';
 import { FALLBACK_LOCALE, SUPPORTED_LOCALES, type AppLocale } from './config';
-import { detectLocale, persistLocale } from './detect';
+import {
+  DEFAULT_URL_LOCALE,
+  detectLocale,
+  localeFromPath,
+  pathForLocale,
+  persistLocale,
+} from './detect';
+
+/**
+ * Приводит URL в соответствие активному языку (RU → `/`, остальные → `/<l>/…`).
+ * @param replace - true: replaceState (старт, без записи в историю);
+ *                  false: pushState (явная смена языка пользователем).
+ */
+function syncUrlToLocale(locale: AppLocale, replace: boolean): void {
+  if (typeof window === 'undefined') return;
+  const next = pathForLocale(locale, window.location);
+  const current = window.location.pathname + window.location.search + window.location.hash;
+  if (next === current) return;
+  window.history[replace ? 'replaceState' : 'pushState'](null, '', next);
+}
 
 /** Флаг, чтобы повторные вызовы initI18n не реинициализировали инстанс. */
 let initialized = false;
@@ -57,6 +76,15 @@ export function initI18n(): I18nInstance {
     });
   }
 
+  // Приводим URL к активному языку на старте: если язык определён по
+  // localStorage/браузеру, а URL без префикса — мягко (replaceState) ставим
+  // нужный путь, чтобы URL == контент == hreflang/canonical.
+  if (typeof window !== 'undefined') {
+    const active = (i18n.language as AppLocale) ?? DEFAULT_URL_LOCALE;
+    const urlLocale = localeFromPath(window.location.pathname) ?? DEFAULT_URL_LOCALE;
+    if (urlLocale !== active) syncUrlToLocale(active, true);
+  }
+
   initialized = true;
   return i18n;
 }
@@ -70,6 +98,9 @@ export function initI18n(): I18nInstance {
 export async function changeLocale(locale: AppLocale): Promise<void> {
   persistLocale(locale);
   await i18n.changeLanguage(locale);
+  // Обновляем URL (pushState), чтобы выбор языка отражался в адресе: ссылка
+  // становится шарабельной, а перезагрузка отдаст правильную пререндер-версию.
+  syncUrlToLocale(locale, false);
 }
 
 /** Текущий активный язык приложения (узкий тип AppLocale). */

@@ -25,6 +25,15 @@
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="https://segurotenerife.com/" />
 
+    <!-- hreflang-альтернативы (одинаковы на всех языковых версиях). RU — на `/`
+         (и x-default), остальные — в подпапках. Файлы по локалям генерирует
+         scripts/seo-prerender.mjs после сборки. -->
+    <link rel="alternate" hreflang="ru" href="https://segurotenerife.com/" />
+    <link rel="alternate" hreflang="es" href="https://segurotenerife.com/es/" />
+    <link rel="alternate" hreflang="uk" href="https://segurotenerife.com/uk/" />
+    <link rel="alternate" hreflang="en" href="https://segurotenerife.com/en/" />
+    <link rel="alternate" hreflang="x-default" href="https://segurotenerife.com/" />
+
     <!-- Favicon / иконки -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="theme-color" content="#0d9488" />
