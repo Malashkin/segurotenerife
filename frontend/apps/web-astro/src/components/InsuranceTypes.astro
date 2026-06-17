@@ -1,0 +1,67 @@
+---
+/** Секция «Виды страховки» (порт InsuranceTypes). Клик по карточке открывает
+    чат с интентом через data-ui="intent" + data-intent (мост в острове). */
+import SectionHead from './SectionHead.astro';
+import { getT } from '../i18n/t';
+import type { AppLocale } from '@shared/i18n';
+
+const { locale } = Astro.props as { locale: AppLocale };
+const t = getT(locale);
+
+const TYPES = [
+  { icon: '🏥', titleKey: 'c1_t', descKey: 'c1_d', intent: 'med' },
+  { icon: '🎓', titleKey: 'c2_t', descKey: 'c2_d', intent: 'student' },
+  { icon: '✈️', titleKey: 'c3_t', descKey: 'c3_d', intent: 'travel' },
+  { icon: '🦷', titleKey: 'c4_t', descKey: 'c4_d', intent: 'dental' },
+  { icon: '💳', titleKey: 'c5_t', descKey: 'c5_d', intent: 'reembolso' },
+  { icon: '🛡️', titleKey: 'c6_t', descKey: 'c6_d', intent: 'life' },
+  { icon: '🕊️', titleKey: 'c7_t', descKey: 'c7_d', intent: 'decesos' },
+  { icon: '🐾', titleKey: 'c8_t', descKey: 'c8_d', intent: 'pet' },
+];
+---
+
+<section id="types" class="py-16">
+  <div class="mx-auto w-[min(1160px,calc(100vw-40px))]">
+    <SectionHead eyebrow={t('types_eyebrow')} title={t('types_h2')} subtitle={t('types_p')} />
+    <div class="grid grid-cols-1 gap-[18px] sm:grid-cols-2 lg:grid-cols-3">
+      {
+        TYPES.map((type) => (
+          <button
+            type="button"
+            data-ui="intent"
+            data-intent={type.intent}
+            class="group flex flex-col items-start gap-2.5 rounded-card border border-slate-200 bg-white p-6 text-left shadow-sm transition-all hover:-translate-y-[3px] hover:border-[#cfeae6] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          >
+            <span
+              aria-hidden
+              class="grid h-[46px] w-[46px] place-items-center rounded-xl bg-brand-tint text-[1.4rem]"
+            >
+              {type.icon}
+            </span>
+            <h3 class="font-heading text-[1.14rem] font-bold text-ink transition-colors group-hover:text-brand-dark">
+              {t(type.titleKey)}
+            </h3>
+            <p class="text-[0.94rem] text-muted">{t(type.descKey)}</p>
+          </button>
+        ))
+      }
+
+      <button
+        type="button"
+        data-ui="open-chat"
+        class="group flex flex-col items-start justify-center gap-2.5 rounded-card border-2 border-dashed border-[#cfeae6] bg-brand-tint2 p-6 text-left transition-all hover:-translate-y-[3px] hover:border-brand hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+      >
+        <span
+          aria-hidden
+          class="grid h-[46px] w-[46px] place-items-center rounded-xl bg-white text-[1.4rem] shadow-sm"
+        >
+          💬
+        </span>
+        <h3 class="font-heading text-[1.14rem] font-bold text-ink transition-colors group-hover:text-brand-dark">
+          {t('ins_more_t')}
+        </h3>
+        <p class="text-[0.94rem] text-muted">{t('ins_more_d')}</p>
+      </button>
+    </div>
+  </div>
+</section>

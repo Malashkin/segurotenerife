@@ -12,6 +12,7 @@
 ## Стек (полный, по SOUL)
 - **Backend:** Rust + axum + PostgreSQL (sqlx). REST. Structured JSON logging. Rate limiting.
 - **Frontend:** React + Feature-Sliced Design + Nx (монорепо) + Zustand + TS strict + Shadcn/ui + TanStack Query + i18next.
+  - **Публичный сайт — Astro (SSG + React-острова):** `apps/web-astro` — целевой web (мультиязычный SEO/GEO: статический HTML по локалям `/`,`/es/`,`/uk/`,`/en/`, hreflang, JSON-LD FAQPage). Прежний Vite-SPA `apps/web` сохранён до переключения e2e/деплоя. Детали: `docs/architecture/astro-web.md`.
 - **Deploy:** Railway (backend + managed Postgres), frontend на Vercel/Netlify.
 
 ## Правила работы (из SOUL)

@@ -1,0 +1,90 @@
+---
+/** Подвал (порт Footer). Ссылки: anchor → <a>, intent/chat/legal → data-ui
+    (мост в острове Overlays). Контактов и «Для бизнеса» нет. */
+import { getT } from '../i18n/t';
+import type { AppLocale } from '@shared/i18n';
+
+const { locale } = Astro.props as { locale: AppLocale };
+const t = getT(locale);
+
+const linkClass =
+  'block w-full py-1 text-left text-[0.92rem] text-[#94a3b8] transition-colors hover:text-white focus-visible:text-white focus-visible:outline-none';
+
+const COLUMNS = [
+  {
+    headingKey: 'foot_h1',
+    links: [
+      { kind: 'intent', intent: 'med', key: 'foot_l1' },
+      { kind: 'intent', intent: 'dental', key: 'c4_t' },
+      { kind: 'intent', intent: 'family', key: 'foot_l2' },
+    ],
+  },
+  {
+    headingKey: 'foot_h2',
+    links: [
+      { kind: 'anchor', href: '#how', key: 'nav_how' },
+      { kind: 'anchor', href: '#articles', key: 'nav_articles' },
+      { kind: 'anchor', href: '#faq', key: 'nav_faq' },
+      { kind: 'chat', key: 'foot_l4' },
+    ],
+  },
+  {
+    headingKey: 'foot_h3',
+    links: [
+      { kind: 'legal', doc: 'privacy', key: 'foot_l5' },
+      { kind: 'legal', doc: 'terms', key: 'foot_l6' },
+      { kind: 'legal', doc: 'cookies', key: 'foot_cookies' },
+    ],
+  },
+] as const;
+---
+
+<footer class="mt-16 bg-[#0b1220] py-[54px] pb-[30px] text-[#cbd5e1]">
+  <div class="mx-auto w-[min(1160px,calc(100vw-40px))]">
+    <div class="grid grid-cols-1 gap-[30px] sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
+      <div>
+        <div class="mb-3.5 flex items-center gap-2.5 font-heading text-lg font-bold text-white">
+          <span
+            class="grid h-[34px] w-[34px] place-items-center rounded-[10px] bg-gradient-to-br from-brand to-sky font-extrabold"
+          >
+            ST
+          </span>
+          Seguro Tenerife
+        </div>
+        <p class="max-w-[40ch] text-[0.82rem] text-[#64748b]">{t('foot_disclaimer')}</p>
+      </div>
+
+      {
+        COLUMNS.map((column) => (
+          <nav aria-label={t(column.headingKey)}>
+            <h4 class="mb-3.5 font-heading text-base text-white">{t(column.headingKey)}</h4>
+            {column.links.map((link) =>
+              link.kind === 'anchor' ? (
+                <a href={link.href} class={linkClass}>
+                  {t(link.key)}
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  data-ui={link.kind === 'legal' ? 'legal' : link.kind === 'intent' ? 'intent' : 'open-chat'}
+                  data-intent={link.kind === 'intent' ? link.intent : undefined}
+                  data-doc={link.kind === 'legal' ? link.doc : undefined}
+                  class={linkClass}
+                >
+                  {t(link.key)}
+                </button>
+              ),
+            )}
+          </nav>
+        ))
+      }
+    </div>
+
+    <div
+      class="mt-9 flex flex-wrap justify-between gap-3 border-t border-[#1e293b] pt-[22px] text-[0.82rem] text-[#64748b]"
+    >
+      <span>{t('foot_rights')}</span>
+      <span>{t('foot_location')}</span>
+    </div>
+  </div>
+</footer>

@@ -41,21 +41,34 @@ function syncUrlToLocale(locale: AppLocale, replace: boolean): void {
   window.history[replace ? 'replaceState' : 'pushState'](null, '', next);
 }
 
-/** Флаг, чтобы повторные вызовы initI18n не реинициализировали инстанс. */
-let initialized = false;
+/** Опции инициализации i18n. */
+export interface InitI18nOptions {
+  /** Явный стартовый язык. Если не задан — определяется detectLocale(). */
+  lng?: AppLocale;
+  /**
+   * Выравнивать ли URL под активный язык на старте (replaceState).
+   * SPA (Vite): true по умолчанию (язык в localStorage → префикс пути).
+   * Astro: false — язык задаётся самим URL/страницей, трогать адрес нельзя.
+   */
+  syncUrl?: boolean;
+}
 
 /**
  * Инициализирует и возвращает общий инстанс i18next.
- * Идемпотентна: повторный вызов вернёт уже готовый инстанс.
+ * Идемпотентна: повторный вызов лишь переключит язык (если задан `lng`).
  *
  * @returns настроенный инстанс i18next (тот же `i18n` из пакета i18next)
  */
-export function initI18n(): I18nInstance {
-  if (initialized) return i18n;
+export function initI18n(opts: InitI18nOptions = {}): I18nInstance {
+  // Уже инициализирован (в т.ч. другим островом Astro) — только язык.
+  if (i18n.isInitialized) {
+    if (opts.lng && i18n.language !== opts.lng) void i18n.changeLanguage(opts.lng);
+    return i18n;
+  }
 
   void i18n.use(initReactI18next).init({
     resources,
-    lng: detectLocale(),
+    lng: opts.lng ?? detectLocale(),
     fallbackLng: FALLBACK_LOCALE,
     supportedLngs: [...SUPPORTED_LOCALES],
     ns: [...NAMESPACES],
@@ -76,16 +89,14 @@ export function initI18n(): I18nInstance {
     });
   }
 
-  // Приводим URL к активному языку на старте: если язык определён по
-  // localStorage/браузеру, а URL без префикса — мягко (replaceState) ставим
-  // нужный путь, чтобы URL == контент == hreflang/canonical.
-  if (typeof window !== 'undefined') {
+  // Приводим URL к активному языку на старте (только если просили — SPA).
+  // В Astro адрес авторитетен (per-locale страницы), поэтому syncUrl=false.
+  if (opts.syncUrl !== false && typeof window !== 'undefined') {
     const active = (i18n.language as AppLocale) ?? DEFAULT_URL_LOCALE;
     const urlLocale = localeFromPath(window.location.pathname) ?? DEFAULT_URL_LOCALE;
     if (urlLocale !== active) syncUrlToLocale(active, true);
   }
 
-  initialized = true;
   return i18n;
 }
 

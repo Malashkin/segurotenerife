@@ -1,0 +1,29 @@
+---
+/** Полоса доверия под Hero (порт TrustBar). */
+import { getT } from '../i18n/t';
+import type { AppLocale } from '@shared/i18n';
+
+const { locale } = Astro.props as { locale: AppLocale };
+const t = getT(locale);
+
+const ITEMS = [
+  { icon: '⚖️', key: 'tb_independent' },
+  { icon: '📋', key: 'tb_source' },
+  { icon: '🔒', key: 'tb_privacy' },
+];
+---
+
+<section aria-label={t('tb_aria')} class="border-y border-slate-200 bg-brand-tint2">
+  <ul
+    class="mx-auto flex w-[min(1160px,calc(100vw-40px))] flex-col gap-3 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-x-8 sm:gap-y-2"
+  >
+    {
+      ITEMS.map((item) => (
+        <li class="flex items-center gap-2.5 text-[0.92rem] font-medium text-slate">
+          <span aria-hidden class="text-base">{item.icon}</span>
+          {t(item.key)}
+        </li>
+      ))
+    }
+  </ul>
+</section>

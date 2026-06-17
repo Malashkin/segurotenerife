@@ -1,0 +1,36 @@
+{
+  "name": "@seguro/web-astro",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "//": "Публичный лендинг на Astro (SSG + React-острова) — мультиязычный SEO/GEO.",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "typecheck": "astro check"
+  },
+  "dependencies": {
+    "@astrojs/react": "^5.0.7",
+    "@astrojs/sitemap": "^3.7.3",
+    "@seguro/entities": "workspace:*",
+    "@seguro/features": "workspace:*",
+    "@seguro/shared-api": "workspace:*",
+    "@seguro/shared-i18n": "workspace:*",
+    "@seguro/shared-store": "workspace:*",
+    "@seguro/shared-ui": "workspace:*",
+    "astro": "^6.4.8",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9",
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "autoprefixer": "10.4.20",
+    "postcss": "8.4.47",
+    "tailwindcss": "3.4.14",
+    "typescript": "5.6.3",
+    "vite-tsconfig-paths": "5.0.1"
+  }
+}

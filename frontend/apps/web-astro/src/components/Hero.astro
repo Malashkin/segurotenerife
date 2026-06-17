@@ -1,0 +1,84 @@
+---
+/** Hero (порт Hero.tsx). CTA «открыть чат» работают через data-ui (мост в
+    острове Overlays). Подсветка выделенного слова в заголовке — на сборке. */
+import { getT } from '../i18n/t';
+import type { AppLocale } from '@shared/i18n';
+
+const { locale } = Astro.props as { locale: AppLocale };
+const t = getT(locale);
+
+const h1 = t('hero_h1');
+const hl = t('hero_h1_hl');
+const idx = hl ? h1.indexOf(hl) : -1;
+const before = idx === -1 ? h1 : h1.slice(0, idx);
+const after = idx === -1 ? '' : h1.slice(idx + hl.length);
+
+const TRUST = ['hero_trust1', 'hero_trust2', 'hero_trust3'];
+---
+
+<section class="py-16 pb-10">
+  <div
+    class="mx-auto grid w-[min(1160px,calc(100vw-40px))] grid-cols-1 items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]"
+  >
+    <div>
+      <span
+        class="inline-flex items-center gap-2 rounded-full bg-brand-tint px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-brand-dark"
+      >
+        {t('hero_eyebrow')}
+      </span>
+
+      <h1
+        class="mt-4 font-heading text-4xl font-extrabold leading-[1.12] tracking-tight text-ink sm:text-5xl lg:text-[3.5rem]"
+      >
+        {before}{idx === -1 ? null : <span class="text-brand">{hl}</span>}{after}
+      </h1>
+
+      <p class="mt-[18px] max-w-[46ch] text-lg text-slate">{t('hero_sub')}</p>
+
+      <div class="mt-7 flex flex-wrap gap-3.5">
+        <button
+          type="button"
+          data-ui="open-chat"
+          class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-7 py-3.5 text-base font-semibold text-white transition-colors hover:bg-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        >
+          {t('hero_cta1')}
+        </button>
+        <a
+          href="#types"
+          class="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-7 py-3.5 text-base font-semibold text-ink transition-colors hover:border-brand hover:text-brand-dark"
+        >
+          {t('hero_cta2')}
+        </a>
+      </div>
+    </div>
+
+    <aside
+      class="rounded-3xl border border-slate-200 bg-white p-[26px] shadow-[0_24px_60px_rgba(13,148,136,0.16)]"
+    >
+      <h2 class="font-heading text-lg font-bold text-ink">{t('hc_title')}</h2>
+      <p class="mb-[18px] mt-1 text-[0.92rem] text-muted">{t('hc_lede')}</p>
+      <ul class="grid gap-3">
+        {
+          TRUST.map((key) => (
+            <li class="flex items-start gap-3 text-[0.95rem] font-medium text-ink">
+              <span
+                aria-hidden
+                class="grid h-6 w-6 flex-none place-items-center rounded-full bg-brand-tint text-[0.8rem] font-extrabold text-brand-dark"
+              >
+                ✓
+              </span>
+              {t(key)}
+            </li>
+          ))
+        }
+      </ul>
+      <button
+        type="button"
+        data-ui="open-chat"
+        class="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-6 py-3 font-semibold text-white transition-colors hover:bg-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+      >
+        {t('hc_btn')}
+      </button>
+    </aside>
+  </div>
+</section>

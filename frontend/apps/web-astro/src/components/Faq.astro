@@ -1,0 +1,36 @@
+---
+/** FAQ-аккордеон (порт Faq). Нативные <details>/<summary> — без JS, и контент
+    в HTML (важно для индексации + совпадает с FAQPage JSON-LD в Layout). */
+import SectionHead from './SectionHead.astro';
+import { getT } from '../i18n/t';
+import type { AppLocale } from '@shared/i18n';
+
+const { locale } = Astro.props as { locale: AppLocale };
+const t = getT(locale);
+
+const ITEMS = [1, 2, 3, 4, 5, 6].map((i) => ({ q: `faq${i}_q`, a: `faq${i}_a` }));
+---
+
+<section id="faq" class="py-16">
+  <div class="mx-auto w-[min(1160px,calc(100vw-40px))]">
+    <SectionHead eyebrow={t('faq_eyebrow')} title={t('faq_h2')} centered />
+    <div class="mx-auto max-w-[820px]">
+      {
+        ITEMS.map((item) => (
+          <details class="group mb-3 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+            <summary class="flex cursor-pointer items-center justify-between gap-4 px-[22px] py-5 text-left font-heading text-[1.05rem] font-semibold text-ink">
+              <span>{t(item.q)}</span>
+              <span
+                aria-hidden
+                class="flex-none text-2xl text-brand transition-transform duration-200 group-open:rotate-45"
+              >
+                +
+              </span>
+            </summary>
+            <p class="px-[22px] pb-5 text-slate">{t(item.a)}</p>
+          </details>
+        ))
+      }
+    </div>
+  </div>
+</section>

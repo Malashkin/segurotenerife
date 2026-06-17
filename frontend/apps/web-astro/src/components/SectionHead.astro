@@ -1,0 +1,25 @@
+---
+/**
+ * Шапка секции (eyebrow + h2 + подзаголовок). Порт SectionHead из widgets.
+ * Тексты приходят уже переведёнными.
+ */
+interface Props {
+  eyebrow: string;
+  title: string;
+  subtitle?: string;
+  centered?: boolean;
+}
+const { eyebrow, title, subtitle, centered = false } = Astro.props;
+---
+
+<div class:list={['mb-9 max-w-2xl', centered && 'mx-auto text-center']}>
+  <span
+    class="inline-flex items-center gap-2 rounded-full bg-brand-tint px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-brand-dark"
+  >
+    {eyebrow}
+  </span>
+  <h2 class="mt-3.5 font-heading text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+    {title}
+  </h2>
+  {subtitle ? <p class="mt-3 text-lg text-slate">{subtitle}</p> : null}
+</div>

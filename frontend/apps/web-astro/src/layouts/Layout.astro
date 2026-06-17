@@ -1,0 +1,125 @@
+---
+/**
+ * Базовый layout лендинга: <head> со всей SEO-разметкой per-locale.
+ *
+ * title/description приходят пропами (локализованы на странице), а hreflang,
+ * canonical, OG/Twitter и JSON-LD (Organization + WebSite + FAQPage) строятся
+ * здесь из локали и общих словарей. Тело — <slot/> (секции лендинга).
+ */
+import '../styles/global.css';
+import { getAbsoluteLocaleUrl } from 'astro:i18n';
+import { dictFor } from '../i18n/t';
+import type { AppLocale } from '@shared/i18n';
+
+interface Props {
+  locale: AppLocale;
+  title: string;
+  description: string;
+}
+const { locale, title, description } = Astro.props;
+
+const LOCALES: AppLocale[] = ['ru', 'en', 'es', 'uk'];
+const OG_LOCALE: Record<AppLocale, string> = {
+  ru: 'ru_RU',
+  en: 'en_US',
+  es: 'es_ES',
+  uk: 'uk_UA',
+};
+
+const canonical = getAbsoluteLocaleUrl(locale, '/');
+const ogImage = new URL('og-image.png', Astro.site).href;
+
+// FAQPage JSON-LD из словаря локали (faq1..faq6) — для rich-результатов.
+const d = dictFor(locale);
+const faqItems = [1, 2, 3, 4, 5, 6]
+  .map((i) => ({ q: d[`faq${i}_q`], a: d[`faq${i}_a`] }))
+  .filter((x) => x.q && x.a)
+  .map((x) => ({
+    '@type': 'Question',
+    name: x.q,
+    acceptedAnswer: { '@type': 'Answer', text: x.a },
+  }));
+
+const jsonld = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': `${Astro.site}#org`,
+      name: 'Seguro Tenerife',
+      url: Astro.site?.href,
+      logo: new URL('favicon.svg', Astro.site).href,
+      areaServed: { '@type': 'Place', name: 'Tenerife, Canary Islands, Spain' },
+      knowsLanguage: ['ru', 'uk', 'es', 'en'],
+    },
+    {
+      '@type': 'WebSite',
+      '@id': `${Astro.site}#website`,
+      url: Astro.site?.href,
+      name: 'Seguro Tenerife',
+      inLanguage: [locale],
+    },
+    { '@type': 'FAQPage', mainEntity: faqItems },
+  ],
+};
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href={canonical} />
+
+    {LOCALES.map((l) => <link rel="alternate" hreflang={l} href={getAbsoluteLocaleUrl(l, '/')} />)}
+    <link rel="alternate" hreflang="x-default" href={getAbsoluteLocaleUrl('ru', '/')} />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content="#0d9488" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Seguro Tenerife" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content={OG_LOCALE[locale]} />
+    {
+      LOCALES.filter((l) => l !== locale).map((l) => (
+        <meta property="og:locale:alternate" content={OG_LOCALE[l]} />
+      ))
+    }
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonld)} />
+  </head>
+  <body class="min-h-screen bg-bg text-ink">
+    <slot />
+
+    <!-- Мост статичных кнопок → острова Overlays: делегированный клик по
+         [data-ui] шлёт событие seguro:ui с данными кнопки (ui/intent/doc). -->
+    <script>
+      document.addEventListener('click', (e) => {
+        const el = (e.target as HTMLElement | null)?.closest<HTMLElement>('[data-ui]');
+        if (!el) return;
+        window.dispatchEvent(new CustomEvent('seguro:ui', { detail: { ...el.dataset } }));
+      });
+    </script>
+  </body>
+</html>

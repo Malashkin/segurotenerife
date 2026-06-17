@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://segurotenerife.com/sitemap-index.xml

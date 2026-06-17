@@ -1,0 +1,36 @@
+/**
+ * Глобальные стили лендинга (Astro). Директивы Tailwind + базовый фон/шрифт и
+ * плавный скролл по якорям (как в прежнем web/index.css).
+ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  background: #f8fafc;
+  color: #0f172a;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+#top,
+#types,
+#how,
+#articles,
+#faq {
+  scroll-margin-top: 5.5rem;
+}
+
+/* FAQ-аккордеон на нативном <details>: убираем стандартный маркер. */
+summary {
+  list-style: none;
+}
+summary::-webkit-details-marker {
+  display: none;
+}

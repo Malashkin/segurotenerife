@@ -1,0 +1,17 @@
+---
+/**
+ * Локальные версии лендинга: /en/, /es/, /uk/ (ru живёт на корне `/`).
+ * Генерируются статически через getStaticPaths.
+ */
+import LandingPage from '../../components/LandingPage.astro';
+import type { AppLocale } from '@shared/i18n';
+
+export function getStaticPaths() {
+  // ru исключаем — он на корне (prefixDefaultLocale: false).
+  return (['en', 'es', 'uk'] as AppLocale[]).map((locale) => ({ params: { locale } }));
+}
+
+const { locale } = Astro.params as { locale: AppLocale };
+---
+
+<LandingPage locale={locale} />

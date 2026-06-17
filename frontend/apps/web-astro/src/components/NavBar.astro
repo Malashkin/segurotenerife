@@ -1,0 +1,77 @@
+---
+/** Sticky-шапка (порт NavBar). Переключатель языков — реальные ссылки на
+    локальные URL (zero-JS, хорошо для SEO). CTA открывает чат через data-ui. */
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { getT } from '../i18n/t';
+import { LOCALE_ORDER, LOCALE_LABELS, type AppLocale } from '@shared/i18n';
+
+const { locale } = Astro.props as { locale: AppLocale };
+const t = getT(locale);
+
+const NAV = [
+  { href: '#types', key: 'nav_types' },
+  { href: '#how', key: 'nav_how' },
+  { href: '#articles', key: 'nav_articles' },
+  { href: '#faq', key: 'nav_faq' },
+];
+---
+
+<header class="sticky top-0 z-50 border-b border-slate-200 bg-bg/85 backdrop-blur-md">
+  <div class="mx-auto flex h-[68px] w-[min(1160px,calc(100vw-40px))] items-center gap-4">
+    <a href="#top" class="flex items-center gap-2.5">
+      <span
+        class="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[10px] bg-gradient-to-br from-brand to-sky font-heading text-sm font-extrabold text-white"
+      >
+        ST
+      </span>
+      <span class="hidden font-heading text-lg font-bold leading-tight text-ink sm:block">
+        Seguro Tenerife
+        <small class="block font-sans text-[0.68rem] font-medium tracking-wide text-muted">
+          {t('logo_sub')}
+        </small>
+      </span>
+    </a>
+
+    <nav aria-label="Primary" class="ml-[18px] hidden gap-6 lg:flex">
+      {
+        NAV.map((link) => (
+          <a
+            href={link.href}
+            class="text-[0.95rem] font-medium text-slate transition-colors hover:text-brand-dark"
+          >
+            {t(link.key)}
+          </a>
+        ))
+      }
+    </nav>
+
+    <div class="ml-auto flex shrink-0 items-center gap-2.5 sm:gap-3.5">
+      <div role="group" aria-label="Language" class="flex gap-1 rounded-full border border-slate-200 bg-white p-1">
+        {
+          LOCALE_ORDER.map((l: AppLocale) => {
+            const active = l === locale;
+            return (
+              <a
+                href={getRelativeLocaleUrl(l)}
+                aria-current={active ? 'true' : undefined}
+                class:list={[
+                  'cursor-pointer rounded-full px-2.5 py-1 text-xs font-semibold transition-colors',
+                  active ? 'bg-brand text-white' : 'text-muted hover:text-brand-dark',
+                ]}
+              >
+                {LOCALE_LABELS[l]}
+              </a>
+            );
+          })
+        }
+      </div>
+      <button
+        type="button"
+        data-ui="open-chat"
+        class="hidden whitespace-nowrap rounded-xl bg-brand px-5 py-2.5 text-[0.95rem] font-semibold text-white transition-colors hover:bg-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand md:inline-flex"
+      >
+        {t('nav_cta')}
+      </button>
+    </div>
+  </div>
+</header>

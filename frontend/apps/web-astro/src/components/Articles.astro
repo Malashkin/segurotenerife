@@ -1,0 +1,44 @@
+---
+/** Секция «Статьи и гайды» — 6 карточек (порт Articles). Контента ещё нет —
+    карточки некликабельны, с пометкой «Скоро» (как в текущем web). */
+import SectionHead from './SectionHead.astro';
+import { getT } from '../i18n/t';
+import type { AppLocale } from '@shared/i18n';
+
+const { locale } = Astro.props as { locale: AppLocale };
+const t = getT(locale);
+
+const ARTICLES = [
+  { tagKey: 'a1_tag', titleKey: 'a1_t', descKey: 'a1_p' },
+  { tagKey: 'a2_tag', titleKey: 'a2_t', descKey: 'a2_p' },
+  { tagKey: 'a3_tag', titleKey: 'a3_t', descKey: 'a3_p' },
+  { tagKey: 'a4_tag', titleKey: 'a4_t', descKey: 'a4_p' },
+  { tagKey: 'a5_tag', titleKey: 'a5_t', descKey: 'a5_p' },
+  { tagKey: 'a6_tag', titleKey: 'a6_t', descKey: 'a6_p' },
+];
+---
+
+<section id="articles" class="bg-gradient-to-b from-white to-brand-tint2 py-16">
+  <div class="mx-auto w-[min(1160px,calc(100vw-40px))]">
+    <SectionHead eyebrow={t('art_eyebrow')} title={t('art_h2')} subtitle={t('art_p')} />
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        ARTICLES.map((article) => (
+          <article class="flex flex-col overflow-hidden rounded-card border border-slate-200 bg-white shadow-sm">
+            <span aria-hidden class="h-2 bg-gradient-to-r from-brand to-sky" />
+            <div class="flex flex-1 flex-col gap-2.5 p-[22px]">
+              <span class="text-[0.76rem] font-bold uppercase tracking-wider text-brand-dark">
+                {t(article.tagKey)}
+              </span>
+              <h3 class="font-heading text-[1.12rem] font-bold text-ink">{t(article.titleKey)}</h3>
+              <p class="text-[0.92rem] text-muted">{t(article.descKey)}</p>
+              <span class="mt-auto inline-flex w-fit items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-[0.78rem] font-semibold text-slate-500">
+                {t('art_soon')}
+              </span>
+            </div>
+          </article>
+        ))
+      }
+    </div>
+  </div>
+</section>

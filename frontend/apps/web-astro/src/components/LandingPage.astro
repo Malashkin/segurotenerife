@@ -1,0 +1,40 @@
+---
+/**
+ * Композиция лендинга для одной локали: Layout (SEO-head) + статичные секции +
+ * остров плавающего UI (чат/правовое/куки). Используется и корневой (ru), и
+ * локальными страницами — разница только в пропе locale.
+ */
+import Layout from '../layouts/Layout.astro';
+import NavBar from './NavBar.astro';
+import Hero from './Hero.astro';
+import TrustBar from './TrustBar.astro';
+import InsuranceTypes from './InsuranceTypes.astro';
+import HowItWorks from './HowItWorks.astro';
+import Articles from './Articles.astro';
+import Faq from './Faq.astro';
+import Footer from './Footer.astro';
+import Overlays from '../islands/Overlays.tsx';
+import { SEO_META } from '../i18n/seo';
+import type { AppLocale } from '@shared/i18n';
+
+const { locale } = Astro.props as { locale: AppLocale };
+const meta = SEO_META[locale];
+---
+
+<Layout locale={locale} title={meta.title} description={meta.description}>
+  <div id="top">
+    <NavBar locale={locale} />
+    <main>
+      <Hero locale={locale} />
+      <TrustBar locale={locale} />
+      <InsuranceTypes locale={locale} />
+      <HowItWorks locale={locale} />
+      <Articles locale={locale} />
+      <Faq locale={locale} />
+    </main>
+    <Footer locale={locale} />
+  </div>
+
+  <!-- Плавающий UI как один остров; статичные кнопки управляют им через события. -->
+  <Overlays client:idle locale={locale} />
+</Layout>
