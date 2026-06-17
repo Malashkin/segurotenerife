@@ -28,7 +28,7 @@ pub struct Config {
     /// Модель Claude для ответов бота (по умолчанию claude-opus-4-8). Для большого
     /// трафика можно переключить на claude-haiku-4-5 / claude-sonnet-4-6 ради цены.
     pub anthropic_model: String,
-    /// Путь к каталогу базы знаний ASISA (грузится в системный промпт при старте).
+    /// Путь к бренд-нейтральному корпусу знаний RAG-агента (services.json).
     pub knowledge_path: String,
 }
 
@@ -70,7 +70,7 @@ impl Config {
             anthropic_model: std::env::var("ANTHROPIC_MODEL")
                 .unwrap_or_else(|_| "claude-opus-4-8".into()),
             knowledge_path: std::env::var("KNOWLEDGE_PATH")
-                .unwrap_or_else(|_| "../knowledge-base/asisa/catalog.json".into()),
+                .unwrap_or_else(|_| "../knowledge-base/asisa/services.json".into()),
         })
     }
 

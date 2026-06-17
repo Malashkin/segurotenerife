@@ -1,0 +1,154 @@
+{
+  "meta": {
+    "purpose": "Бренд-НЕЙТРАЛЬНЫЙ корпус знаний для RAG-агента подбора. Только этот файл попадает в ответы — здесь НЕТ названия страховщика и брендовых названий продуктов (политика нейтрального бренда). Факты покрытия — каноничный испанский (как на источнике), перевод под язык клиента делает LLM на этапе ответа.",
+    "source_of_truth": "https://www.asisa.es",
+    "retrieved": "2026-06-17",
+    "pricing_policy": "Тарифы НЕ публикуются → конкретные цифры НЕ называть; считает менеджер. Цены ниже (если есть) — публичные ориентиры 'от', помечены как примерные.",
+    "intents": ["med", "family", "student", "travel", "dental", "reembolso", "life", "decesos", "pet"]
+  },
+  "services": [
+    {
+      "id": "salud-residencia",
+      "intents": ["med", "family", "student"],
+      "title_es": "Seguro médico de salud para residencia / visado (NIE·TIE)",
+      "audience_es": ["Extranjeros que tramitan residencia en España", "Visado no lucrativo, nómada digital (DNV), reagrupación familiar", "Estudiantes internacionales"],
+      "covers_es": ["Medicina primaria (general, pediatría, enfermería)", "Urgencias 24/7 (domiciliaria, ambulatoria y hospitalaria)", "Más de 40 especialidades médicas", "Pruebas diagnósticas e imagen", "Hospitalización y cirugía ambulatoria", "Traslado en ambulancia", "Prótesis, implantes y trasplantes", "Podología, psicoterapia, planificación familiar y odontología básica", "Telemedicina / consultas virtuales"],
+      "conditions_es": ["Sin copagos", "Sin períodos de carencia (cobertura desde el primer día)", "Certificado inmediato en PDF válido para presentar en consulados", "Cobertura en todo el territorio nacional", "Cumple los requisitos legales españoles para la autorización migratoria", "Duración 1 año, renovable", "Contratación hasta 90 días antes de llegar a España", "Asistencia en viajes hasta 25.000€ fuera de España y repatriación"],
+      "limits_es": ["Periodo de espera de 6 meses para la indemnización por hospitalización (cobertura opcional)", "No reembolsable salvo denegación del visado antes de entrar en vigor", "Pago con tarjeta internacional; IBAN español requerido desde el 2º año para renovación", "Cuadro médico concertado por provincia (conviene verificar antes)"],
+      "expat_note_es": "Es la opción de referencia para papeles de visado/residencia: el certificado sin copagos ni carencias suele cumplir el requisito consular.",
+      "keywords": ["виза", "внж", "резиденция", "residencia", "residency", "visa", "visado", "NIE", "TIE", "нумада", "digital nomad", "DNV", "сертификат", "certificado", "consulado", "без доплат", "sin copagos", "каренция", "carencia", "переезд", "медицинская", "salud", "health"]
+    },
+    {
+      "id": "salud-estudiantes",
+      "intents": ["student", "med"],
+      "title_es": "Seguro médico para estudiantes internacionales (visado de estudios)",
+      "audience_es": ["Estudiantes internacionales, Erasmus, másteres, doctorados, formación oficial"],
+      "covers_es": ["Medicina primaria y urgencias 24/7", "Más de 40 especialidades", "Hospitalización y cirugía ambulatoria", "Pruebas diagnósticas", "Odontología y estomatología", "Telemedicina", "Asistencia en viaje 25.000€ y repatriación"],
+      "conditions_es": ["Sin copagos", "Sin carencias", "Certificado inmediato en PDF para el consulado", "Cumple los requisitos legales para la autorización de estancia por estudios", "Contratación hasta 90 días antes de llegar"],
+      "limits_es": ["Duración 2–12 meses", "No renovable automáticamente", "No reembolsable salvo denegación del visado", "Cuadro médico por provincia"],
+      "expat_note_es": "Pensado específicamente para el visado de estudios; el certificado cumple el requisito de la estancia por estudios.",
+      "keywords": ["студент", "учёба", "estudiante", "student", "erasmus", "виза студента", "study visa", "estudios", "университет", "колледж", "стажировка"]
+    },
+    {
+      "id": "salud-completa",
+      "intents": ["med", "family"],
+      "title_es": "Seguro de salud completo (con hospitalización)",
+      "audience_es": ["Residentes que quieren cobertura médica completa", "Familias"],
+      "covers_es": ["Libre elección de médico de familia y decenas de especialidades", "Urgencias 24h domiciliaria y ambulatoria", "Diagnóstico: análisis, imagen, RMN, TAC, ecografías", "Hospitalización médica, quirúrgica, maternidad, pediátrica y psiquiátrica (psiquiatría máx. 50 días/año)", "Cirugía ambulatoria y hospitalaria", "Maternidad: seguimiento del embarazo, preparación y parto", "20 sesiones de psicoterapia al año", "Oncología, rehabilitación, diálisis, medicina nuclear", "Prótesis e implantes (válvulas, stents, marcapasos, lentes)", "Dental básico: limpieza anual, extracciones, urgencias"],
+      "conditions_es": ["Sin copagos (en la modalidad sin copago)", "Contratación hasta los 70 años, sin edad máxima de permanencia", "Más de 1.000 centros concertados y amplia red de profesionales", "Cobertura en el extranjero hasta 3 meses"],
+      "limits_es": ["Carencias: técnicas especiales, planificación familiar y psicoterapia 6 meses; cirugía ambulatoria 6 meses; hospitalización 8 meses"],
+      "expat_note_es": "Para quien ya reside y busca cobertura amplia con hospitalización (no solo para papeles).",
+      "keywords": ["полная", "completo", "completa", "госпитализация", "hospitalización", "hospital", "роды", "maternidad", "беременность", "операция", "cirugía", "специалисты", "especialistas", "семейная", "familiar", "family"]
+    },
+    {
+      "id": "salud-ambulatoria",
+      "intents": ["med"],
+      "title_es": "Seguro de salud ambulatorio / económico (sin hospitalización)",
+      "audience_es": ["Personas jóvenes y sanas", "Uso esporádico", "Quienes buscan el precio más bajo"],
+      "covers_es": ["Asistencia ambulatoria: medicina primaria y especialidades", "Pruebas diagnósticas", "Acceso a la red de centros y profesionales", "Telemedicina"],
+      "conditions_es": ["Precio económico", "Modalidades con o sin copago por acto"],
+      "limits_es": ["Sin hospitalización", "Las modalidades más baratas funcionan con copagos por visita"],
+      "expat_note_es": "Opción de entrada para uso ocasional; no sirve cuando se necesita hospitalización o certificado de residencia.",
+      "keywords": ["амбулаторный", "ambulatorio", "дешёвый", "эконом", "económico", "barato", "básico", "esencial", "молодым", "редко", "приём", "consulta"]
+    },
+    {
+      "id": "salud-reembolso",
+      "intents": ["reembolso", "med"],
+      "title_es": "Seguro de salud con reembolso (libre elección de médico/clínica)",
+      "audience_es": ["Quienes quieren elegir cualquier médico o clínica privada, también fuera de la red"],
+      "covers_es": ["Reembolso del 80% de los gastos en proveedores fuera de la red", "Máximo anual 100.000€", "Consultas, especialistas y pruebas diagnósticas", "Hospitalización (médica, quirúrgica, maternidad, pediátrica, psiquiátrica)", "Parto normal hasta 3.000€, cesárea hasta 3.500€", "20 sesiones de psicoterapia al año", "Tratamientos especiales: medicina nuclear, rehabilitación, diálisis", "También acceso gratuito a la red concertada (libre elección opcional)"],
+      "conditions_es": ["Contratación hasta los 70 años, sin edad máxima de permanencia", "Descuentos por pago fraccionado: 2% trimestral, 4% semestral, 6% anual", "Disponible solo para residentes en España"],
+      "limits_es": ["Carencias de 6–8 meses en ciertos servicios; hospitalización 8 meses"],
+      "expat_note_es": "Para quien valora elegir clínica/médico privados libremente y recuperar parte del gasto.",
+      "keywords": ["возмещение", "reembolso", "reimbursement", "любая клиника", "свобода выбора", "libre elección", "частная клиника", "вернуть деньги", "80%"]
+    },
+    {
+      "id": "salud-internacional",
+      "intents": ["med", "travel"],
+      "title_es": "Seguro médico internacional (cobertura mundial)",
+      "audience_es": ["Expatriados y profesionales que se trasladan al extranjero", "Estudiantes que viven fuera"],
+      "covers_es": ["Cobertura en cualquier parte del mundo", "Asistencia médica durante viajes temporales a España", "Consultas y pruebas diagnósticas", "Hospitalización y cirugía ambulatoria", "Traslado en ambulancia e indemnización por accidente", "Embarazo y parto (modalidades ampliadas)", "Prótesis e implantes, podología", "Asistencia jurídica en viajes, prolongación de estancia, envío de medicamentos"],
+      "conditions_es": ["Sin copagos en el extranjero", "Sin períodos de carencia (desde el primer día)", "Asistencia 24h", "Límites anuales de 30.000€, 60.000€ o 120.000€ según nivel"],
+      "limits_es": ["No detalla exclusiones por condición preexistente en la información pública"],
+      "expat_note_es": "Para quien vive entre países o viaja mucho y necesita cobertura global con asistencia en España.",
+      "keywords": ["международная", "internacional", "international", "за границей", "по всему миру", "worldwide", "экспат", "expat", "global", "переезд за рубеж"]
+    },
+    {
+      "id": "hospitalizacion",
+      "intents": ["med"],
+      "title_es": "Seguro de hospitalización (complemento)",
+      "audience_es": ["Quien quiere cubrir específicamente ingresos hospitalarios y cirugías"],
+      "covers_es": ["Hospitalización médica y quirúrgica", "Cirugía", "Pruebas y atención asociadas al ingreso"],
+      "conditions_es": ["Complementa la sanidad pública o un seguro ambulatorio"],
+      "limits_es": ["No cubre la asistencia ambulatoria del día a día"],
+      "expat_note_es": "Complemento para cubrir el coste de ingresos y operaciones.",
+      "keywords": ["госпитализация", "hospitalización", "стационар", "операция", "cirugía", "ингресо", "ingreso"]
+    },
+    {
+      "id": "dental",
+      "intents": ["dental"],
+      "title_es": "Seguro dental (todo incluido)",
+      "audience_es": ["Familias con niños", "Adultos y personas mayores", "Quien busca precios cerrados en dentista"],
+      "covers_es": ["Más de 50 tratamientos incluidos sin coste: revisiones, exámenes (inicial, periodontal, urgencia)", "Limpiezas bucales", "Extracciones simples", "Empastes provisionales", "Radiografías (intraorales, oclusales, de aleta)", "Selladores en niños, periodontogramas", "Estudios de implantología"],
+      "conditions_es": ["Sin carencia (beneficios desde la contratación)", "Sin límite de edad", "Sin límite de tratamientos anuales", "Red amplia de más de 1.800 centros dentales", "Reembolso hasta 1.500€ por complicaciones de ortodoncias/implantes/prótesis"],
+      "limits_es": ["Tratamientos mayores (implantes, ortodoncia ~35% dto., endodoncia, prótesis, cirugía oral, estética) van con descuento, no gratis"],
+      "expat_note_es": "Cubre lo básico sin coste y aplica descuentos fuertes en tratamientos caros.",
+      "keywords": ["стоматология", "dental", "зубы", "зубной", "dientes", "diente", "limpieza", "чистка", "имплант", "implante", "ортодонтия", "ortodoncia", "брекеты", "пломба", "empaste"]
+    },
+    {
+      "id": "viaje",
+      "intents": ["travel"],
+      "title_es": "Seguro de viaje (estancia temporal en España)",
+      "audience_es": ["Visitantes y turistas en España", "Estancias temporales antes de la residencia"],
+      "covers_es": ["Gastos médicos del viaje hasta 30.000€", "Asistencia odontológica de urgencia (hasta 60€)", "Repatriación o traslado al centro médico más cercano y regreso al país", "Repatriación del acompañante", "Búsqueda y envío de equipaje extraviado; compensación por demora >12h", "Regreso anticipado por hospitalización o fallecimiento de familiar", "Prolongación de estancia por prescripción médica (hasta 720€/día, máx. 10 días)"],
+      "conditions_es": ["Sin límite de edad, sin carencias, sin cuestionario médico", "Sin límite de asegurados por póliza", "Contratación flexible por días concretos del viaje"],
+      "limits_es": ["Cobertura solo en territorio español (modalidad estándar)", "Algunas modalidades no cubren cruceros"],
+      "expat_note_es": "Útil mientras no se tiene residencia: cubre la estancia turística; para papeles de residencia hace falta el seguro de residencia.",
+      "keywords": ["путешествие", "поездка", "viaje", "travel", "турист", "багаж", "equipaje", "репатриация", "repatriación", "отмена", "временно", "temporal", "виза туриста"]
+    },
+    {
+      "id": "vida",
+      "intents": ["life"],
+      "title_es": "Seguro de vida",
+      "audience_es": ["Quien quiere proteger económicamente a su familia ante fallecimiento o incapacidad"],
+      "covers_es": ["Prestación económica a los beneficiarios por fallecimiento (cualquier causa)", "Opcional: incapacidad permanente absoluta (cualquier causa)", "Opcional: fallecimiento por accidente, incluido tráfico", "Opcional: incapacidad por accidente"],
+      "conditions_es": ["Edad mínima 18 años; contratación hasta 66 años; permanencia hasta 75 años (fallecimiento)", "Capital mínimo desde 18.000€"],
+      "limits_es": ["La información pública no detalla exclusiones por enfermedades preexistentes o carencias"],
+      "expat_note_es": "Protección económica de la familia; útil para quienes tienen cargas familiares o hipoteca.",
+      "keywords": ["жизнь", "vida", "life", "страхование жизни", "смерть", "fallecimiento", "инвалидность", "incapacidad", "семья", "ипотека", "hipoteca", "наследники", "beneficiarios"]
+    },
+    {
+      "id": "accidentes",
+      "intents": ["life"],
+      "title_es": "Seguro de accidentes personales",
+      "audience_es": ["Cualquier persona de 15 a 69 años que quiera indemnización por accidente"],
+      "covers_es": ["Indemnización por fallecimiento por accidente al beneficiario", "Válido si el fallecimiento ocurre hasta 24 meses después del accidente", "Cobertura nacional e internacional"],
+      "conditions_es": ["Edad 15–69 años", "Sin carencia (desde el primer día)", "Capital asegurado de 30.000€ a 90.000€", "Sin revisión médica (solo cuestionario)"],
+      "limits_es": ["El infarto agudo de miocardio no se considera accidente", "Capital fijo: no cubre incapacidad ni gastos médicos en la modalidad básica"],
+      "expat_note_es": "Complemento sencillo y barato centrado en el accidente.",
+      "keywords": ["несчастный случай", "accidente", "accident", "травма", "индемнизация", "indemnización", "выплата при несчастном"]
+    },
+    {
+      "id": "decesos",
+      "intents": ["decesos"],
+      "title_es": "Seguro de decesos (servicios funerarios)",
+      "audience_es": ["Familias que quieren dejar resuelta la organización y el coste del funeral"],
+      "covers_es": ["Todos los costes de los servicios funerarios pactados", "Libre elección de tanatorio y cementerio", "Traslado del fallecido sin límite de distancia (nacional e internacional)", "Repatriación si el fallecimiento ocurre en el extranjero", "Asistencia en viaje (gastos médicos hasta 20.000€, máx. 90 días por viaje)", "Asesoramiento legal: sucesiones, pensiones, hasta 3 consultas presenciales al año"],
+      "conditions_es": ["Cobertura de viaje fuera de España hasta 90 días"],
+      "limits_es": ["Periodo de viaje máximo 90 días", "Gastos médicos en viaje limitados a 20.000€"],
+      "expat_note_es": "Incluye repatriación internacional del fallecido, relevante para extranjeros con familia en otro país.",
+      "keywords": ["похороны", "decesos", "funeral", "погребение", "репатриация тела", "repatriación", "танаторий", "tanatorio", "наследство", "sucesiones"]
+    },
+    {
+      "id": "mascotas",
+      "intents": ["pet"],
+      "title_es": "Seguro para mascotas (perros y gatos)",
+      "audience_es": ["Dueños de perros y gatos"],
+      "covers_es": ["Vacunas y consultas gratuitas en clínicas de la red", "Consultas de urgencia vital gratuitas", "Orientación veterinaria telefónica 24h, videoconsultas ilimitadas y chat", "Otros servicios con coste franquiciado", "Información de recursos para mascotas (hoteles, peluquerías, adiestradores)"],
+      "conditions_es": ["Perros y gatos sin restricción por raza, edad o estado de salud", "Requisitos: registro en autoridades locales y microchip", "Sin carencias en asistencia veterinaria (desde el primer día)", "Precio orientativo desde 9,90€/mes (2026, impuestos aparte)"],
+      "limits_es": ["No cubre pájaros, peces, tortugas, iguanas ni exóticos", "Opcionales con carencia: robo 15 días, sacrificio 6 meses", "Responsabilidad Civil opcional (capital 150.000€/200.000€/300.000€) — obligatoria para perros desde septiembre 2023", "Fallecimiento por accidente y robo: hasta 1.000€ con factura (300€ sin), con reducción anual del 15% tras 9 años"],
+      "expat_note_es": "La Responsabilidad Civil es obligatoria para perros en España desde 2023; este seguro la incluye como opción.",
+      "keywords": ["питомец", "животное", "собака", "кошка", "mascota", "perro", "gato", "pet", "dog", "cat", "ветеринар", "veterinario", "vet", "гражданская ответственность", "responsabilidad civil", "микрочип"]
+    }
+  ]
+}

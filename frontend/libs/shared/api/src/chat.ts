@@ -20,14 +20,19 @@ interface ChatAnswer {
  *
  * @param question - вопрос пользователя.
  * @param lang - язык ответа (en|es|uk|ru).
+ * @param intent - интент текущего шага чата (med|dental|pet|...), уточняет ретривал.
  * @returns текст ответа, либо null если ассистент недоступен (503).
  * @throws ApiError при прочих ошибках (например 500/сеть) — UI покажет фолбэк.
  */
-export async function askQuestion(question: string, lang: string): Promise<string | null> {
+export async function askQuestion(
+  question: string,
+  lang: string,
+  intent?: string,
+): Promise<string | null> {
   try {
     const data = await apiRequest<ChatAnswer>('/api/chat', {
       method: 'POST',
-      body: { question, lang },
+      body: intent ? { question, lang, intent } : { question, lang },
     });
     return data.answer;
   } catch (e) {

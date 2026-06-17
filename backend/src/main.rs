@@ -10,6 +10,7 @@
 mod config;
 mod db;
 mod error;
+mod knowledge;
 mod rate_limit;
 mod routes;
 
@@ -28,9 +29,9 @@ pub struct AppState {
     pub limiter: Arc<rate_limit::RateLimiter>,
     /// HTTP-клиент к Claude API (переиспользуем пул соединений).
     pub http: reqwest::Client,
-    /// Готовый системный промпт чат-консультанта (инструкции + каталог ASISA),
-    /// собранный при старте. None, если каталог не загрузился — тогда чат выключен.
-    pub knowledge_prompt: Option<Arc<String>>,
+    /// Бренд-нейтральный корпус знаний RAG-агента (services.json). None, если не
+    /// загрузился — тогда чат выключен (503), остальной сервис работает.
+    pub knowledge: Option<Arc<knowledge::KnowledgeBase>>,
 }
 
 #[tokio::main]
@@ -59,13 +60,14 @@ async fn main() -> anyhow::Result<()> {
     // Чат-консультант (Волна C): собираем системный промпт из базы знаний ASISA.
     // Если каталог не найден или ключ Claude не задан — чат просто выключен (503),
     // остальной сервис работает как обычно.
-    let knowledge_prompt = match routes::chat::load_knowledge_prompt(&config.knowledge_path) {
-        Ok(prompt) => {
+    let knowledge = match knowledge::KnowledgeBase::load(&config.knowledge_path) {
+        Ok(kb) => {
             tracing::info!(
                 ai_enabled = config.anthropic_api_key.is_some(),
+                services = kb.len(),
                 "knowledge base loaded for chat assistant"
             );
-            Some(Arc::new(prompt))
+            Some(Arc::new(kb))
         }
         Err(e) => {
             tracing::warn!(error = %e, path = %config.knowledge_path, "knowledge base not loaded — chat assistant disabled");
@@ -78,7 +80,7 @@ async fn main() -> anyhow::Result<()> {
         config: config.clone(),
         limiter,
         http: reqwest::Client::new(),
-        knowledge_prompt,
+        knowledge,
     };
 
     // CORS. Refresh-токен лежит в cookie, поэтому при заданном белом списке

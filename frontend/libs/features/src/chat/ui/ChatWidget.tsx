@@ -75,6 +75,8 @@ export function ChatWidget(): JSX.Element {
   const clearChatIntent = useUiStore((s) => s.clearChatIntent);
   const openLegal = useUiStore((s) => s.openLegal);
   const [activeIntent, setActiveIntent] = useState<ChatIntent | null>(null);
+  // Ключ интента (med|dental|pet…) — отдельно от объекта: нужен RAG-ретривалу.
+  const [activeIntentKey, setActiveIntentKey] = useState<string | null>(null);
 
   // Индекс шага 'who' и override его вопроса для активного интента (напр. питомцы:
   // «какой у вас питомец?» вместо «кого страхуем»).
@@ -109,7 +111,7 @@ export function ChatWidget(): JSX.Element {
     setAsking(true);
     void trackEvent('question_asked', { lang });
     try {
-      const answer = await askQuestion(question, lang);
+      const answer = await askQuestion(question, lang, activeIntentKey ?? undefined);
       // null → ассистент недоступен (503): мягкий фолбэк на менеджера.
       const text = answer ?? ct('here');
       setFreeItems((prev) => [...prev, { id: freeIdRef.current++, author: 'bot', text }]);
@@ -137,6 +139,7 @@ export function ChatWidget(): JSX.Element {
     const intent = chatIntent ? CHAT_INTENTS[chatIntent] : undefined;
     if (intent) {
       setActiveIntent(intent);
+      setActiveIntentKey(chatIntent);
       startWithGoal(ct(intent.goalKey));
       clearChatIntent();
     } else if (useChatStore.getState().phase === 'idle') {
@@ -254,6 +257,7 @@ export function ChatWidget(): JSX.Element {
     setConsentLocal(false);
     setFormError(null);
     setActiveIntent(null);
+    setActiveIntentKey(null);
     reset();
     start();
   }
@@ -371,7 +375,7 @@ export function ChatWidget(): JSX.Element {
               className={
                 m.author === 'user'
                   ? 'rounded-2xl rounded-br-sm bg-brand px-[15px] py-[11px] text-[0.96rem] leading-normal text-white'
-                  : 'rounded-2xl rounded-bl-sm border border-slate-200 bg-white px-[15px] py-[11px] text-[0.96rem] leading-normal text-ink'
+                  : 'whitespace-pre-line rounded-2xl rounded-bl-sm border border-slate-200 bg-white px-[15px] py-[11px] text-[0.96rem] leading-relaxed text-ink'
               }
             >
               {m.text}
