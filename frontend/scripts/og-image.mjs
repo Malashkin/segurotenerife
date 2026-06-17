@@ -2,7 +2,7 @@
  * Генерация OG-картинки (1200×630) для шеринга в соцсетях/мессенджерах.
  *
  * Рендерим статичный HTML-баннер в Chromium (Playwright) и снимаем скриншот в
- * apps/web/public/og-image.png. Запуск вручную при изменении бренда/копирайта:
+ * apps/web-astro/public/og-image.png. Запуск вручную при изменении бренда/копирайта:
  *   node scripts/og-image.mjs
  * (в обычную сборку не входит — картинка коммитится как ассет.)
  */
@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const OUT = resolve(__dirname, '../apps/web/public/og-image.png');
+const OUT = resolve(__dirname, '../apps/web-astro/public/og-image.png');
 
 const html = `<!doctype html><html><head><meta charset="utf-8">
 <style>

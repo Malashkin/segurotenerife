@@ -1,12 +1,12 @@
 /**
- * E2E web: мультиязычные URL (SEO/GEO).
+ * E2E web (Astro): мультиязычные URL (SEO/GEO).
  *
- * Проверяем, что:
- *  1. /es/ и /uk/ отдают версию на нужном языке (детект локали из префикса пути,
- *     <html lang> совпадает) — значит URL == контент == hreflang/canonical;
- *  2. корень `/` — русская (каноническая) версия;
- *  3. смена языка в шапке обновляет URL-префикс (pushState), т.е. ссылка
- *     становится шарабельной и перезагрузка отдаст правильную пререндер-версию.
+ * Astro отдаёт статические страницы по локалям: `/` (ru, каноническая), `/es/`,
+ * `/uk/`, `/en/`. Проверяем, что:
+ *  1. /es/ и /uk/ отдают версию на нужном языке (<html lang> совпадает с URL);
+ *  2. корень `/` — русская версия;
+ *  3. переключатель языка — это ссылки на локальные URL (навигация), т.е. выбор
+ *     языка отражается в адресе и шарится.
  */
 import { test, expect } from '@playwright/test';
 
@@ -16,12 +16,8 @@ test.describe('web — мультиязычные URL', () => {
   test.use({ viewport: { width: 1280, height: 900 } });
 
   test.beforeEach(async ({ page }) => {
-    // Фиксируем сохранённый язык как ru для детерминизма (иначе на `/` сработает
-    // детект языка браузера Playwright = en). Префикс URL (/es, /uk) всё равно
-    // имеет приоритет над сохранённым выбором — это и проверяем.
     await page.addInitScript(() => {
       try {
-        localStorage.setItem('seguro_lang', 'ru');
         localStorage.setItem('seguro_cookie_consent', 'accepted');
       } catch {
         /* игнор */
@@ -32,7 +28,6 @@ test.describe('web — мультиязычные URL', () => {
   test('/es/ отдаёт испанскую версию (html lang=es)', async ({ page }) => {
     await page.goto(`${WEB}/es/`);
     await expect(page.locator('html')).toHaveAttribute('lang', 'es');
-    // URL не «съехал» обратно на корень (контент совпадает с префиксом).
     expect(new URL(page.url()).pathname).toBe('/es/');
   });
 
@@ -46,13 +41,14 @@ test.describe('web — мультиязычные URL', () => {
     await expect(page.locator('html')).toHaveAttribute('lang', 'ru');
   });
 
-  test('смена языка в шапке обновляет URL-префикс', async ({ page }) => {
+  test('переключатель языка ведёт на локальный URL', async ({ page }) => {
     await page.goto(`${WEB}/`);
     await expect(page.locator('html')).toHaveAttribute('lang', 'ru');
     const langGroup = page.getByRole('group', { name: 'Language' }).first();
-    await langGroup.getByRole('button', { name: 'ES' }).click();
-    // i18n переключился (html lang) и URL получил префикс /es/.
+    // На Astro это ссылки (навигация на /es/), а не кнопки live-переключения.
+    await langGroup.getByRole('link', { name: 'ES' }).click();
+    await page.waitForURL('**/es/**');
     await expect(page.locator('html')).toHaveAttribute('lang', 'es');
-    await expect.poll(() => new URL(page.url()).pathname).toBe('/es/');
+    expect(new URL(page.url()).pathname).toBe('/es/');
   });
 });

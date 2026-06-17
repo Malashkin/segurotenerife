@@ -1,13 +1,14 @@
 /**
  * Playwright E2E (Волна 4).
  *
- * Гоняет реальный браузер против собранных SPA (vite preview), а backend-API
- * подменяется детерминированными стабами (page.route) — так E2E проверяет именно
- * UI-флоу (чат-подбор, i18n, хендофф, логин менеджера, таблица лидов) без флака
+ * Гоняет реальный браузер против собранных приложений: web — Astro (astro
+ * preview), admin — Vite SPA (vite preview). Backend-API подменяется
+ * детерминированными стабами (page.route) — так E2E проверяет именно UI-флоу
+ * (чат-подбор, i18n-роутинг, хендофф, логин менеджера, таблица лидов) без флака
  * от БД/сети. Живой API покрыт backend-smoke (scripts/smoke) и k6-нагрузкой.
  *
- * Два preview-сервера: web (4173) и admin (4174). Playwright поднимает их сам и
- * ждёт готовности перед тестами.
+ * Два preview-сервера: web (4173, Astro) и admin (4174). Playwright поднимает их
+ * сам и ждёт готовности перед тестами.
  */
 import { defineConfig, devices } from '@playwright/test';
 
@@ -28,7 +29,7 @@ export default defineConfig({
   webServer: [
     {
       command:
-        'pnpm --filter @seguro/web build && pnpm --filter @seguro/web exec vite preview --port 4173 --strictPort',
+        'pnpm --filter @seguro/web-astro build && pnpm --filter @seguro/web-astro exec astro preview --port 4173',
       url: WEB_URL,
       reuseExistingServer: !process.env.CI,
       timeout: 180_000,

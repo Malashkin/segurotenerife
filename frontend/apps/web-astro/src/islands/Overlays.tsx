@@ -5,8 +5,7 @@
  * `seguro:ui` (см. мост в Layout): { ui: 'open-chat' | 'intent' | 'legal',
  * intent?, doc? }.
  *
- * i18n инициализируем явной локалью страницы (syncUrl:false — в Astro адрес
- * авторитетен, трогать его нельзя). Грузится client:idle.
+ * i18n инициализируем явной локалью страницы. Грузится client:idle.
  */
 import { useEffect } from 'react';
 import { initI18n, type AppLocale } from '@shared/i18n';
@@ -15,8 +14,8 @@ import { QueryProvider } from '@shared/api';
 import { ChatLauncher, LegalModal, CookieConsent } from '@widgets';
 
 export default function Overlays({ locale }: { locale: AppLocale }): JSX.Element {
-  // Инициализация до первого рендера детей (идемпотентна, без правки URL).
-  initI18n({ lng: locale, syncUrl: false });
+  // Инициализация до первого рендера детей (идемпотентна, задаём язык страницы).
+  initI18n({ lng: locale });
 
   useEffect(() => {
     const onUi = (e: Event): void => {

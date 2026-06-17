@@ -2,11 +2,11 @@
  * E2E web: плавающий чат-бот и подбор страховки (Волна 4, обновлено под Волну с
  * плавающим виджетом).
  *
- * Чат теперь — попап (ChatLauncher): открывается плавающей кнопкой (FAB) в углу
- * или CTA в шапке/hero. Проверяем:
- *  1. CTA открывает чат-окно; посетитель проходит быстрые шаги, заполняет форму
- *     и доходит до экрана хендоффа со ссылками на мессенджеры;
- *  2. смена языка в шапке перерисовывает открытый чат вживую, без перезагрузки.
+ * Чат — React-остров (ChatLauncher) на Astro-лендинге: открывается плавающей
+ * кнопкой (FAB) в углу или CTA в шапке/hero. Проверяем, что посетитель проходит
+ * быстрые шаги, заполняет форму и доходит до экрана хендоффа со ссылками на
+ * мессенджеры. (Смена языка на Astro — навигация по локальным URL, проверяется в
+ * web-i18n.spec, поэтому отдельного «ре-рендер без перезагрузки» здесь нет.)
  *
  * Backend подменён стабами: POST /api/leads → 201, POST /api/events → 204.
  */
@@ -72,19 +72,5 @@ test.describe('web — плавающий чат-подбор', () => {
     const links = chat.locator('a[target="_blank"]');
     await expect(links.first()).toBeVisible();
     expect(await links.count()).toBeGreaterThanOrEqual(1);
-  });
-
-  test('смена языка перерисовывает открытый чат без перезагрузки', async ({ page }) => {
-    await page.goto(WEB);
-    const chat = await openChat(page);
-    await expect(chat.locator('[data-testid="chat-option"]').first()).toBeVisible();
-    const before = await chat.innerText();
-
-    // Переключатель языка в шапке (EN·ES·UA·RU). Жмём ES.
-    const langGroup = page.getByRole('group', { name: 'Language' }).first();
-    await langGroup.getByRole('button', { name: 'ES' }).click();
-
-    // Содержимое чата (вопрос/опции) меняется без reload.
-    await expect.poll(async () => chat.innerText()).not.toBe(before);
   });
 });

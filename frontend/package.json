@@ -9,10 +9,10 @@
     "pnpm": ">=9"
   },
   "scripts": {
-    "dev:web": "pnpm --filter @seguro/web dev",
+    "dev:web": "pnpm --filter @seguro/web-astro dev",
     "dev:admin": "pnpm --filter @seguro/admin dev",
-    "build": "pnpm --filter @seguro/web build && pnpm --filter @seguro/admin build",
-    "build:web": "pnpm --filter @seguro/web build",
+    "build": "pnpm --filter @seguro/web-astro build && pnpm --filter @seguro/admin build",
+    "build:web": "pnpm --filter @seguro/web-astro build",
     "build:admin": "pnpm --filter @seguro/admin build",
     "typecheck": "pnpm -r --if-present typecheck",
     "lint": "pnpm -r --if-present lint",

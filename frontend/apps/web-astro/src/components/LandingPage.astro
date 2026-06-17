@@ -35,6 +35,8 @@ const meta = SEO_META[locale];
     <Footer locale={locale} />
   </div>
 
-  <!-- Плавающий UI как один остров; статичные кнопки управляют им через события. -->
-  <Overlays client:idle locale={locale} />
+  <!-- Плавающий UI — один клиентский остров (client:only: это интерактивные
+       оверлеи, не SEO-контент; зависят от localStorage/window, поэтому НЕ SSR'им,
+       иначе hydration-mismatch). Статичные кнопки управляют им через seguro:ui. -->
+  <Overlays client:only="react" locale={locale} />
 </Layout>

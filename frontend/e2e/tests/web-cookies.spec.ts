@@ -8,16 +8,8 @@ const WEB = 'http://localhost:4173';
 test.describe('web — согласие на куки', () => {
   test.use({ viewport: { width: 1280, height: 900 } });
 
-  test.beforeEach(async ({ page }) => {
-    // Язык фиксируем, но согласие НЕ ставим — баннер должен показаться.
-    await page.addInitScript(() => {
-      try {
-        localStorage.setItem('seguro_lang', 'ru');
-      } catch {
-        /* игнор */
-      }
-    });
-  });
+  // Корень `/` — русская версия (Astro), отсюда RU-подписи баннера. Согласие НЕ
+  // ставим — баннер (React-остров) должен показаться после гидрации.
 
   test('«Принять все» закрывает баннер, выбор сохраняется и не возвращается', async ({ page }) => {
     await page.goto(WEB);

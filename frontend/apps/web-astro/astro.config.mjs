@@ -32,6 +32,10 @@ export default defineConfig({
     }),
   ],
   vite: {
+    // Astro по умолчанию пробрасывает в клиент только PUBLIC_*. Возвращаем и
+    // VITE_* — иначе @shared/api (общий с admin) не увидит VITE_API_URL и уйдёт
+    // на дефолтный http://localhost:8080.
+    envPrefix: ['VITE_', 'PUBLIC_'],
     plugins: [tsconfigPaths({ projects: ['../../tsconfig.base.json'] })],
   },
 });

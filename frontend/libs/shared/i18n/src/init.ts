@@ -20,37 +20,15 @@ import {
   resources,
 } from './resources';
 import { FALLBACK_LOCALE, SUPPORTED_LOCALES, type AppLocale } from './config';
-import {
-  DEFAULT_URL_LOCALE,
-  detectLocale,
-  localeFromPath,
-  pathForLocale,
-  persistLocale,
-} from './detect';
-
-/**
- * Приводит URL в соответствие активному языку (RU → `/`, остальные → `/<l>/…`).
- * @param replace - true: replaceState (старт, без записи в историю);
- *                  false: pushState (явная смена языка пользователем).
- */
-function syncUrlToLocale(locale: AppLocale, replace: boolean): void {
-  if (typeof window === 'undefined') return;
-  const next = pathForLocale(locale, window.location);
-  const current = window.location.pathname + window.location.search + window.location.hash;
-  if (next === current) return;
-  window.history[replace ? 'replaceState' : 'pushState'](null, '', next);
-}
+import { detectLocale, persistLocale } from './detect';
 
 /** Опции инициализации i18n. */
 export interface InitI18nOptions {
-  /** Явный стартовый язык. Если не задан — определяется detectLocale(). */
-  lng?: AppLocale;
   /**
-   * Выравнивать ли URL под активный язык на старте (replaceState).
-   * SPA (Vite): true по умолчанию (язык в localStorage → префикс пути).
-   * Astro: false — язык задаётся самим URL/страницей, трогать адрес нельзя.
+   * Явный стартовый язык. Если не задан — определяется detectLocale().
+   * Astro-острова передают локаль страницы; admin (SPA) вызывает без аргументов.
    */
-  syncUrl?: boolean;
+  lng?: AppLocale;
 }
 
 /**
@@ -89,14 +67,6 @@ export function initI18n(opts: InitI18nOptions = {}): I18nInstance {
     });
   }
 
-  // Приводим URL к активному языку на старте (только если просили — SPA).
-  // В Astro адрес авторитетен (per-locale страницы), поэтому syncUrl=false.
-  if (opts.syncUrl !== false && typeof window !== 'undefined') {
-    const active = (i18n.language as AppLocale) ?? DEFAULT_URL_LOCALE;
-    const urlLocale = localeFromPath(window.location.pathname) ?? DEFAULT_URL_LOCALE;
-    if (urlLocale !== active) syncUrlToLocale(active, true);
-  }
-
   return i18n;
 }
 
@@ -109,9 +79,6 @@ export function initI18n(opts: InitI18nOptions = {}): I18nInstance {
 export async function changeLocale(locale: AppLocale): Promise<void> {
   persistLocale(locale);
   await i18n.changeLanguage(locale);
-  // Обновляем URL (pushState), чтобы выбор языка отражался в адресе: ссылка
-  // становится шарабельной, а перезагрузка отдаст правильную пререндер-версию.
-  syncUrlToLocale(locale, false);
 }
 
 /** Текущий активный язык приложения (узкий тип AppLocale). */

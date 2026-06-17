@@ -3,16 +3,16 @@
 Мультиязычный (EN / ES / UA(uk) / RU) фронтенд сервиса подбора страховки на Тенерифе.
 Монорепо из двух приложений и набора FSD-библиотек.
 
-- **apps/web-astro** — публичный лендинг на **Astro** (SSG + React-острова), целевой
-  web: мультиязычный SEO/GEO (статический HTML по локалям `/`,`/es/`,`/uk/`,`/en/`,
-  hreflang, JSON-LD FAQPage). Подробности — `../docs/architecture/astro-web.md`.
-- **apps/web** — прежний Vite-SPA лендинг (сохранён до переключения e2e/деплоя на Astro).
-- **apps/admin** — дашборд менеджера со списком лидов.
+- **apps/web-astro** — публичный лендинг на **Astro** (SSG + React-острова): мультиязычный
+  SEO/GEO (статический HTML по локалям `/`,`/es/`,`/uk/`,`/en/`, hreflang, JSON-LD FAQPage).
+  Подробности — `../docs/architecture/astro-web.md`. (Прежний Vite-SPA `apps/web` удалён.)
+- **apps/admin** — дашборд менеджера со списком лидов (Vite-SPA).
 
-Лендинг (`apps/web`) собран на слое `pages` (`LandingPage`) и стекует виджеты в
-продуктовом порядке: **NavBar → Hero → InsuranceTypes → HowItWorks → ChatWidget
-(«подбор», секция `#quiz`) → Articles → Faq → Footer**. Переключатель языка в
-шапке меняет весь UI вживую, включая чат.
+Лендинг (`apps/web-astro`) — статические секции `.astro` в продуктовом порядке
+(**NavBar → Hero → TrustBar → InsuranceTypes → HowItWorks → Articles → Faq →
+Footer**) + один React-остров плавающего UI (чат-подбор + правовая модалка + куки),
+переиспользующий FSD-библиотеки. Переключатель языка — ссылки на локальные URL
+(`/`,`/es/`,`/uk/`,`/en/`). См. `../docs/architecture/astro-web.md`.
 
 ## Стек
 
@@ -53,8 +53,9 @@ Vite пробрасывает в бандл только переменные с
 | -------------- | ------------------------------- | ----------------------- |
 | `VITE_API_URL` | Базовый URL backend REST API    | `http://localhost:8080` |
 
-Скопируйте `.env.example` в `apps/web/.env.local` / `apps/admin/.env.local`
-и при необходимости измените значения.
+Скопируйте `.env.example` в `apps/web-astro/.env` / `apps/admin/.env.local`
+и при необходимости измените значения. (Astro читает `VITE_*` из `.env` —
+см. `envPrefix` в `apps/web-astro/astro.config.mjs`.)
 
 ### Аутентификация менеджера (Волна 3)
 
@@ -77,8 +78,8 @@ Vite пробрасывает в бандл только переменные с
 ```
 frontend/
 ├── apps/
-│   ├── web/                 # публичное приложение (лендинг + чат)
-│   └── admin/               # дашборд менеджера
+│   ├── web-astro/           # публичный лендинг на Astro (SSG + React-острова)
+│   └── admin/               # дашборд менеджера (Vite-SPA)
 ├── libs/
 │   ├── shared/
 │   │   ├── ui/              # Atomic Design: atoms / molecules / organisms (shadcn-style)
@@ -132,8 +133,9 @@ import { QueryProvider, type CreateLeadRequest } from '@shared/api';
   слоя и допишите строку реэкспорта в `index.ts`. Импортировать внутренние
   пути напрямую (минуя alias) нельзя.
 - **Где инициализируется i18n.** `libs/shared/i18n/src/init.ts` (`initI18n()`).
-  Вызывается один раз в app-слое каждого приложения: `apps/web/src/main.tsx`,
-  `apps/admin/src/main.tsx`. Язык: localStorage → язык браузера (`be`→`ru`) → `en`.
+  Admin (`apps/admin/src/main.tsx`) вызывает `initI18n()` (язык: localStorage →
+  браузер → `en`). На Astro-лендинге язык задаётся URL-роутингом, а остров
+  `Overlays` вызывает `initI18n({ lng })` с локалью страницы.
   Порядок переключателя и подписи — `LOCALE_ORDER` / `LOCALE_LABELS` в
   `libs/shared/i18n/src/config.ts`. Словари лендинга/квиза/FAQ портированы из
   `I18N` прототипа в `libs/shared/i18n/src/locales/<lng>/common.json` (один

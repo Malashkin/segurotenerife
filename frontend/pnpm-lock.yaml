@@ -76,67 +76,6 @@ importers:
         specifier: 5.0.1
         version: 5.0.1(typescript@5.6.3)(vite@5.4.10(@types/node@24.13.2))
 
-  apps/web:
-    dependencies:
-      '@seguro/entities':
-        specifier: workspace:*
-        version: link:../../libs/entities
-      '@seguro/features':
-        specifier: workspace:*
-        version: link:../../libs/features
-      '@seguro/pages':
-        specifier: workspace:*
-        version: link:../../libs/pages
-      '@seguro/shared-api':
-        specifier: workspace:*
-        version: link:../../libs/shared/api
-      '@seguro/shared-i18n':
-        specifier: workspace:*
-        version: link:../../libs/shared/i18n
-      '@seguro/shared-store':
-        specifier: workspace:*
-        version: link:../../libs/shared/store
-      '@seguro/shared-ui':
-        specifier: workspace:*
-        version: link:../../libs/shared/ui
-      '@seguro/widgets':
-        specifier: workspace:*
-        version: link:../../libs/widgets
-      react:
-        specifier: 18.3.1
-        version: 18.3.1
-      react-dom:
-        specifier: 18.3.1
-        version: 18.3.1(react@18.3.1)
-    devDependencies:
-      '@types/react':
-        specifier: 18.3.12
-        version: 18.3.12
-      '@types/react-dom':
-        specifier: 18.3.1
-        version: 18.3.1
-      '@vitejs/plugin-react':
-        specifier: 4.3.3
-        version: 4.3.3(vite@5.4.10(@types/node@24.13.2))
-      autoprefixer:
-        specifier: 10.4.20
-        version: 10.4.20(postcss@8.4.47)
-      postcss:
-        specifier: 8.4.47
-        version: 8.4.47
-      tailwindcss:
-        specifier: 3.4.14
-        version: 3.4.14
-      typescript:
-        specifier: 5.6.3
-        version: 5.6.3
-      vite:
-        specifier: 5.4.10
-        version: 5.4.10(@types/node@24.13.2)
-      vite-tsconfig-paths:
-        specifier: 5.0.1
-        version: 5.0.1(typescript@5.6.3)(vite@5.4.10(@types/node@24.13.2))
-
   apps/web-astro:
     dependencies:
       '@astrojs/react':

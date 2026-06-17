@@ -24,52 +24,15 @@ function isSupported(value: string | null): value is AppLocale {
 }
 
 /**
- * Язык по умолчанию для «голого» URL (`/`). Это основная аудитория (RU) и язык,
- * которым пререндерится корневой index.html. Отличается от FALLBACK_LOCALE (en),
- * который используется лишь как фоллбэк для отсутствующих ключей перевода.
- */
-export const DEFAULT_URL_LOCALE: AppLocale = 'ru';
-
-/**
- * Достаёт локаль из префикса пути: `/es`, `/uk/...`, `/en` → код языка.
- * Корень `/` (или путь без языкового префикса) → null (язык по умолчанию).
- * RU специально БЕЗ префикса: `/` — это русская (каноническая) версия.
- */
-export function localeFromPath(pathname: string): AppLocale | null {
-  const seg = pathname.replace(/^\/+/, '').split('/')[0]?.toLowerCase() ?? '';
-  if (seg === 'ru') return null; // /ru не используем — русская версия живёт на `/`
-  return isSupported(seg) ? seg : null;
-}
-
-/**
- * Строит путь для локали, сохраняя «хвост» пути, query и hash.
- * RU → без префикса (`/…`); остальные → `/<locale>/…`.
- */
-export function pathForLocale(
-  locale: AppLocale,
-  loc: { pathname: string; search: string; hash: string },
-): string {
-  const current = localeFromPath(loc.pathname);
-  let rest = loc.pathname;
-  if (current) rest = rest.replace(new RegExp(`^/${current}(?=/|$)`), '');
-  if (!rest.startsWith('/')) rest = `/${rest}`;
-  const base = locale === DEFAULT_URL_LOCALE ? rest : `/${locale}${rest === '/' ? '/' : rest}`;
-  return `${base}${loc.search}${loc.hash}`;
-}
-
-/**
  * Возвращает язык, который нужно показать пользователю при загрузке.
- * Приоритет: префикс URL (авторитетен для SEO) → сохранённый выбор → язык
- * браузера → язык по умолчанию (RU). Безопасно работает без window (вернёт RU).
+ * Приоритет: сохранённый выбор (localStorage) → язык браузера → фоллбэк.
+ * Безопасно работает в окружениях без window (вернёт фоллбэк).
+ *
+ * Примечание: публичный сайт переехал на Astro — там язык задаётся URL-роутингом
+ * (страницы по локалям), а острова инициализируют i18n явной локалью через
+ * initI18n({ lng }). Эта функция используется для admin (SPA без локальных URL).
  */
 export function detectLocale(): AppLocale {
-  // Шаг 0: язык из URL-префикса важнее всего — он должен совпадать с контентом
-  // (иначе hreflang/canonical будут «врать»).
-  if (typeof window !== 'undefined') {
-    const fromPath = localeFromPath(window.location.pathname);
-    if (fromPath) return fromPath;
-  }
-
   // Шаг 1: сохранённый выбор пользователя.
   if (typeof window !== 'undefined') {
     try {
@@ -93,8 +56,8 @@ export function detectLocale(): AppLocale {
     }
   }
 
-  // Шаг 3: ничего не подошло — язык по умолчанию для корня (RU).
-  return DEFAULT_URL_LOCALE;
+  // Шаг 3: ничего не подошло — базовый язык.
+  return FALLBACK_LOCALE;
 }
 
 /**
