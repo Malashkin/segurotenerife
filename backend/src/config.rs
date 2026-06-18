@@ -20,7 +20,15 @@ pub struct Config {
     /// Ставить ли флаг Secure на refresh-cookie (true в проде/HTTPS, false локально).
     pub cookie_secure: bool,
     pub allowed_origins_raw: String,
+    /// Общий лимит запросов в минуту на клиента (для всех роутов).
     pub rate_limit_per_min: u32,
+    /// Строгий лимит для платного `/api/chat` (каждый запрос = вызов Claude).
+    pub rate_limit_chat_per_min: u32,
+    /// Доверять ли прокси-заголовкам (X-Forwarded-For/CF-Connecting-IP) для
+    /// определения IP клиента. В проде ЗА прокси (Railway/Cloudflare) — `true`,
+    /// иначе rate limit считает всех под одним IP прокси. Локально/без прокси —
+    /// `false` (заголовки можно подделать, если сервис доступен напрямую).
+    pub trust_proxy_headers: bool,
 
     /// Ключ Claude API (ANTHROPIC_API_KEY). Опционален: без него чат-консультант
     /// выключен (POST /api/chat вернёт 503), остальной сервис работает как обычно.
@@ -65,6 +73,14 @@ impl Config {
                 .ok()
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(60),
+            rate_limit_chat_per_min: std::env::var("RATE_LIMIT_CHAT_PER_MIN")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(8),
+            trust_proxy_headers: std::env::var("TRUST_PROXY_HEADERS")
+                .ok()
+                .map(|v| v == "true" || v == "1")
+                .unwrap_or(false),
             anthropic_api_key: std::env::var("ANTHROPIC_API_KEY")
                 .ok()
                 .filter(|s| !s.is_empty()),

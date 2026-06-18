@@ -27,6 +27,8 @@ pub struct AppState {
     pub pool: sqlx::PgPool,
     pub config: Arc<config::Config>,
     pub limiter: Arc<rate_limit::RateLimiter>,
+    /// Строгий лимитер для платного `/api/chat` (защита от cost-DoS).
+    pub chat_limiter: Arc<rate_limit::RateLimiter>,
     /// HTTP-клиент к Claude API (переиспользуем пул соединений).
     pub http: reqwest::Client,
     /// Бренд-нейтральный корпус знаний RAG-агента (services.json). None, если не
@@ -56,6 +58,7 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("migrations applied");
 
     let limiter = Arc::new(rate_limit::RateLimiter::new(config.rate_limit_per_min));
+    let chat_limiter = Arc::new(rate_limit::RateLimiter::new(config.rate_limit_chat_per_min));
 
     // Чат-консультант (Волна C): собираем системный промпт из базы знаний ASISA.
     // Если каталог не найден или ключ Claude не задан — чат просто выключен (503),
@@ -79,6 +82,7 @@ async fn main() -> anyhow::Result<()> {
         pool,
         config: config.clone(),
         limiter,
+        chat_limiter,
         http: reqwest::Client::new(),
         knowledge,
     };

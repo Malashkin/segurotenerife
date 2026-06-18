@@ -7,11 +7,12 @@ pub mod health;
 pub mod leads;
 
 use axum::{
+    middleware,
     routing::{get, post},
     Router,
 };
 
-use crate::AppState;
+use crate::{rate_limit, AppState};
 
 pub fn router(state: AppState) -> Router {
     Router::new()
@@ -19,8 +20,15 @@ pub fn router(state: AppState) -> Router {
         // Публичные эндпоинты воронки.
         .route("/api/leads", post(leads::create).get(leads::list))
         .route("/api/events", post(events::create))
-        // Чат-консультант по базе знаний ASISA (Claude API; 503 если не настроен).
-        .route("/api/chat", post(chat::ask))
+        // Чат-консультант (Claude API; 503 если не настроен). Поверх общего лимита —
+        // строгий per-IP лимит: каждый запрос платный (защита от cost-DoS).
+        .route(
+            "/api/chat",
+            post(chat::ask).route_layer(middleware::from_fn_with_state(
+                state.clone(),
+                rate_limit::chat_rate_limit_mw,
+            )),
+        )
         // Аутентификация менеджера (JWT).
         .route("/api/auth/login", post(auth::login))
         .route("/api/auth/refresh", post(auth::refresh))
