@@ -33,6 +33,9 @@ export default defineConfig({
       url: WEB_URL,
       reuseExistingServer: !process.env.CI,
       timeout: 180_000,
+      // Гермотичность: в тест-сборке отключаем PostHog (пустой ключ → no-op),
+      // чтобы e2e не слал тестовый трафик в реальный проект аналитики.
+      env: { PUBLIC_POSTHOG_KEY: '', VITE_POSTHOG_KEY: '' },
     },
     {
       command:
@@ -40,6 +43,7 @@ export default defineConfig({
       url: ADMIN_URL,
       reuseExistingServer: !process.env.CI,
       timeout: 180_000,
+      env: { PUBLIC_POSTHOG_KEY: '', VITE_POSTHOG_KEY: '' },
     },
   ],
 });

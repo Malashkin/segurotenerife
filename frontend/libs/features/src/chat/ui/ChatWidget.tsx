@@ -28,7 +28,7 @@ import {
   type ChatMessenger,
 } from '@shared/store';
 import { useCreateLead, type CreateLeadRequest } from '@entities';
-import { trackEvent, askQuestion } from '@shared/api';
+import { trackEvent, askQuestion, captureEvent } from '@shared/api';
 import { Button } from '@shared/ui';
 import { FreeAsk } from './FreeAsk';
 import { useChatI18n } from '../model/useChatI18n';
@@ -540,7 +540,10 @@ export function ChatWidget(): JSX.Element {
                   <button
                     type="button"
                     data-testid="chat-ask-toggle"
-                    onClick={() => setFreeAskOpen(true)}
+                    onClick={() => {
+                      captureEvent('chat_free_ask_opened');
+                      setFreeAskOpen(true);
+                    }}
                     className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-2.5 text-[0.88rem] font-semibold text-brand-dark transition-colors hover:border-brand hover:bg-brand-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                   >
                     <span aria-hidden>💬</span>
@@ -563,7 +566,10 @@ export function ChatWidget(): JSX.Element {
                             key={key}
                             type="button"
                             data-testid="chat-starter"
-                            onClick={() => void handleAsk(ct(key))}
+                            onClick={() => {
+                              captureEvent('chat_starter_clicked', { key });
+                              void handleAsk(ct(key));
+                            }}
                             className="rounded-full border border-slate-200 bg-slate-50 px-3.5 py-2 text-left text-[0.85rem] font-medium text-slate-600 transition-colors hover:border-brand hover:bg-brand-tint hover:text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                           >
                             {ct(key)}

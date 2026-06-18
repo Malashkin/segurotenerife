@@ -39,7 +39,7 @@ const COLUMNS = [
 ] as const;
 ---
 
-<footer class="mt-16 bg-[#0b1220] py-[54px] pb-[30px] text-[#cbd5e1]">
+<footer data-section="footer" class="mt-16 bg-[#0b1220] py-[54px] pb-[30px] text-[#cbd5e1]">
   <div class="mx-auto w-[min(1160px,calc(100vw-40px))]">
     <div class="grid grid-cols-1 gap-[30px] sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
       <div>
@@ -69,6 +69,7 @@ const COLUMNS = [
                   data-ui={link.kind === 'legal' ? 'legal' : link.kind === 'intent' ? 'intent' : 'open-chat'}
                   data-intent={link.kind === 'intent' ? link.intent : undefined}
                   data-doc={link.kind === 'legal' ? link.doc : undefined}
+                  data-source={link.kind === 'chat' ? 'footer' : undefined}
                   class={linkClass}
                 >
                   {t(link.key)}

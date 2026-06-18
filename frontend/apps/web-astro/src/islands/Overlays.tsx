@@ -32,12 +32,22 @@ export default function Overlays({ locale }: { locale: AppLocale }): JSX.Element
         captureEvent('legal_opened', { doc: detail.doc, locale });
         st.openLegal(detail.doc);
       } else {
-        captureEvent('chat_opened', { source: 'cta', locale });
+        captureEvent('chat_opened', { source: detail.source ?? 'cta', locale });
         st.openChat();
       }
     };
+    // Канал произвольных событий из vanilla-скриптов страницы (scroll/section/faq):
+    // они шлют seguro:track, остров проксирует в PostHog (gated на согласие).
+    const onTrack = (e: Event): void => {
+      const d = (e as CustomEvent).detail ?? {};
+      if (d.event) captureEvent(d.event, { ...d.props, locale });
+    };
     window.addEventListener('seguro:ui', onUi);
-    return () => window.removeEventListener('seguro:ui', onUi);
+    window.addEventListener('seguro:track', onTrack);
+    return () => {
+      window.removeEventListener('seguro:ui', onUi);
+      window.removeEventListener('seguro:track', onTrack);
+    };
   }, []);
 
   return (

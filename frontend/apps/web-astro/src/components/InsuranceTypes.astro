@@ -20,7 +20,7 @@ const TYPES = [
 ];
 ---
 
-<section id="types" class="py-16">
+<section id="types" data-section="types" class="py-16">
   <div class="mx-auto w-[min(1160px,calc(100vw-40px))]">
     <SectionHead eyebrow={t('types_eyebrow')} title={t('types_h2')} subtitle={t('types_p')} />
     <div class="grid grid-cols-1 gap-[18px] sm:grid-cols-2 lg:grid-cols-3">
@@ -49,6 +49,7 @@ const TYPES = [
       <button
         type="button"
         data-ui="open-chat"
+        data-source="types_cta"
         class="group flex flex-col items-start justify-center gap-2.5 rounded-card border-2 border-dashed border-[#cfeae6] bg-brand-tint2 p-6 text-left transition-all hover:-translate-y-[3px] hover:border-brand hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
       >
         <span

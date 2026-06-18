@@ -16,7 +16,7 @@ const after = idx === -1 ? '' : h1.slice(idx + hl.length);
 const TRUST = ['hero_trust1', 'hero_trust2', 'hero_trust3'];
 ---
 
-<section class="py-16 pb-10">
+<section data-section="hero" class="py-16 pb-10">
   <div
     class="mx-auto grid w-[min(1160px,calc(100vw-40px))] grid-cols-1 items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]"
   >
@@ -39,6 +39,7 @@ const TRUST = ['hero_trust1', 'hero_trust2', 'hero_trust3'];
         <button
           type="button"
           data-ui="open-chat"
+          data-source="hero_primary"
           class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-7 py-3.5 text-base font-semibold text-white transition-colors hover:bg-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
         >
           {t('hero_cta1')}
@@ -75,6 +76,7 @@ const TRUST = ['hero_trust1', 'hero_trust2', 'hero_trust3'];
       <button
         type="button"
         data-ui="open-chat"
+        data-source="hero_card"
         class="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-6 py-3 font-semibold text-white transition-colors hover:bg-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
       >
         {t('hc_btn')}

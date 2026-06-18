@@ -121,5 +121,56 @@ const jsonld = {
         window.dispatchEvent(new CustomEvent('seguro:ui', { detail: { ...el.dataset } }));
       });
     </script>
+
+    <!-- Доп. продуктовая аналитика статичной страницы: глубина скролла, просмотры
+         секций (IntersectionObserver) и открытия FAQ. Шлём через канал
+         seguro:track → остров Overlays проксирует в PostHog (gated на согласие). -->
+    <script>
+      const track = (event: string, props?: Record<string, unknown>) =>
+        window.dispatchEvent(new CustomEvent('seguro:track', { detail: { event, props } }));
+
+      // Глубина скролла: 25/50/75/100% — каждый порог один раз.
+      const marks = [25, 50, 75, 100];
+      const fired = new Set<number>();
+      const onScroll = () => {
+        const doc = document.documentElement;
+        const max = doc.scrollHeight - doc.clientHeight;
+        if (max <= 0) return;
+        const pct = (doc.scrollTop / max) * 100;
+        for (const m of marks) {
+          if (pct >= m && !fired.has(m)) {
+            fired.add(m);
+            track('scroll_depth', { percent: m });
+          }
+        }
+        if (fired.size === marks.length) window.removeEventListener('scroll', onScroll);
+      };
+      window.addEventListener('scroll', onScroll, { passive: true });
+
+      // Просмотры секций: фиксируем первый показ каждой [data-section].
+      const seen = new Set<string>();
+      const io = new IntersectionObserver(
+        (entries) => {
+          for (const en of entries) {
+            const name = (en.target as HTMLElement).dataset.section;
+            if (en.isIntersecting && name && !seen.has(name)) {
+              seen.add(name);
+              track('section_viewed', { section: name });
+            }
+          }
+        },
+        { threshold: 0.4 },
+      );
+      document.querySelectorAll('[data-section]').forEach((el) => io.observe(el));
+
+      // Открытие пунктов FAQ.
+      document.querySelectorAll('details[data-faq]').forEach((d) => {
+        d.addEventListener('toggle', () => {
+          if ((d as HTMLDetailsElement).open) {
+            track('faq_opened', { q: (d as HTMLElement).dataset.faq });
+          }
+        });
+      });
+    </script>
   </body>
 </html>
