@@ -153,11 +153,48 @@ pub async fn chat_rate_limit_mw(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use axum::{body::Body, http::Request, middleware, routing::get, Router};
     use std::net::Ipv4Addr;
+    use std::sync::Arc;
     use std::time::{Duration, Instant};
+    use tower::ServiceExt;
 
     fn ip(n: u8) -> IpAddr {
         IpAddr::V4(Ipv4Addr::new(10, 0, 0, n))
+    }
+
+    /// Минимальный AppState для интеграции middleware (пул ленивый — БД не трогаем).
+    fn test_state(general: u32, chat: u32) -> AppState {
+        let cfg = crate::config::Config {
+            database_url: "x".into(),
+            port: 0,
+            jwt_secret: "x".into(),
+            manager_password_hash: "x".into(),
+            access_ttl_min: 30,
+            refresh_ttl_days: 7,
+            cookie_secure: false,
+            allowed_origins_raw: "*".into(),
+            rate_limit_per_min: general,
+            rate_limit_chat_per_min: chat,
+            trust_proxy_headers: false,
+            anthropic_api_key: None,
+            anthropic_model: "x".into(),
+            knowledge_path: "x".into(),
+        };
+        AppState {
+            pool: sqlx::PgPool::connect_lazy("postgres://u:p@127.0.0.1/db").unwrap(),
+            config: Arc::new(cfg),
+            limiter: Arc::new(RateLimiter::new(general)),
+            chat_limiter: Arc::new(RateLimiter::new(chat)),
+            http: reqwest::Client::new(),
+            knowledge: None,
+        }
+    }
+
+    async fn status(app: &Router, addr: SocketAddr) -> StatusCode {
+        let mut req = Request::builder().uri("/r").body(Body::empty()).unwrap();
+        req.extensions_mut().insert(ConnectInfo(addr));
+        app.clone().oneshot(req).await.unwrap().status()
     }
 
     #[test]
@@ -238,5 +275,33 @@ mod tests {
         h.insert("x-forwarded-for", "203.0.113.7".parse().unwrap());
         let socket: SocketAddr = "10.0.0.1:5000".parse().unwrap();
         assert_eq!(client_ip(&h, socket, true).to_string(), "198.51.100.5");
+    }
+
+    #[tokio::test]
+    async fn chat_middleware_blocks_over_strict_limit() {
+        // Интеграция: запрос через router с chat_rate_limit_mw. Сверх лимита (2) →
+        // middleware отдаёт 429 (а не пропускает/не возвращает дефолтный 200).
+        let state = test_state(1000, 2);
+        let app = Router::new()
+            .route("/r", get(|| async { "ok" }))
+            .route_layer(middleware::from_fn_with_state(state.clone(), chat_rate_limit_mw))
+            .with_state(state);
+        let addr: SocketAddr = "9.9.9.9:1234".parse().unwrap();
+        assert_eq!(status(&app, addr).await, StatusCode::OK);
+        assert_eq!(status(&app, addr).await, StatusCode::OK);
+        assert_eq!(status(&app, addr).await, StatusCode::TOO_MANY_REQUESTS);
+    }
+
+    #[tokio::test]
+    async fn general_middleware_blocks_over_limit() {
+        // То же для общего rate_limit_mw (лимит 1).
+        let state = test_state(1, 1000);
+        let app = Router::new()
+            .route("/r", get(|| async { "ok" }))
+            .route_layer(middleware::from_fn_with_state(state.clone(), rate_limit_mw))
+            .with_state(state);
+        let addr: SocketAddr = "8.8.8.8:4321".parse().unwrap();
+        assert_eq!(status(&app, addr).await, StatusCode::OK);
+        assert_eq!(status(&app, addr).await, StatusCode::TOO_MANY_REQUESTS);
     }
 }
