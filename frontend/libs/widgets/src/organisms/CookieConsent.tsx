@@ -12,6 +12,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUiStore } from '@shared/store';
+import { setAnalyticsConsent, captureEvent } from '@shared/api';
 import { Button } from '@shared/ui';
 
 const CONSENT_KEY = 'seguro_cookie_consent';
@@ -39,6 +40,10 @@ export function CookieConsent(): JSX.Element | null {
     } catch {
       /* приватный режим — выбор не сохранится, но баннер скроем */
     }
+    // Применяем решение к PostHog: accepted → начинаем трекинг, necessary → opt-out.
+    setAnalyticsConsent(value === 'accepted');
+    // Фиксируем выбор (для 'necessary' уже opted out → no-op, это ок).
+    captureEvent('cookie_consent', { choice: value });
     setVisible(false);
   };
 

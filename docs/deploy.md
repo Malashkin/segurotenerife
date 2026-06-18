@@ -72,20 +72,32 @@ cargo run --bin hash_password -- 'ВашСложныйПароль'
 (или два проекта в монорепо), указывая на свой подкаталог.
 
 ### Общие настройки
-| Параметр | `apps/web` | `apps/admin` |
+| Параметр | `apps/web-astro` (Astro) | `apps/admin` (Vite) |
 |---|---|---|
 | Root directory | `frontend` | `frontend` |
 | Install | `pnpm install` | `pnpm install` |
 | Build command | `pnpm build:web` | `pnpm build:admin` |
-| Output directory | `apps/web/dist` | `apps/admin/dist` |
+| Output directory | `apps/web-astro/dist` | `apps/admin/dist` |
+
+> web — статический Astro по локалям (`/`,`/es/`,`/uk/`,`/en/`); хост должен
+> отдавать `/<lang>/index.html` для подпапок (Netlify/Vercel/CF — обычно из коробки).
 
 ### Переменные окружения фронтенда
+web на Astro (`apps/web-astro`) читает `PUBLIC_*` и `VITE_*`; admin (Vite) — `VITE_*`.
+
 | Переменная | Значение |
 |---|---|
-| `VITE_API_URL` | URL backend на Railway, напр. `https://seguro-backend.up.railway.app` |
+| `VITE_API_URL` / `PUBLIC_API_URL` | URL backend на Railway, напр. `https://seguro-backend.up.railway.app` |
 | `VITE_WHATSAPP_NUMBER` | номер WhatsApp офиса (формат wa.me, только цифры) |
 | `VITE_TELEGRAM_USERNAME` | username Telegram офиса (без `@`) |
 | `VITE_VIBER_NUMBER` | номер Viber (по умолчанию = WhatsApp) |
+| `PUBLIC_POSTHOG_KEY` (web) / `VITE_POSTHOG_KEY` (admin) | **публичный** проектный ключ PostHog `phc_…` (Project Settings → Project API Key). Без него аналитика выключена (no-op). НЕ персональный `phx_…` ключ! |
+| `PUBLIC_POSTHOG_HOST` / `VITE_POSTHOG_HOST` | хост PostHog по региону проекта: EU `https://eu.i.posthog.com` (по умолчанию) или US `https://us.i.posthog.com`. **Должен совпадать с регионом вашего проекта**, иначе события не дойдут. |
+
+> **PostHog/GDPR:** на публичном сайте capture включается ТОЛЬКО после согласия в
+> баннере куки (по умолчанию opt-out). В записях сессий маскируются все инпуты
+> (PII контактной формы). На admin autocapture и запись сессий выключены (на
+> экранах видны данные лидов) — логируются лишь явные события.
 
 > SPA без роутера — fallback на `index.html` не обязателен. Если позже появится
 > клиентский роутинг, добавить rewrite всех путей на `/index.html`

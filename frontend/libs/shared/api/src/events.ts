@@ -14,6 +14,7 @@
  *    sessionStorage (живёт в пределах вкладки/сессии, без долгого трекинга — privacy.md).
  */
 import { apiRequest } from './client';
+import { captureEvent } from './posthog';
 
 /** Путь приёма событий на backend. */
 const EVENTS_PATH = '/api/events';
@@ -90,6 +91,9 @@ export async function trackEvent(event: FunnelEvent, opts: TrackOptions = {}): P
   if (sessionId) body.session_id = sessionId;
   if (opts.lang) body.lang = opts.lang;
   if (opts.meta) body.meta = opts.meta;
+
+  // Фан-аут в PostHog: тот же funnel-ивент с контекстом (no-op без ключа/согласия).
+  captureEvent(event, { lang: opts.lang, ...(opts.meta ?? {}) });
 
   try {
     await apiRequest<void>(EVENTS_PATH, { method: 'POST', body });

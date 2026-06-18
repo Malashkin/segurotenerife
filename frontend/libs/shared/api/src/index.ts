@@ -24,6 +24,13 @@ export { createLead, listLeads } from './leads';
 
 export { trackEvent, getSessionId } from './events';
 
+export {
+  initAnalytics,
+  setAnalyticsConsent,
+  captureEvent,
+  type InitAnalyticsOptions,
+} from './posthog';
+
 export { askQuestion } from './chat';
 
 export { createLeadSchema, validateLead, MESSENGERS } from './schema';
