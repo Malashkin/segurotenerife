@@ -25,8 +25,9 @@ pub struct Config {
     /// Ключ Claude API (ANTHROPIC_API_KEY). Опционален: без него чат-консультант
     /// выключен (POST /api/chat вернёт 503), остальной сервис работает как обычно.
     pub anthropic_api_key: Option<String>,
-    /// Модель Claude для ответов бота (по умолчанию claude-opus-4-8). Для большого
-    /// трафика можно переключить на claude-haiku-4-5 / claude-sonnet-4-6 ради цены.
+    /// Модель Claude для ответов бота. По умолчанию claude-haiku-4-5 (дёшево,
+    /// для grounded-RAG достаточно). Для более «умных» ответов на сложных
+    /// вопросах можно переключить на claude-sonnet-4-6 / claude-opus-4-8.
     pub anthropic_model: String,
     /// Путь к бренд-нейтральному корпусу знаний RAG-агента (services.json).
     pub knowledge_path: String,
@@ -68,7 +69,7 @@ impl Config {
                 .ok()
                 .filter(|s| !s.is_empty()),
             anthropic_model: std::env::var("ANTHROPIC_MODEL")
-                .unwrap_or_else(|_| "claude-opus-4-8".into()),
+                .unwrap_or_else(|_| "claude-haiku-4-5".into()),
             knowledge_path: std::env::var("KNOWLEDGE_PATH")
                 .unwrap_or_else(|_| "../knowledge-base/asisa/services.json".into()),
         })
