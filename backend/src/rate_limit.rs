@@ -51,8 +51,12 @@ impl RateLimiter {
 
     /// Возвращает true, если запрос разрешён, и инкрементит счётчик IP.
     pub fn allow(&self, ip: IpAddr) -> bool {
+        self.allow_at(ip, Instant::now())
+    }
+
+    /// Ядро лимита с инъектируемым «сейчас» (детерминированные тесты окна/эвикции).
+    fn allow_at(&self, ip: IpAddr, now: Instant) -> bool {
         let mut b = self.buckets.lock().unwrap();
-        let now = Instant::now();
 
         // Эвикция: не чаще раза в окно вычищаем протухшие IP, чтобы мапа не росла
         // бесконечно (иначе медленная утечка памяти / memory-DoS).
@@ -72,6 +76,12 @@ impl RateLimiter {
         }
         entry.0 += 1;
         true
+    }
+
+    /// Число отслеживаемых IP (для тестов эвикции).
+    #[cfg(test)]
+    fn tracked_ips(&self) -> usize {
+        self.buckets.lock().unwrap().map.len()
     }
 }
 
@@ -144,9 +154,48 @@ pub async fn chat_rate_limit_mw(
 mod tests {
     use super::*;
     use std::net::Ipv4Addr;
+    use std::time::{Duration, Instant};
 
     fn ip(n: u8) -> IpAddr {
         IpAddr::V4(Ipv4Addr::new(10, 0, 0, n))
+    }
+
+    #[test]
+    fn window_resets_after_expiry() {
+        let rl = RateLimiter::new(2); // окно 60с
+        let t0 = Instant::now();
+        assert!(rl.allow_at(ip(1), t0));
+        assert!(rl.allow_at(ip(1), t0));
+        assert!(!rl.allow_at(ip(1), t0)); // лимит исчерпан в окне
+        // После истечения окна счётчик сбрасывается — снова можно.
+        let t1 = t0 + Duration::from_secs(61);
+        assert!(rl.allow_at(ip(1), t1));
+        assert!(rl.allow_at(ip(1), t1));
+        assert!(!rl.allow_at(ip(1), t1)); // и снова лимит в новом окне
+    }
+
+    #[test]
+    fn window_boundary_is_exclusive() {
+        // Граница: РОВНО окно (60с) ещё НЕ сбрасывает счётчик (условие `> window`,
+        // не `>=`). На 60с лимит держится, на 60.001с — сброс.
+        let rl = RateLimiter::new(1);
+        let t0 = Instant::now();
+        assert!(rl.allow_at(ip(1), t0));
+        assert!(!rl.allow_at(ip(1), t0 + Duration::from_secs(60))); // ровно окно → ещё лимит
+        assert!(rl.allow_at(ip(1), t0 + Duration::from_millis(60_001))); // чуть за окном → сброс
+    }
+
+    #[test]
+    fn evicts_stale_ips_after_window() {
+        let rl = RateLimiter::new(5);
+        let t0 = Instant::now();
+        rl.allow_at(ip(1), t0);
+        rl.allow_at(ip(2), t0);
+        assert_eq!(rl.tracked_ips(), 2);
+        // Спустя окно новый запрос триггерит свип — протухшие IP уходят из мапы.
+        let t1 = t0 + Duration::from_secs(61);
+        rl.allow_at(ip(3), t1);
+        assert_eq!(rl.tracked_ips(), 1); // остался только активный ip(3)
     }
 
     #[test]
@@ -174,6 +223,12 @@ mod tests {
         assert_eq!(client_ip(&h, socket, true).to_string(), "203.0.113.7");
         // Без доверия к прокси — игнорируем заголовок, берём сокет.
         assert_eq!(client_ip(&h, socket, false).to_string(), "10.0.0.1");
+    }
+
+    #[test]
+    fn too_many_returns_429() {
+        // Ответ лимита — именно 429 (а не пустой 200 по умолчанию).
+        assert_eq!(too_many().status(), StatusCode::TOO_MANY_REQUESTS);
     }
 
     #[test]

@@ -319,4 +319,67 @@ mod tests {
         assert!(idx.contains("dental"));
         assert!(idx.contains("viaje"));
     }
+
+    #[test]
+    fn intent_outranks_lexical_match() {
+        // Спецификация: интент чата авторитетнее лексики. Запрос лексически
+        // совпадает с viaje, но интент=dental → dental должен быть первым.
+        let kb = kb();
+        let res = kb.retrieve("хочу страховку на viaje путешествие", Some("dental"), 1);
+        assert_eq!(res[0].id, "dental");
+    }
+
+    #[test]
+    fn intent_only_query_returns_intent_docs() {
+        // Пустой по словам запрос + интент → возвращаем доки этого интента.
+        let kb = kb();
+        let res = kb.retrieve("?", Some("travel"), 2);
+        assert_eq!(res[0].id, "viaje");
+    }
+
+    #[test]
+    fn retrieve_respects_top_k() {
+        // Несколько совпадений, но k=1 → ровно один док.
+        let kb = kb();
+        let res = kb.retrieve("viaje dental", None, 1);
+        assert_eq!(res.len(), 1);
+    }
+
+    #[test]
+    fn render_includes_grounding_facts() {
+        // В промпт должны попадать сами факты покрытия (заземление), а не только id.
+        let kb = kb();
+        let docs = kb.retrieve("стоматология", Some("dental"), 1);
+        let rendered = KnowledgeBase::render(&docs);
+        assert!(rendered.contains("Cubre"));
+        assert!(rendered.contains("Limpiezas"));
+    }
+
+    #[test]
+    fn fallback_returns_priority_order_and_dedup() {
+        // Запрос без совпадений → детерминированная подборка: приоритетные доки
+        // первыми, без дублей, ровно k. Пинит логику fallback и ветку «нет
+        // совпадений» (иначе вернулась бы пустота).
+        let kb = kb();
+        let res = kb.retrieve("zzz qqq xxx", None, 3);
+        let ids: Vec<&str> = res.iter().map(|d| d.id.as_str()).collect();
+        assert_eq!(ids, vec!["salud-residencia", "viaje", "dental"]);
+    }
+
+    #[test]
+    fn len_and_empty_report_corpus() {
+        let kb = kb();
+        assert_eq!(kb.len(), 3);
+        assert!(!kb.is_empty());
+        assert!(KnowledgeBase::from_docs(vec![]).is_empty());
+    }
+
+    #[test]
+    fn strip_brand_case_insensitive_and_multiple() {
+        let (out, leaked) = strip_brand("ASISA, потом Asisa и ещё asisa, и Ocaso тоже.");
+        assert!(leaked);
+        let low = out.to_lowercase();
+        assert!(!low.contains("asisa"));
+        assert!(!low.contains("ocaso"));
+    }
 }
