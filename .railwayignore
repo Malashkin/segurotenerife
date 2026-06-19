@@ -1,0 +1,6 @@
+# Railway деплоит только backend (Docker-контекст = корень, но образ берёт лишь
+# backend/ + knowledge-base). Остальное в аплоад не нужно.
+frontend/
+docs/
+.git/
+TEST_RESULTS.md
