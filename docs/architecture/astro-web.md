@@ -1,3 +1,9 @@
+---
+audience: [frontend, devops]
+owner: seguro-tenerife
+updated: 2026-06-19
+---
+
 # Публичный сайт переехал на Astro (SSG + React-острова)
 
 **Статус:** реализовано и переключено. Публичный web — `frontend/apps/web-astro`

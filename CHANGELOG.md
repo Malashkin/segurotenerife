@@ -4,6 +4,33 @@
 
 ## [Unreleased]
 
+### Added — Наблюдаемость и тесты
+
+**Langfuse — трассировка диалогов агента.** Каждый ответ `/api/chat` пишет в
+Langfuse `trace` (вопрос → ответ, метаданные intent/lang/поднятые сервис-доки/
+флаг бренд-гейта, `sessionId` для группировки) + вложенный `generation` (модель,
+токены, латентность). Прямой HTTP на ingestion-API (Basic-auth; у Langfuse нет
+Rust-SDK), **fire-and-forget** через `tokio::spawn` — на UX чата не влияет. Без
+ключей (`LANGFUSE_PUBLIC_KEY`/`SECRET_KEY`/`BASE_URL`) — no-op. Фронт шлёт
+`session_id` (consent-gated) для группировки. Детали: `docs/monitoring/`.
+
+**Тестовая инфраструктура.** Frontend: **vitest** (`pnpm test`) для чистых
+хелперов (posthog-гейт/GDPR, i18n `getT`). Backend: укреплены unit-тесты RAG-
+ретривала и rate-limit + интеграционные тесты middleware (router/`tower::oneshot`)
+и Langfuse `log_chat` (mock-сервер). Quality-гейт — **mutation-тесты**
+(`cargo-mutants`) на изменённом коде; сводка в `TEST_RESULTS.md`. Хелпер
+`Config::test()` для тестов backend.
+
+### Changed
+- Модель чата по умолчанию `claude-opus-4-8` → **`claude-haiku-4-5`**.
+- `/api/chat` принимает `session_id`; упрощён избыточный `&& != 207` в Langfuse-
+  отправке (207 уже входит в `is_success()`).
+
+### Security
+- `/api/chat`: строгий per-IP лимит (`RATE_LIMIT_CHAT_PER_MIN`, дефолт 8/мин) +
+  proxy-aware IP (`TRUST_PROXY_HEADERS`) + эвикция протухших IP; анти-инъекционное
+  правило в системном промпте.
+
 ### Added — Волна D: Astro, RAG-агент, продуктовая аналитика, харднинг
 
 **Публичный сайт переехал на Astro (SSG + React-острова).** Новое приложение
