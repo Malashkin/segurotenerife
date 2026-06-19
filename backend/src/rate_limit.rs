@@ -166,23 +166,9 @@ mod tests {
     /// Минимальный AppState для интеграции middleware (пул ленивый — БД не трогаем).
     fn test_state(general: u32, chat: u32) -> AppState {
         let cfg = crate::config::Config {
-            database_url: "x".into(),
-            port: 0,
-            jwt_secret: "x".into(),
-            manager_password_hash: "x".into(),
-            access_ttl_min: 30,
-            refresh_ttl_days: 7,
-            cookie_secure: false,
-            allowed_origins_raw: "*".into(),
             rate_limit_per_min: general,
             rate_limit_chat_per_min: chat,
-            trust_proxy_headers: false,
-            anthropic_api_key: None,
-            anthropic_model: "x".into(),
-            knowledge_path: "x".into(),
-            langfuse_public_key: None,
-            langfuse_secret_key: None,
-            langfuse_base_url: "https://cloud.langfuse.com".into(),
+            ..crate::config::Config::test()
         };
         AppState {
             pool: sqlx::PgPool::connect_lazy("postgres://u:p@127.0.0.1/db").unwrap(),

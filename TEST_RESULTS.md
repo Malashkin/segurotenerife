@@ -9,11 +9,13 @@
 
 | Слой | Кол-во | Команда |
 |---|---|---|
-| Backend unit | **22 passed** | `cargo test` |
-| Backend integration (middleware через router/oneshot) | **2 passed** | `cargo test` |
+| Backend unit | **28 passed** (knowledge 14 · rate_limit 8 · langfuse 6) | `cargo test` |
+| Backend integration (router/oneshot + mock-сервер) | **3 passed** (rate-limit ×2 · langfuse log_chat) | `cargo test` |
 | Frontend unit (vitest) | **8 passed** | `pnpm test` |
 | E2E (web) | 15 passed | `pnpm e2e` |
 | Lint | 0 warnings | `cargo clippy` |
+
+Всего backend: **31 cargo-теста.**
 
 ### knowledge.rs (ретривал + бренд-гейт) — 14 тестов
 Интент важнее лексики; кросс-язычный матч (ru/uk/en→es); интент-only запрос;
@@ -29,6 +31,16 @@ no-op на чистом тексте; `len`/`is_empty`.
 
 > Рефактор для тестируемости: `RateLimiter::allow` → тонкая обёртка над
 > `allow_at(ip, now)` с инъектируемыми часами (детерминизм окна/эвикции без `sleep`).
+
+### langfuse.rs (трассировка диалогов агента) — 7 тестов
+`build_batch` (5): trace+generation с вопросом/ответом; generation вложен в trace
+и несёт model+usage(токены); sessionId группирует диалог / пустой — опускается;
+metadata (intent/lang/brand_leaked). `enabled` (1): требует ОБА ключа. Интеграция
+(1): `log_chat` реально POST'ит batch на `/api/public/ingestion` с Basic-auth и
+вопросом в теле (mock-сервер на axum, эфемерный порт).
+
+> Хелпер `Config::test()` (#[cfg(test)]) + struct-update `..Config::test()` —
+> убрал дублирование 17-полевых литералов в тестах rate_limit/langfuse.
 
 ### Frontend (vitest) — 8 тестов
 - `@shared/api/posthog.ts` (4): no-op без ключа; **GDPR — init с
@@ -59,6 +71,15 @@ overall ≈ 92% killed (viable); прогресс caught: 44 → 51 → 54 → 5
   best-effort GC, момент срабатывания не влияет на allow/deny.
 - ✅ `rate_limit.rs:129/145 middleware → Default` — **УБИТЫ** интеграционными
   тестами `chat/general_middleware_*` (router + `tower::oneshot`, 429 сверх лимита).
+
+**langfuse.rs** (после интеграционного теста: 6 caught · 4 missed; было 2/10):
+- ✅ `enabled` (×3) и `log_chat → ()` — **УБИТЫ** (тесты `enabled_requires_both_keys`
+  + `log_chat_posts_batch_with_auth` через mock-сервер).
+- `log_chat:108/111` (`!is_success()` guard ×3 + `Err`-arm) — **обоснованы**: эти
+  ветки лишь решают, писать ли `tracing::debug!`-строку; на поведение
+  (fire-and-forget, всегда `()`) не влияют. Убирать их = ловить лог-вывод ради
+  нулевого функционального эффекта. Заодно упрощён избыточный `&& != 207` (207 уже
+  входит в `is_success()`).
 
 ## Coverage
 Инструмент покрытия не устанавливался — как **диагностику** использован

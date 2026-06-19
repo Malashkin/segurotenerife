@@ -102,8 +102,10 @@ pub async fn log_chat(http: &reqwest::Client, cfg: &Config, t: ChatTrace) {
         cfg.langfuse_base_url.trim_end_matches('/')
     );
     let payload = build_batch(&t);
+    // 2xx (включая 207 multi-status Langfuse) — успех; иначе/ошибка — только
+    // debug-лог, на поведение не влияет (fire-and-forget).
     match http.post(&url).basic_auth(pk, Some(sk)).json(&payload).send().await {
-        Ok(resp) if !resp.status().is_success() && resp.status().as_u16() != 207 => {
+        Ok(resp) if !resp.status().is_success() => {
             tracing::debug!(status = %resp.status(), "langfuse ingest non-success");
         }
         Err(e) => tracing::debug!(error = %e, "langfuse ingest failed"),
@@ -177,5 +179,65 @@ mod tests {
         assert_eq!(md["intent"], "dental");
         assert_eq!(md["lang"], "ru");
         assert_eq!(md["brand_leaked"], false);
+    }
+
+    #[test]
+    fn enabled_requires_both_keys() {
+        let mut c = Config::test();
+        assert!(!enabled(&c)); // нет ключей
+        c.langfuse_public_key = Some("pk".into());
+        assert!(!enabled(&c)); // только public
+        c.langfuse_public_key = None;
+        c.langfuse_secret_key = Some("sk".into());
+        assert!(!enabled(&c)); // только secret
+        c.langfuse_public_key = Some("pk".into());
+        assert!(enabled(&c)); // оба ключа
+    }
+
+    // Интеграция: log_chat реально POST'ит batch на /api/public/ingestion с
+    // Basic-auth и вопросом в теле. Поднимаем mock-сервер на эфемерном порту.
+    #[tokio::test]
+    async fn log_chat_posts_batch_with_auth() {
+        use axum::{extract::State, http::HeaderMap, http::StatusCode, routing::post, Router};
+        use std::sync::{Arc, Mutex};
+        use tokio::sync::oneshot;
+
+        type Slot = Arc<Mutex<Option<oneshot::Sender<(String, String)>>>>;
+        async fn capture(State(tx): State<Slot>, headers: HeaderMap, body: String) -> StatusCode {
+            let auth = headers
+                .get("authorization")
+                .and_then(|v| v.to_str().ok())
+                .unwrap_or("")
+                .to_string();
+            if let Some(tx) = tx.lock().unwrap().take() {
+                let _ = tx.send((auth, body));
+            }
+            StatusCode::MULTI_STATUS // 207, как у реального Langfuse
+        }
+
+        let (tx, rx) = oneshot::channel::<(String, String)>();
+        let slot: Slot = Arc::new(Mutex::new(Some(tx)));
+        let app = Router::new()
+            .route("/api/public/ingestion", post(capture))
+            .with_state(slot);
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+
+        let cfg = Config {
+            langfuse_public_key: Some("pk-x".into()),
+            langfuse_secret_key: Some("sk-x".into()),
+            langfuse_base_url: format!("http://{addr}"),
+            ..Config::test()
+        };
+        log_chat(&reqwest::Client::new(), &cfg, sample()).await;
+
+        let (auth, body) = tokio::time::timeout(std::time::Duration::from_secs(3), rx)
+            .await
+            .expect("сервер не получил запрос (log_chat не отправил)")
+            .unwrap();
+        assert!(auth.starts_with("Basic "), "должен быть Basic-auth, got: {auth}");
+        assert!(body.contains("Что покрывает стоматология?")); // вопрос ушёл в трейс
+        assert!(body.contains("trace-create"));
     }
 }

@@ -119,4 +119,29 @@ impl Config {
             .collect();
         AllowOrigin::list(list)
     }
+
+    /// Минимально валидная конфигурация для тестов (дальше точечно правится через
+    /// struct-update `..Config::test()`). Все секреты — заглушки.
+    #[cfg(test)]
+    pub fn test() -> Self {
+        Self {
+            database_url: "postgres://u:p@127.0.0.1/db".into(),
+            port: 0,
+            jwt_secret: "x".into(),
+            manager_password_hash: "x".into(),
+            access_ttl_min: 30,
+            refresh_ttl_days: 7,
+            cookie_secure: false,
+            allowed_origins_raw: "*".into(),
+            rate_limit_per_min: 60,
+            rate_limit_chat_per_min: 8,
+            trust_proxy_headers: false,
+            anthropic_api_key: None,
+            anthropic_model: "claude-haiku-4-5".into(),
+            knowledge_path: "x".into(),
+            langfuse_public_key: None,
+            langfuse_secret_key: None,
+            langfuse_base_url: "https://cloud.langfuse.com".into(),
+        }
+    }
 }
