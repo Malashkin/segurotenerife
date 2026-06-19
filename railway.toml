@@ -1,0 +1,16 @@
+# Railway-конфиг backend-сервиса (деплой из КОРНЯ репо).
+#
+# Root Directory сервиса = корень репозитория (нужен knowledge-base вне backend/).
+# Сборка по backend/Dockerfile; healthcheck /health (проверяет и БД — миграции
+# применяются при старте). Postgres — managed-плагин Railway; секреты — в
+# переменных сервиса (см. docs/deploy.md).
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "backend/Dockerfile"
+
+[deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 100
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
