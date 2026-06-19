@@ -39,6 +39,13 @@ pub struct Config {
     pub anthropic_model: String,
     /// Путь к бренд-нейтральному корпусу знаний RAG-агента (services.json).
     pub knowledge_path: String,
+
+    /// Langfuse (observability диалогов агента). Оба ключа опциональны: без них
+    /// трассировка выключена (no-op), чат работает как обычно. Secret — секрет
+    /// (только backend-env). Base URL по умолчанию EU-облако.
+    pub langfuse_public_key: Option<String>,
+    pub langfuse_secret_key: Option<String>,
+    pub langfuse_base_url: String,
 }
 
 impl Config {
@@ -88,6 +95,14 @@ impl Config {
                 .unwrap_or_else(|_| "claude-haiku-4-5".into()),
             knowledge_path: std::env::var("KNOWLEDGE_PATH")
                 .unwrap_or_else(|_| "../knowledge-base/asisa/services.json".into()),
+            langfuse_public_key: std::env::var("LANGFUSE_PUBLIC_KEY")
+                .ok()
+                .filter(|s| !s.is_empty()),
+            langfuse_secret_key: std::env::var("LANGFUSE_SECRET_KEY")
+                .ok()
+                .filter(|s| !s.is_empty()),
+            langfuse_base_url: std::env::var("LANGFUSE_BASE_URL")
+                .unwrap_or_else(|_| "https://cloud.langfuse.com".into()),
         })
     }
 

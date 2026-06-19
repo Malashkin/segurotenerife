@@ -180,6 +180,9 @@ mod tests {
             anthropic_api_key: None,
             anthropic_model: "x".into(),
             knowledge_path: "x".into(),
+            langfuse_public_key: None,
+            langfuse_secret_key: None,
+            langfuse_base_url: "https://cloud.langfuse.com".into(),
         };
         AppState {
             pool: sqlx::PgPool::connect_lazy("postgres://u:p@127.0.0.1/db").unwrap(),

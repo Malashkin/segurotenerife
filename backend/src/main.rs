@@ -11,6 +11,7 @@ mod config;
 mod db;
 mod error;
 mod knowledge;
+mod langfuse;
 mod rate_limit;
 mod routes;
 

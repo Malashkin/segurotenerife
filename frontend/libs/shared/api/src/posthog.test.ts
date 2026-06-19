@@ -38,7 +38,7 @@ describe('analytics (PostHog)', () => {
     const { initAnalytics } = await import('./posthog');
     initAnalytics();
     expect(ph.init).toHaveBeenCalledTimes(1);
-    const cfg = ph.init.mock.calls[0][1] as Record<string, unknown>;
+    const cfg = ph.init.mock.calls[0]![1] as Record<string, unknown>;
     expect(cfg.opt_out_capturing_by_default).toBe(true);
     expect((cfg.session_recording as Record<string, unknown>).maskAllInputs).toBe(true);
   });
@@ -59,7 +59,7 @@ describe('analytics (PostHog)', () => {
     vi.stubEnv('PUBLIC_POSTHOG_KEY', 'phc_test');
     const { initAnalytics } = await import('./posthog');
     initAnalytics({ autocapture: false, sessionRecording: false });
-    const cfg = ph.init.mock.calls[0][1] as Record<string, unknown>;
+    const cfg = ph.init.mock.calls[0]![1] as Record<string, unknown>;
     expect(cfg.autocapture).toBe(false);
     expect(cfg.disable_session_recording).toBe(true);
   });

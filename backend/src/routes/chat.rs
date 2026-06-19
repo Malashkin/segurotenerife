@@ -59,6 +59,9 @@ pub struct ChatIn {
     /// Интент текущего шага чата (med|dental|pet|...). Уточняет ретривал.
     #[validate(length(max = 32))]
     pub intent: Option<String>,
+    /// Идентификатор сессии посетителя — для группировки диалога в Langfuse.
+    #[validate(length(max = 64))]
+    pub session_id: Option<String>,
 }
 
 /// `POST /api/chat` — развёрнутый ответ по базе знаний (бренд-нейтрально).
@@ -85,6 +88,7 @@ pub async fn ask(
 
     // 1. Ретривал: интент (если есть) + текст вопроса → релевантные сервис-доки.
     let docs = kb.retrieve(question, body.intent.as_deref(), TOP_K);
+    let retrieved_ids: Vec<String> = docs.iter().map(|d| d.id.clone()).collect();
     let relevant = crate::knowledge::KnowledgeBase::render(&docs);
 
     // 2. Кэшируемый системный блок: правила + индекс всех сервисов (стабилен →
@@ -108,6 +112,7 @@ pub async fn ask(
         "messages": [{ "role": "user", "content": user_text }]
     });
 
+    let start = chrono::Utc::now();
     let resp = state
         .http
         .post(ANTHROPIC_URL)
@@ -131,6 +136,7 @@ pub async fn ask(
         .json()
         .await
         .map_err(|e| AppError::Internal(format!("claude response parse: {e}")))?;
+    let end = chrono::Utc::now();
 
     // Безопасные отказы Claude (stop_reason=refusal) — мягкий фолбэк.
     if data.get("stop_reason").and_then(|v| v.as_str()) == Some("refusal") {
@@ -171,5 +177,29 @@ pub async fn ask(
         retrieved = docs.len(),
         "chat question answered"
     );
+
+    // Трассировка диалога в Langfuse (вопрос/ответ/модель/токены), не блокируя
+    // ответ пользователю: fire-and-forget в фоне. Без ключей — enabled()=false.
+    if crate::langfuse::enabled(&state.config) {
+        let http = state.http.clone();
+        let cfg = state.config.clone();
+        let usage = data.get("usage");
+        let trace = crate::langfuse::ChatTrace {
+            session_id: body.session_id.clone(),
+            intent: body.intent.clone(),
+            lang: lang.to_string(),
+            question: question.to_string(),
+            answer: answer.clone(),
+            model: state.config.anthropic_model.clone(),
+            input_tokens: usage.and_then(|u| u.get("input_tokens")).and_then(|v| v.as_u64()),
+            output_tokens: usage.and_then(|u| u.get("output_tokens")).and_then(|v| v.as_u64()),
+            retrieved_ids,
+            brand_leaked: leaked,
+            start,
+            end,
+        };
+        tokio::spawn(async move { crate::langfuse::log_chat(&http, &cfg, trace).await });
+    }
+
     Ok(Json(json!({ "answer": answer })))
 }

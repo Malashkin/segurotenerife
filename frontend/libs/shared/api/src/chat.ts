@@ -9,6 +9,7 @@
  * функция поверх apiRequest (api.md).
  */
 import { apiRequest, ApiError } from './client';
+import { getSessionId } from './events';
 
 /** Ответ ассистента. */
 interface ChatAnswer {
@@ -30,10 +31,12 @@ export async function askQuestion(
   intent?: string,
 ): Promise<string | null> {
   try {
-    const data = await apiRequest<ChatAnswer>('/api/chat', {
-      method: 'POST',
-      body: intent ? { question, lang, intent } : { question, lang },
-    });
+    const body: Record<string, unknown> = { question, lang };
+    if (intent) body.intent = intent;
+    // session_id (если есть согласие на аналитику) группирует диалог в Langfuse.
+    const sid = getSessionId();
+    if (sid) body.session_id = sid;
+    const data = await apiRequest<ChatAnswer>('/api/chat', { method: 'POST', body });
     return data.answer;
   } catch (e) {
     // 503 — фича выключена на сервере (нет ключа/каталога): тихий фолбэк.
