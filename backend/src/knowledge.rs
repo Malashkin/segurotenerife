@@ -200,27 +200,57 @@ fn tokenize(query: &str) -> BTreeSet<String> {
         .collect()
 }
 
-/// Пост-гейт бренда: вырезает названия страховщика из ответа модели (политика
-/// нейтрального бренда). Возвращает (очищенный_текст, было_ли_совпадение).
-/// Корпус бренд-нейтрален, так что срабатывать должно крайне редко — это
-/// страховка от «знаний» самой модели.
+/// Известные бренды страховщиков (нижний регистр, ASCII), которые НЕЛЬЗЯ называть
+/// (политика «никакой бренд»). Список — страховка от «знаний» самой модели;
+/// первичная защита — бренд-нейтральный корпус + правило в системном промпте
+/// (запрещает называть ЛЮБУЮ компанию). Здесь — самые вероятные на рынке Испании.
+const INSURER_BRANDS: [&str; 12] = [
+    "asisa", "ocaso", "sanitas", "adeslas", "mapfre", "dkv", "cigna", "caser",
+    "aegon", "fiatc", "generali", "allianz",
+];
+
+/// Пост-гейт бренда: вырезает названия страховщиков из ответа модели.
+/// Матч — по ГРАНИЦАМ слова (case-insensitive), чтобы не задеть обычные слова
+/// (напр. «caser» внутри исп. «casero» не трогаем). Возвращает
+/// (очищенный_текст, было_ли_совпадение).
 pub fn strip_brand(text: &str) -> (String, bool) {
-    const BRANDS: [&str; 2] = ["asisa", "ocaso"];
+    let orig: Vec<char> = text.chars().collect();
+    // Лоуэркейс-проекция 1:1 по символам (бренды ASCII → одного char достаточно).
+    let lc: Vec<char> = orig
+        .iter()
+        .map(|c| c.to_lowercase().next().unwrap_or(*c))
+        .collect();
+    let n = orig.len();
+    let mut keep = vec![true; n];
     let mut leaked = false;
-    let mut out = text.to_string();
-    for brand in BRANDS {
-        loop {
-            let lower = out.to_lowercase();
-            let Some(pos) = lower.find(brand) else { break };
-            leaked = true;
-            out.replace_range(pos..pos + brand.len(), "");
+
+    for brand in INSURER_BRANDS {
+        let b: Vec<char> = brand.chars().collect();
+        let bl = b.len();
+        let mut i = 0;
+        while i + bl <= n {
+            let matches = lc[i..i + bl] == b[..];
+            let left_ok = i == 0 || !orig[i - 1].is_alphanumeric();
+            let right_ok = i + bl == n || !orig[i + bl].is_alphanumeric();
+            if matches && left_ok && right_ok {
+                leaked = true;
+                for k in keep.iter_mut().take(i + bl).skip(i) {
+                    *k = false;
+                }
+                i += bl;
+            } else {
+                i += 1;
+            }
         }
     }
-    if leaked {
-        // Подчищаем двойные пробелы/пробелы перед пунктуацией после вырезания.
-        let collapsed = out.split_whitespace().collect::<Vec<_>>().join(" ");
-        out = collapsed.replace(" ,", ",").replace(" .", ".").replace(" :", ":");
+
+    if !leaked {
+        return (text.to_string(), false);
     }
+    let out: String = orig.iter().zip(keep).filter(|(_, k)| *k).map(|(c, _)| *c).collect();
+    // Подчищаем двойные пробелы/пробелы перед пунктуацией после вырезания.
+    let out = out.split_whitespace().collect::<Vec<_>>().join(" ");
+    let out = out.replace(" ,", ",").replace(" .", ".").replace(" :", ":");
     (out, leaked)
 }
 
@@ -381,5 +411,24 @@ mod tests {
         let low = out.to_lowercase();
         assert!(!low.contains("asisa"));
         assert!(!low.contains("ocaso"));
+    }
+
+    #[test]
+    fn strip_brand_covers_other_insurers() {
+        // Политика «никакой бренд»: не только ASISA, но и конкуренты.
+        for brand in ["Sanitas", "Mapfre", "DKV", "Adeslas", "Allianz"] {
+            let (out, leaked) = strip_brand(&format!("Рекомендую {brand} для вас."));
+            assert!(leaked, "{brand} должен быть вырезан");
+            assert!(!out.to_lowercase().contains(&brand.to_lowercase()));
+        }
+    }
+
+    #[test]
+    fn strip_brand_does_not_touch_word_fragments() {
+        // Границы слова: бренд внутри обычного слова НЕ трогаем.
+        // 'caser' внутри исп. 'casero', 'generali' внутри 'generalidades'.
+        let (out, leaked) = strip_brand("El casero firmó las generalidades del contrato.");
+        assert!(!leaked);
+        assert_eq!(out, "El casero firmó las generalidades del contrato.");
     }
 }

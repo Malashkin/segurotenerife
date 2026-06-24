@@ -1,0 +1,67 @@
+name: Deploy frontend to Cloudflare Pages
+
+# Автодеплой фронта на каждый push в main, затрагивающий frontend/.
+# Собирает web (Astro) и admin (Vite) с прод-env и заливает в Pages-проекты
+# seguro-web / seguro-admin. Кастомные домены (segurotenerife.com,
+# admin.segurotenerife.com) уже привязаны к проектам — деплой их обновляет.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-frontend.yml'
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-frontend
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      # Публичные значения (безопасно в коде): URL API + публичный PostHog-ключ.
+      PUBLIC_API_URL: https://api.segurotenerife.com
+      VITE_API_URL: https://api.segurotenerife.com
+      PUBLIC_POSTHOG_KEY: phc_arcGvtgDBgFjvJtr3p2aAaB0zlhT0sinuHEnwLasbBx
+      VITE_POSTHOG_KEY: phc_arcGvtgDBgFjvJtr3p2aAaB0zlhT0sinuHEnwLasbBx
+      PUBLIC_POSTHOG_HOST: https://eu.i.posthog.com
+      VITE_POSTHOG_HOST: https://eu.i.posthog.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install deps
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web + admin
+        working-directory: frontend
+        run: |
+          pnpm build:web
+          pnpm build:admin
+
+      - name: Deploy web → seguro-web
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy frontend/apps/web-astro/dist --project-name seguro-web --branch main
+
+      - name: Deploy admin → seguro-admin
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy frontend/apps/admin/dist --project-name seguro-admin --branch main
