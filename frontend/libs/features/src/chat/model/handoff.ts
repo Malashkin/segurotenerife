@@ -19,6 +19,8 @@ export interface OfficeContacts {
   whatsappNumber: string;
   telegramUsername: string;
   viberNumber: string;
+  /** Username Telegram-бота (для захвата ника клиента через ?start=<lead_id>). */
+  telegramBotUsername: string;
 }
 
 /**
@@ -31,28 +33,37 @@ export function getOfficeContacts(): OfficeContacts {
   const whatsappNumber = env?.VITE_WHATSAPP_NUMBER || '34600000000';
   const telegramUsername = (env?.VITE_TELEGRAM_USERNAME || 'your_office').replace(/^@/, '');
   const viberNumber = env?.VITE_VIBER_NUMBER || whatsappNumber;
-  return { whatsappNumber, telegramUsername, viberNumber };
+  const telegramBotUsername = (env?.VITE_TELEGRAM_BOT_USERNAME || '').replace(/^@/, '');
+  return { whatsappNumber, telegramUsername, viberNumber, telegramBotUsername };
 }
 
 /**
  * Строит deep-link на выбранный мессенджер с предзаполненным сообщением.
  *
  *  - WhatsApp: https://wa.me/<number>?text=<msg>
- *  - Telegram: https://t.me/<username>  (Telegram не принимает text для t.me/username)
+ *  - Telegram: https://t.me/<bot>?start=<lead_id>  — клиент уходит в БОТА: нажав
+ *    Start, он отдаёт нам свой @ник, а бот шлёт карточку лида менеджеру. Если бот
+ *    не сконфигурирован (нет VITE_TELEGRAM_BOT_USERNAME) — фолбэк на личку
+ *    менеджера t.me/<username> (текст Telegram не предзаполняет).
  *  - Viber:    viber://chat?number=%2B<number>&text=<msg>
  *
  * @param messenger - целевой мессенджер
  * @param contacts  - контакты офиса
- * @param message   - текст предзаполненного сообщения менеджеру
+ * @param message   - текст предзаполненного сообщения менеджеру (WhatsApp/Viber)
+ * @param leadId    - UUID лида (для Telegram ?start=<lead_id>)
  */
 export function buildHandoffLink(
   messenger: ChatMessenger,
   contacts: OfficeContacts,
   message: string,
+  leadId?: string,
 ): string {
   const text = encodeURIComponent(message);
   switch (messenger) {
     case 'Telegram':
+      if (contacts.telegramBotUsername && leadId) {
+        return `https://t.me/${contacts.telegramBotUsername}?start=${encodeURIComponent(leadId)}`;
+      }
       return `https://t.me/${contacts.telegramUsername}`;
     case 'Viber':
       // Viber требует номер в международном формате с ведущим «+» (кодируется как %2B).

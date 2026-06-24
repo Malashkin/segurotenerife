@@ -42,6 +42,16 @@ type Msg =
   | { id: number; kind: 'text'; author: 'user' | 'bot'; text: string }
   | { id: number; kind: 'handoff' };
 
+/** UUID лида: crypto.randomUUID, с фолбэком для старых сред. */
+function newLeadId(): string {
+  const c = globalThis.crypto;
+  if (c && typeof c.randomUUID === 'function') return c.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (ch) => {
+    const r = (Math.random() * 16) | 0;
+    return (ch === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
 /**
  * Чистит остаточную Markdown-разметку из ответа агента (пузырь рендерит обычный
  * текст, поэтому «звёздочки»/решётки показались бы буквально). Жирный/курсив →
@@ -311,6 +321,10 @@ function HandoffCard({
   const contacts = getOfficeContacts();
   const [name, setName] = useState('');
   const [nameError, setNameError] = useState(false);
+  // UUID лида — генерим на клиенте, чтобы Telegram-ссылку t.me/<bot>?start=<id>
+  // построить синхронно (без ожидания сервера → без блокировки попапа), и тем же
+  // id сохранить лид на бэкенде.
+  const [leadId] = useState(newLeadId);
   const inputRef = useRef<HTMLInputElement>(null);
   const ordered: ChatMessenger[] = [
     DEFAULT_MESSENGER,
@@ -336,9 +350,11 @@ function HandoffCard({
     }
     void trackEvent('handoff_clicked', { lang, meta: { messenger: m } });
     // Сохраняем лид + форвардим менеджеру (для всех мессенджеров).
-    const payload: HandoffInput = { name: trimmedName, messenger: m, lang };
+    // topic — человекочитаемый вид страховки (как в сообщении клиента), чтобы
+    // менеджер в карточке видел «Медицинская для визы / ВНЖ», а не ключ «med».
+    const payload: HandoffInput = { name: trimmedName, messenger: m, lang, leadId };
     if (lastQuestion) payload.question = lastQuestion;
-    if (topic) payload.topic = topic;
+    if (typeLabel) payload.topic = typeLabel;
     void forwardHandoff(payload);
   };
 
@@ -370,7 +386,7 @@ function HandoffCard({
         {ordered.map((m, idx) => (
           <a
             key={m}
-            href={buildHandoffLink(m, contacts, message)}
+            href={buildHandoffLink(m, contacts, message, leadId)}
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => handleClick(m, e)}

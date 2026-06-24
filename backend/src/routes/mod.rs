@@ -6,6 +6,7 @@ pub mod events;
 pub mod handoff;
 pub mod health;
 pub mod leads;
+pub mod telegram;
 
 use axum::{
     middleware,
@@ -32,6 +33,8 @@ pub fn router(state: AppState) -> Router {
         )
         // Передача лида менеджеру в Telegram (бот).
         .route("/api/handoff", post(handoff::forward))
+        // Вебхук Telegram-бота: захват ника клиента + карточка менеджеру.
+        .route("/api/telegram/webhook", post(telegram::webhook))
         // Аутентификация менеджера (JWT).
         .route("/api/auth/login", post(auth::login))
         .route("/api/auth/refresh", post(auth::refresh))

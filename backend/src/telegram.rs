@@ -24,20 +24,55 @@ pub struct Lead<'a> {
     pub topic: Option<&'a str>,
     /// Выбранный клиентом мессенджер (где ждать клиента).
     pub messenger: Option<&'a str>,
+    /// Контакт клиента, если известен (@ник из Telegram-бота). Для WhatsApp/Viber
+    /// контакт не собираем — None.
+    pub contact: Option<&'a str>,
     pub lang: &'a str,
 }
 
-/// Собирает HTML-текст уведомления менеджеру (пустые поля → «—»).
+/// Собирает HTML-текст уведомления менеджеру (пустые поля → «—»). Строку
+/// «Контакт» добавляем только если он известен (Telegram-ник).
 fn lead_text(lead: &Lead<'_>) -> String {
     let dash = |s: Option<&str>| esc(s.map(str::trim).filter(|s| !s.is_empty()).unwrap_or("—"));
+    let contact_line = match lead.contact.map(str::trim).filter(|s| !s.is_empty()) {
+        Some(c) => format!("\n📱 Контакт: {}", esc(c)),
+        None => String::new(),
+    };
     format!(
-        "🆕 <b>Новый лид · Seguro Tenerife</b>\n\n👤 Имя: {}\n📨 Мессенджер: {}\n🛡 Страховка: {}\n🌐 Язык: {}\n💬 Вопрос: {}",
+        "🆕 <b>Новый лид · Seguro Tenerife</b>\n\n👤 Имя: {}\n📨 Мессенджер: {}{}\n🛡 Страховка: {}\n🌐 Язык: {}\n💬 Вопрос: {}",
         dash(lead.name),
         dash(lead.messenger),
+        contact_line,
         dash(lead.topic),
         esc(lead.lang),
         dash(lead.question),
     )
+}
+
+/// Низкоуровневая отправка сообщения в один chat_id. Возвращает true при успехе.
+pub async fn send_to_chat(
+    http: &reqwest::Client,
+    token: &str,
+    chat_id: &str,
+    text: &str,
+) -> bool {
+    let url = format!("https://api.telegram.org/bot{token}/sendMessage");
+    match http
+        .post(&url)
+        .json(&json!({ "chat_id": chat_id, "text": text, "parse_mode": "HTML" }))
+        .send()
+        .await
+    {
+        Ok(resp) if resp.status().is_success() => true,
+        Ok(resp) => {
+            tracing::warn!(status = %resp.status(), chat_id, "telegram sendMessage non-success");
+            false
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, chat_id, "telegram sendMessage failed");
+            false
+        }
+    }
 }
 
 /// Разбирает список chat_id из конфигурации (через запятую): получателями могут
@@ -60,18 +95,10 @@ pub async fn send_lead(http: &reqwest::Client, cfg: &Config, lead: &Lead<'_>) ->
     }
 
     let text = lead_text(lead);
-    let url = format!("https://api.telegram.org/bot{token}/sendMessage");
     let mut any = false;
     for chat_id in chats {
-        match http
-            .post(&url)
-            .json(&json!({ "chat_id": chat_id, "text": text, "parse_mode": "HTML" }))
-            .send()
-            .await
-        {
-            Ok(resp) if resp.status().is_success() => any = true,
-            Ok(resp) => tracing::warn!(status = %resp.status(), chat_id, "telegram sendMessage non-success"),
-            Err(e) => tracing::warn!(error = %e, chat_id, "telegram sendMessage failed"),
+        if send_to_chat(http, token, chat_id, &text).await {
+            any = true;
         }
     }
     any
@@ -99,11 +126,13 @@ mod tests {
             name: Some("Анна"),
             question: Some("Какой полис для ВНЖ?"),
             topic: Some("med"),
-            messenger: Some("WhatsApp"),
+            messenger: Some("Telegram"),
+            contact: Some("@anna"),
             lang: "ru",
         });
         assert!(text.contains("Имя: Анна"));
-        assert!(text.contains("Мессенджер: WhatsApp"));
+        assert!(text.contains("Мессенджер: Telegram"));
+        assert!(text.contains("Контакт: @anna"));
         assert!(text.contains("Страховка: med"));
         assert!(text.contains("Язык: ru"));
         assert!(text.contains("Вопрос: Какой полис для ВНЖ?"));
@@ -116,11 +145,14 @@ mod tests {
             question: None,
             topic: None,
             messenger: Some("<b>"),
+            contact: None,
             lang: "en",
         });
         assert!(text.contains("Имя: —"));
         assert!(text.contains("Вопрос: —"));
         assert!(text.contains("Страховка: —"));
         assert!(text.contains("Мессенджер: &lt;b&gt;"));
+        // Контакт неизвестен → строки «Контакт» нет вовсе.
+        assert!(!text.contains("Контакт"));
     }
 }
