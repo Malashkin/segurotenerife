@@ -1,19 +1,20 @@
 /**
- * ChatWidget — чат-консультант: ответить на вопросы и передать менеджеру.
+ * ChatWidget — чат-консультант: сначала отвечаем на вопросы, затем (по запросу
+ * или когда агент видит, что вопросов нет) мягко предлагаем менеджера.
  *
- * Флоу (по продукту):
- *  1. Приветствие «расскажите, какая нужна страховка».
- *  2. Свободный диалог: пользователь спрашивает → агент отвечает (бренд-нейтрально,
- *     без упоминания, что это ИИ).
- *  3. Когда агент понимает, что вопросов больше нет / человек хочет менеджера
- *     (флаг `handoff` из ответа) ИЛИ по кнопке «Связаться с менеджером» —
- *     короткая анимация «подбираем менеджера» (~3с) → контакты в мессенджерах.
+ * Принципы UX:
+ *  - Чат всегда = шапка + лента сообщений + строка ввода. Ввод доступен ВСЕГДА —
+ *    хендофф не «перехватывает» экран и не блокирует продолжение диалога.
+ *  - Сначала ценность: на первом экране НЕТ кнопки «к менеджеру» — только
+ *    приветствие, подсказки и ввод. Кнопка появляется ПОСЛЕ первого ответа.
+ *  - Хендофф — это инлайн-карточка в ленте (контакты мессенджеров) с короткой
+ *    анимацией «подбираем менеджера». После неё можно нажать мессенджер ИЛИ
+ *    продолжать задавать вопросы (подсказка об этом — под карточкой).
+ *  - Агент сам может предложить менеджера (флаг handoff) — тогда карточка
+ *    появляется автоматически, но диалог не закрывается.
  *
- * НЕТ: пошагового опросника, контактной формы, индикатора ИИ. Лид-капча идёт
- * через мессенджер (deep-link с предзаполненным сообщением менеджеру).
- *
- * Все строки — через @shared/i18n (словарь чата), смена языка перерисовывает
- * чат без перезагрузки.
+ * НЕТ: опросника, контактной формы, любого упоминания, что это ИИ/бот.
+ * Хендофф идёт через мессенджер (deep-link с предзаполненным сообщением).
  */
 import { useEffect, useRef, useState } from 'react';
 import { useUiStore, DEFAULT_MESSENGER, type ChatMessenger } from '@shared/store';
@@ -24,14 +25,15 @@ import { CHAT_INTENTS } from '../model/intents';
 import { buildHandoffLink, continueLabelKey, getOfficeContacts } from '../model/handoff';
 
 /** Длительность анимации «подбираем менеджера» перед показом контактов (мс). */
-const MATCHING_MS = 3000;
+const MATCHING_MS = 2200;
 /** Стартовые вопросы-подсказки на первом экране (ключи словаря `chat`). */
 const STARTER_KEYS = ['starter_visa', 'starter_price', 'starter_dental'] as const;
 /** Мессенджеры на хендоффе (Instagram не предлагаем). */
 const MESSENGERS: readonly ChatMessenger[] = ['WhatsApp', 'Telegram', 'Viber'];
 
-type Msg = { id: number; author: 'user' | 'bot'; text: string };
-type Phase = 'chat' | 'matching' | 'handoff';
+type Msg =
+  | { id: number; kind: 'text'; author: 'user' | 'bot'; text: string }
+  | { id: number; kind: 'handoff' };
 
 export function ChatWidget(): JSX.Element {
   const { ct, lang } = useChatI18n();
@@ -40,69 +42,70 @@ export function ChatWidget(): JSX.Element {
 
   const [messages, setMessages] = useState<Msg[]>([]);
   const [asking, setAsking] = useState(false);
-  const [phase, setPhase] = useState<Phase>('chat');
+  const [matching, setMatching] = useState(false);
   const idRef = useRef(0);
   const bodyRef = useRef<HTMLDivElement>(null);
   const matchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startedRef = useRef(false);
+  const intentKeyRef = useRef<string | null>(null);
   // Последний вопрос пользователя — добавим в предзаполненное сообщение менеджеру.
   const lastQuestionRef = useRef<string>('');
 
-  const push = (author: Msg['author'], text: string) =>
-    setMessages((prev) => [...prev, { id: idRef.current++, author, text }]);
+  const pushText = (author: 'user' | 'bot', text: string) =>
+    setMessages((prev) => [...prev, { id: idRef.current++, kind: 'text', author, text }]);
 
-  /** Запустить передачу менеджеру: анимация → экран контактов. */
-  function goHandoff(source: 'agent' | 'button'): void {
-    setPhase((p) => {
-      if (p !== 'chat') return p; // уже идёт/завершено
-      captureEvent('chat_handoff_started', { source, lang });
+  /** Показать карточку контактов менеджера (инлайн, с короткой анимацией). */
+  function offerHandoff(source: 'agent' | 'button'): void {
+    setMessages((prev) => {
+      // Не дублируем, если последняя реплика — уже карточка хендоффа.
+      if (prev.at(-1)?.kind === 'handoff') return prev;
+      captureEvent('chat_handoff_offered', { source, lang });
       void trackEvent('chat_completed', { lang, meta: { source } });
+      setMatching(true);
       if (matchTimer.current) clearTimeout(matchTimer.current);
-      matchTimer.current = setTimeout(() => setPhase('handoff'), MATCHING_MS);
-      return 'matching';
+      matchTimer.current = setTimeout(() => {
+        setMatching(false);
+        setMessages((p) => [...p, { id: idRef.current++, kind: 'handoff' }]);
+      }, MATCHING_MS);
+      return prev;
     });
   }
 
-  /** Вопрос агенту: реплика пользователя → ответ; при handoff — к менеджеру. */
+  /** Вопрос агенту: реплика пользователя → ответ; при handoff — карточка менеджера. */
   async function handleAsk(question: string): Promise<void> {
     const q = question.trim();
-    if (!q || asking || phase !== 'chat') return;
+    if (!q || asking || matching) return;
     lastQuestionRef.current = q;
-    push('user', q);
+    pushText('user', q);
     setAsking(true);
     void trackEvent('question_asked', { lang });
     try {
-      const reply = await askQuestion(q, lang, chatIntentKeyRef.current ?? undefined);
+      const reply = await askQuestion(q, lang, intentKeyRef.current ?? undefined);
       if (reply === null) {
-        // Ассистент недоступен (503) — сразу к менеджеру.
-        push('bot', ct('assist_off'));
+        pushText('bot', ct('assist_off'));
         setAsking(false);
-        goHandoff('agent');
+        offerHandoff('agent');
         return;
       }
-      push('bot', reply.answer);
+      pushText('bot', reply.answer);
       setAsking(false);
-      if (reply.handoff) goHandoff('agent');
+      if (reply.handoff) offerHandoff('agent');
     } catch {
-      push('bot', ct('assist_off'));
+      pushText('bot', ct('assist_off'));
       setAsking(false);
-      goHandoff('agent');
+      offerHandoff('agent');
     }
   }
 
-  // Ключ интента карточки (med|dental|pet…) — для RAG-ретривала. Фиксируем в ref,
-  // чтобы handleAsk видел его и при авто-вопросе на монтировании.
-  const chatIntentKeyRef = useRef<string | null>(null);
-
   // Старт: приветствие; если открыто из карточки «Виды страховок» — авто-вопрос
-  // по выбранному типу (агент сразу объяснит). Один раз на монтирование.
+  // по выбранному типу. Один раз на монтирование.
   useEffect(() => {
     if (startedRef.current) return;
     startedRef.current = true;
     void trackEvent('chat_started', { lang });
-    push('bot', ct('greeting'));
+    pushText('bot', ct('greeting'));
     if (chatIntent && CHAT_INTENTS[chatIntent]) {
-      chatIntentKeyRef.current = chatIntent;
+      intentKeyRef.current = chatIntent;
       void handleAsk(ct(CHAT_INTENTS[chatIntent].goalKey));
       clearChatIntent();
     }
@@ -116,19 +119,14 @@ export function ChatWidget(): JSX.Element {
   useEffect(() => {
     const el = bodyRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [messages.length, asking, phase]);
+  }, [messages.length, asking, matching]);
 
-  function restart(): void {
-    if (matchTimer.current) clearTimeout(matchTimer.current);
-    chatIntentKeyRef.current = null;
-    lastQuestionRef.current = '';
-    idRef.current = 0;
-    setMessages([{ id: idRef.current++, author: 'bot', text: ct('greeting') }]);
-    setAsking(false);
-    setPhase('chat');
-  }
-
-  const showStarters = phase === 'chat' && messages.length <= 1 && !asking;
+  const userMsgCount = messages.filter((m) => m.kind === 'text' && m.author === 'user').length;
+  const lastIsHandoff = messages.at(-1)?.kind === 'handoff';
+  const onFirstScreen = userMsgCount === 0 && !asking;
+  // Кнопку «к менеджеру» показываем только после первого ответа и не когда
+  // карточка уже на экране / идёт анимация.
+  const showToManager = userMsgCount > 0 && !asking && !matching && !lastIsHandoff;
 
   return (
     <div
@@ -154,21 +152,37 @@ export function ChatWidget(): JSX.Element {
         aria-live="polite"
         aria-atomic="false"
       >
-        {messages.map((m) => (
-          <div key={m.id} className={m.author === 'user' ? 'max-w-[84%] self-end' : 'max-w-[84%] self-start'}>
-            <div
-              className={
-                m.author === 'user'
-                  ? 'rounded-2xl rounded-br-sm bg-brand px-[15px] py-[11px] text-[0.96rem] leading-normal text-white'
-                  : 'whitespace-pre-line rounded-2xl rounded-bl-sm border border-slate-200 bg-white px-[15px] py-[11px] text-[0.96rem] leading-relaxed text-ink'
+        {messages.map((m) =>
+          m.kind === 'handoff' ? (
+            <HandoffCard
+              key={m.id}
+              ct={ct}
+              lang={lang}
+              message={
+                lastQuestionRef.current
+                  ? `${ct('lead_msg')}\n\n${lastQuestionRef.current}`
+                  : ct('lead_msg')
               }
+            />
+          ) : (
+            <div
+              key={m.id}
+              className={m.author === 'user' ? 'max-w-[84%] self-end' : 'max-w-[84%] self-start'}
             >
-              {m.text}
+              <div
+                className={
+                  m.author === 'user'
+                    ? 'rounded-2xl rounded-br-sm bg-brand px-[15px] py-[11px] text-[0.96rem] leading-normal text-white'
+                    : 'whitespace-pre-line rounded-2xl rounded-bl-sm border border-slate-200 bg-white px-[15px] py-[11px] text-[0.96rem] leading-relaxed text-ink'
+                }
+              >
+                {m.text}
+              </div>
             </div>
-          </div>
-        ))}
+          ),
+        )}
 
-        {/* Индикатор «печатает» */}
+        {/* «печатает» / «подбираем менеджера» — компактные инлайн-индикаторы */}
         {asking && (
           <div className="max-w-[84%] self-start" role="status" aria-label="…">
             <div className="inline-flex items-center gap-1 rounded-2xl rounded-bl-sm border border-slate-200 bg-white px-[15px] py-[13px]">
@@ -178,115 +192,99 @@ export function ChatWidget(): JSX.Element {
             </div>
           </div>
         )}
-
-        {/* Анимация «подбираем менеджера» */}
-        {phase === 'matching' && (
-          <div className="my-auto flex flex-col items-center gap-3 py-6 text-center" role="status">
-            <span className="inline-block h-9 w-9 animate-spin rounded-full border-[3px] border-brand-tint border-t-brand" />
-            <b className="text-[0.98rem] text-ink">{ct('load_h')}</b>
-            <span className="text-[0.85rem] text-muted">{ct('load_p')}</span>
+        {matching && (
+          <div className="self-start" role="status">
+            <div className="inline-flex items-center gap-2.5 rounded-2xl rounded-bl-sm border border-slate-200 bg-white px-[15px] py-3">
+              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-brand-tint border-t-brand" />
+              <span className="text-[0.9rem] font-medium text-ink">{ct('load_h')}</span>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Подвал */}
+      {/* Подвал: ввод всегда доступен; над ним — подсказки (первый экран) и
+          кнопка «к менеджеру» (после первого ответа). */}
       <div className="border-t border-slate-200 bg-white px-4 py-[14px]">
-        {phase === 'chat' && (
-          <>
-            {showStarters && (
-              <div className="mb-3">
-                <p className="mb-2 text-[0.78rem] font-medium text-muted">{ct('starters_label')}</p>
-                <div className="flex flex-wrap gap-2">
-                  {STARTER_KEYS.map((key) => (
-                    <button
-                      key={key}
-                      type="button"
-                      data-testid="chat-starter"
-                      onClick={() => {
-                        captureEvent('chat_starter_clicked', { key });
-                        void handleAsk(ct(key));
-                      }}
-                      className="rounded-full border border-slate-200 bg-slate-50 px-3.5 py-2 text-left text-[0.85rem] font-medium text-slate-600 transition-colors hover:border-brand hover:bg-brand-tint hover:text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                    >
-                      {ct(key)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <FreeAsk ct={ct} onAsk={handleAsk} pending={asking} />
-
-            <button
-              type="button"
-              data-testid="chat-to-manager"
-              onClick={() => goHandoff('button')}
-              className="mt-2.5 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-2.5 text-[0.88rem] font-semibold text-brand-dark transition-colors hover:border-brand hover:bg-brand-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-            >
-              {ct('to_manager')}
-            </button>
-          </>
+        {onFirstScreen && (
+          <div className="mb-3">
+            <p className="mb-2 text-[0.78rem] font-medium text-muted">{ct('starters_label')}</p>
+            <div className="flex flex-wrap gap-2">
+              {STARTER_KEYS.map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  data-testid="chat-starter"
+                  onClick={() => {
+                    captureEvent('chat_starter_clicked', { key });
+                    void handleAsk(ct(key));
+                  }}
+                  className="rounded-full border border-slate-200 bg-slate-50 px-3.5 py-2 text-left text-[0.85rem] font-medium text-slate-600 transition-colors hover:border-brand hover:bg-brand-tint hover:text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                >
+                  {ct(key)}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
 
-        {phase === 'handoff' && (
-          <HandoffActions ct={ct} lang={lang} lastQuestion={lastQuestionRef.current} onRestart={restart} />
+        {showToManager && (
+          <button
+            type="button"
+            data-testid="chat-to-manager"
+            onClick={() => offerHandoff('button')}
+            className="mb-2.5 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-2.5 text-[0.88rem] font-semibold text-brand-dark transition-colors hover:border-brand hover:bg-brand-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          >
+            {ct('to_manager')}
+          </button>
         )}
+
+        <FreeAsk ct={ct} onAsk={handleAsk} pending={asking || matching} />
       </div>
     </div>
   );
 }
 
-/** Экран контактов менеджера: deep-link'и на мессенджеры + рестарт. */
-function HandoffActions({
+/** Инлайн-карточка контактов менеджера в ленте. */
+function HandoffCard({
   ct,
   lang,
-  lastQuestion,
-  onRestart,
+  message,
 }: {
   ct: (key: string) => string;
   lang: string;
-  lastQuestion: string;
-  onRestart: () => void;
+  message: string;
 }): JSX.Element {
   const contacts = getOfficeContacts();
-  // Предзаполненное сообщение менеджеру: приветствие + последний вопрос (контекст).
-  const message = lastQuestion ? `${ct('lead_msg')}\n\n${lastQuestion}` : ct('lead_msg');
   const ordered: ChatMessenger[] = [
     DEFAULT_MESSENGER,
     ...MESSENGERS.filter((m) => m !== DEFAULT_MESSENGER),
   ];
 
   return (
-    <div className="flex flex-col gap-2.5">
-      {ordered.map((m, idx) => (
-        <a
-          key={m}
-          href={buildHandoffLink(m, contacts, message)}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={() => void trackEvent('handoff_clicked', { lang, meta: { messenger: m } })}
-          className={
-            idx === 0
-              ? 'inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-6 py-3.5 font-semibold text-white transition-colors hover:bg-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand'
-              : 'inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3.5 font-semibold text-ink transition-colors hover:border-brand hover:text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand'
-          }
-        >
-          {ct(continueLabelKey(m))}
-        </a>
-      ))}
-
-      <p className="flex items-center justify-center gap-1.5 text-center text-[0.84rem] font-medium text-brand-dark">
+    <div className="self-stretch rounded-2xl border border-slate-200 bg-white p-3.5">
+      <div className="flex flex-col gap-2">
+        {ordered.map((m, idx) => (
+          <a
+            key={m}
+            href={buildHandoffLink(m, contacts, message)}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => void trackEvent('handoff_clicked', { lang, meta: { messenger: m } })}
+            className={
+              idx === 0
+                ? 'inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-5 py-3 text-[0.95rem] font-semibold text-white transition-colors hover:bg-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand'
+                : 'inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-[0.95rem] font-semibold text-ink transition-colors hover:border-brand hover:text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand'
+            }
+          >
+            {ct(continueLabelKey(m))}
+          </a>
+        ))}
+      </div>
+      <p className="mt-2.5 flex items-center justify-center gap-1.5 text-center text-[0.82rem] font-medium text-brand-dark">
         <span aria-hidden>⏱️</span>
         {ct('reply_time')}
       </p>
-
-      <button
-        type="button"
-        onClick={onRestart}
-        className="mt-1 text-[0.85rem] text-slate-500 underline hover:text-ink"
-      >
-        {ct('done_restart')}
-      </button>
+      <p className="mt-1 text-center text-[0.8rem] text-muted">{ct('handoff_or_continue')}</p>
     </div>
   );
 }

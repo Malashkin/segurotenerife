@@ -50,6 +50,8 @@ test.describe('web — чат-консультант', () => {
 
     // Приветствие.
     await expect(chat.getByText(/Расскажите, какая страховка/i)).toBeVisible();
+    // На первом экране кнопки «к менеджеру» НЕТ — сначала ценность (ответы).
+    await expect(chat.getByTestId('chat-to-manager')).toHaveCount(0);
 
     // Свободный вопрос → ответ агента.
     await chat.locator('input[type="text"]').fill('Какой полис для ВНЖ?');
@@ -57,11 +59,20 @@ test.describe('web — чат-консультант', () => {
     await expect(chat.getByText('Какой полис для ВНЖ?')).toBeVisible();
     await expect(chat.getByText(/сертификат/i)).toBeVisible();
 
-    // Передача менеджеру по кнопке → экран контактов с deep-link'ами.
+    // Кнопка «к менеджеру» появляется только ПОСЛЕ первого ответа.
+    await expect(chat.getByTestId('chat-to-manager')).toBeVisible();
     await chat.getByTestId('chat-to-manager').click();
+
+    // Инлайн-карточка контактов (deep-link'и) появляется в ленте.
     const links = chat.locator('a[target="_blank"]');
     await expect(links.first()).toBeVisible({ timeout: 7000 });
     expect(await links.count()).toBeGreaterThanOrEqual(1);
+
+    // КЛЮЧЕВОЕ: хендофф — не тупик, ввод остаётся → можно продолжать спрашивать.
+    await expect(chat.locator('input[type="text"]')).toBeVisible();
+    await chat.locator('input[type="text"]').fill('А что со стоматологией?');
+    await chat.getByRole('button', { name: /Спросить/i }).click();
+    await expect(chat.getByText('А что со стоматологией?')).toBeVisible();
   });
 
   test('агент сам уводит к менеджеру при handoff=true', async ({ page }) => {
