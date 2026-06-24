@@ -40,32 +40,41 @@ fn lead_text(lead: &Lead<'_>) -> String {
     )
 }
 
-/// Шлёт менеджеру лид. Возвращает true при успешной доставке.
+/// Разбирает список chat_id из конфигурации (через запятую): получателями могут
+/// быть и владелец (учёт лидов), и менеджер(ы). Пустые/пробельные — отбрасываем.
+fn recipients(raw: &str) -> Vec<&str> {
+    raw.split(',').map(str::trim).filter(|s| !s.is_empty()).collect()
+}
+
+/// Шлёт карточку лида всем получателям (владелец + менеджер(ы)). Один общий
+/// текст рассылается на каждый chat_id из `TELEGRAM_MANAGER_CHAT_ID`
+/// (через запятую). Возвращает true, если доставлено хотя бы одному.
 pub async fn send_lead(http: &reqwest::Client, cfg: &Config, lead: &Lead<'_>) -> bool {
-    let (Some(token), Some(chat_id)) = (&cfg.telegram_bot_token, &cfg.telegram_manager_chat_id)
+    let (Some(token), Some(chat_ids)) = (&cfg.telegram_bot_token, &cfg.telegram_manager_chat_id)
     else {
         return false;
     };
+    let chats = recipients(chat_ids);
+    if chats.is_empty() {
+        return false;
+    }
 
     let text = lead_text(lead);
-
     let url = format!("https://api.telegram.org/bot{token}/sendMessage");
-    match http
-        .post(&url)
-        .json(&json!({ "chat_id": chat_id, "text": text, "parse_mode": "HTML" }))
-        .send()
-        .await
-    {
-        Ok(resp) if resp.status().is_success() => true,
-        Ok(resp) => {
-            tracing::warn!(status = %resp.status(), "telegram sendMessage non-success");
-            false
-        }
-        Err(e) => {
-            tracing::warn!(error = %e, "telegram sendMessage failed");
-            false
+    let mut any = false;
+    for chat_id in chats {
+        match http
+            .post(&url)
+            .json(&json!({ "chat_id": chat_id, "text": text, "parse_mode": "HTML" }))
+            .send()
+            .await
+        {
+            Ok(resp) if resp.status().is_success() => any = true,
+            Ok(resp) => tracing::warn!(status = %resp.status(), chat_id, "telegram sendMessage non-success"),
+            Err(e) => tracing::warn!(error = %e, chat_id, "telegram sendMessage failed"),
         }
     }
+    any
 }
 
 #[cfg(test)]
@@ -75,6 +84,13 @@ mod tests {
     #[test]
     fn esc_handles_html() {
         assert_eq!(esc("a<b>&c"), "a&lt;b&gt;&amp;c");
+    }
+
+    #[test]
+    fn recipients_splits_trims_and_drops_empty() {
+        assert_eq!(recipients("172373152"), vec!["172373152"]);
+        assert_eq!(recipients(" 111 , 222 ,, 333 "), vec!["111", "222", "333"]);
+        assert!(recipients("  ,  ").is_empty());
     }
 
     #[test]
