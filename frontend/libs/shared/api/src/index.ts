@@ -31,7 +31,7 @@ export {
   type InitAnalyticsOptions,
 } from './posthog';
 
-export { askQuestion } from './chat';
+export { askQuestion, type ChatReply } from './chat';
 
 export { createLeadSchema, validateLead, MESSENGERS } from './schema';
 

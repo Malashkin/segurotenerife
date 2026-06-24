@@ -37,7 +37,9 @@ export function FreeAsk({ ct, onAsk, pending }: FreeAskProps): JSX.Element {
         aria-label={ct('ask_title')}
         autoComplete="off"
         enterKeyHint="send"
-        className="min-w-0 flex-1 rounded-xl border-[1.5px] border-slate-200 px-3.5 py-2.5 text-[0.92rem] focus:border-brand focus:outline-none"
+        // text-base (16px) обязателен: при меньшем шрифте iOS Safari зумит
+        // страницу при фокусе на input → ломается вёрстка/скролл.
+        className="min-w-0 flex-1 rounded-xl border-[1.5px] border-slate-200 px-3.5 py-2.5 text-base focus:border-brand focus:outline-none"
       />
       <Button
         type="submit"

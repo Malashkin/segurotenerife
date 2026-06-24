@@ -1,35 +1,28 @@
 /**
- * E2E web: плавающий чат-бот и подбор страховки (Волна 4, обновлено под Волну с
- * плавающим виджетом).
+ * E2E web: чат-консультант (новый флоу — ответить + передать менеджеру).
  *
  * Чат — React-остров (ChatLauncher) на Astro-лендинге: открывается плавающей
- * кнопкой (FAB) в углу или CTA в шапке/hero. Проверяем, что посетитель проходит
- * быстрые шаги, заполняет форму и доходит до экрана хендоффа со ссылками на
- * мессенджеры. (Смена языка на Astro — навигация по локальным URL, проверяется в
- * web-i18n.spec, поэтому отдельного «ре-рендер без перезагрузки» здесь нет.)
+ * кнопкой (FAB). Флоу: приветствие → свободный вопрос (агент отвечает) → кнопка
+ * «Связаться с менеджером» ИЛИ агент сам решает (handoff) → анимация «подбираем
+ * менеджера» → контакты в мессенджерах. Опросника и формы-контакта НЕТ.
  *
- * Backend подменён стабами: POST /api/leads → 201, POST /api/events → 204.
+ * Backend подменён стабами: POST /api/chat → {answer, handoff}, /api/events → 204.
  */
 import { test, expect, type Page } from '@playwright/test';
 
 const WEB = 'http://localhost:4173';
 
-/** Открывает чат через плавающую кнопку (FAB) — стабильный data-testid, без зависимости от языка. */
 async function openChat(page: Page) {
   await page.getByTestId('chat-fab').click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
-  // Внутри попапа сам чат — это region (ChatWidget); кнопка закрытия — вне region.
   return dialog.getByRole('region');
 }
 
-test.describe('web — плавающий чат-подбор', () => {
-  // Реалистичный десктоп-вьюпорт: на нём чат-карточка не перекрывает шапку
-  // (на коротких окнах <760px карточка дорастает до навигации — это ок для демо).
+test.describe('web — чат-консультант', () => {
   test.use({ viewport: { width: 1280, height: 900 } });
 
   test.beforeEach(async ({ page }) => {
-    // Согласие на куки — чтобы баннер не перекрывал элементы в тестах.
     await page.addInitScript(() => {
       try {
         localStorage.setItem('seguro_cookie_consent', 'accepted');
@@ -38,39 +31,54 @@ test.describe('web — плавающий чат-подбор', () => {
       }
     });
     await page.route('**/api/events', (route) => route.fulfill({ status: 204, body: '' }));
-    await page.route('**/api/leads', (route) => {
-      if (route.request().method() === 'POST') {
-        return route.fulfill({
-          status: 201,
-          contentType: 'application/json',
-          body: JSON.stringify({ id: 'e2e-lead-1' }),
-        });
-      }
-      return route.continue();
-    });
+    // Агент: отвечает и сразу сигналит handoff=false (вопрос ещё открыт).
+    await page.route('**/api/chat', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          answer: 'Для ВНЖ подойдёт медполис с сертификатом для консульства, без доплат.',
+          handoff: false,
+        }),
+      }),
+    );
   });
 
-  test('CTA открывает чат; проход подбора до экрана хендоффа', async ({ page }) => {
+  test('вопрос → ответ → кнопка «к менеджеру» → анимация → контакты', async ({ page }) => {
     await page.goto(WEB);
     const chat = await openChat(page);
 
-    // 4 быстрых шага (goal, who, city, urgency): первая опция каждого.
-    // (Шаг языка убран — берётся из языка страницы.) Кнопки опций — внутри region.
-    for (let i = 0; i < 4; i++) {
-      await chat.locator('[data-testid="chat-option"]').first().click();
-    }
+    // Приветствие.
+    await expect(chat.getByText(/Расскажите, какая страховка/i)).toBeVisible();
 
-    // Контактная форма.
-    const name = page.locator('#chat-name');
-    await expect(name).toBeVisible();
-    await name.fill('E2E Tester');
-    await page.locator('#chat-contact').fill('+34600123456');
-    await chat.locator('input[type="checkbox"]').check();
-    await chat.locator('button[type="submit"]').click();
+    // Свободный вопрос → ответ агента.
+    await chat.locator('input[type="text"]').fill('Какой полис для ВНЖ?');
+    await chat.getByRole('button', { name: /Спросить/i }).click();
+    await expect(chat.getByText('Какой полис для ВНЖ?')).toBeVisible();
+    await expect(chat.getByText(/сертификат/i)).toBeVisible();
 
-    // Экран хендоффа: внешние deep-link'и на мессенджеры.
+    // Передача менеджеру по кнопке → экран контактов с deep-link'ами.
+    await chat.getByTestId('chat-to-manager').click();
     const links = chat.locator('a[target="_blank"]');
-    await expect(links.first()).toBeVisible();
+    await expect(links.first()).toBeVisible({ timeout: 7000 });
     expect(await links.count()).toBeGreaterThanOrEqual(1);
+  });
+
+  test('агент сам уводит к менеджеру при handoff=true', async ({ page }) => {
+    // Переопределяем стаб: агент отвечает и сигналит handoff.
+    await page.route('**/api/chat', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ answer: 'Передаю вас менеджеру.', handoff: true }),
+      }),
+    );
+    await page.goto(WEB);
+    const chat = await openChat(page);
+    await chat.locator('input[type="text"]').fill('Хочу к менеджеру');
+    await chat.getByRole('button', { name: /Спросить/i }).click();
+    // Без нажатия кнопки — сам переходит к контактам (после ~3с анимации).
+    const links = chat.locator('a[target="_blank"]');
+    await expect(links.first()).toBeVisible({ timeout: 8000 });
   });
 });

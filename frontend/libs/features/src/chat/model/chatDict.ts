@@ -38,7 +38,7 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
   en: {
     ask_or: "or ask your own question",
     ai_label: "How matching works",
-    ai_note: "Insurance matching here is done by an AI assistant based on ASISA’s public catalogue. A manager always confirms the details and the quote.",
+    ai_note: "An AI assistant helps you here with general insurance guidance. A manager always confirms the details and the quote.",
     o_student: "Student insurance",
     o_travel: "Travel / international",
     o_reembolso: "With reimbursement",
@@ -106,7 +106,9 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     title: 'Online insurance finder',
     status: '● online',
     greeting:
-      "Hi! 👋 I'll help you find insurance in a couple of minutes. Just answer a few questions.",
+      "Hi! 👋 Tell me what insurance you're looking for — I'll answer your questions and then connect you with a manager.",
+    to_manager: 'Connect me with a manager',
+    assist_off: "Let me connect you with a manager — they'll answer your questions and help you choose.",
     reply_time: 'We usually reply within an hour during working hours.',
     here: 'You can keep chatting right here — the manager will reply as soon as they join.',
     contWa: 'Continue in WhatsApp',
@@ -116,7 +118,7 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
   es: {
     ask_or: "o haz tu propia pregunta",
     ai_label: "Cómo funciona",
-    ai_note: "La orientación aquí la realiza un asistente de IA según el catálogo público de ASISA. Un gestor confirma siempre los detalles y el presupuesto.",
+    ai_note: "Aquí te orienta un asistente de IA con información general sobre seguros. Un gestor confirma siempre los detalles y el presupuesto.",
     o_student: "Seguro para estudiantes",
     o_travel: "Viajes / internacional",
     o_reembolso: "Con reembolso",
@@ -183,7 +185,9 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     title: 'Buscador de seguros online',
     status: '● en línea',
     greeting:
-      '¡Hola! 👋 Te ayudo a encontrar un seguro en un par de minutos. Responde unas preguntas.',
+      '¡Hola! 👋 Cuéntame qué seguro buscas — respondo tus preguntas y luego te paso con un gestor.',
+    to_manager: 'Hablar con un gestor',
+    assist_off: 'Te paso con un gestor — responderá tus preguntas y te ayudará a elegir.',
     reply_time: 'Solemos responder en menos de una hora en horario laboral.',
     here: 'Puedes seguir chateando aquí mismo — el gestor responderá en cuanto se conecte.',
     contWa: 'Continuar en WhatsApp',
@@ -193,7 +197,7 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
   uk: {
     ask_or: "або запитайте своє",
     ai_label: "Як працює підбір",
-    ai_note: "Підбір тут виконує ШІ-асистент за публічним каталогом ASISA. Менеджер завжди підтверджує деталі та розрахунок.",
+    ai_note: "Тут вам допомагає ШІ-асистент із загальною інформацією про страхування. Менеджер завжди підтверджує деталі та розрахунок.",
     o_student: "Студентська страховка",
     o_travel: "Подорожі / міжнародна",
     o_reembolso: "З відшкодуванням",
@@ -260,7 +264,9 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     title: 'Онлайн-підбір страховки',
     status: '● онлайн',
     greeting:
-      'Вітаю! 👋 Допоможу підібрати страховку за пару хвилин. Дайте відповідь на кілька питань.',
+      'Вітаю! 👋 Розкажіть, яке страхування вам потрібне — відповім на запитання та передам менеджеру.',
+    to_manager: "Зв'язатися з менеджером",
+    assist_off: 'Передаю вас менеджеру — він відповість на запитання та допоможе обрати.',
     reply_time: 'Зазвичай відповідаємо протягом години в робочий час.',
     here: 'Можете продовжити листування просто тут — менеджер відповість, щойно підключиться.',
     contWa: 'Продовжити у WhatsApp',
@@ -270,7 +276,7 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
   ru: {
     ask_or: "или спросите своё",
     ai_label: "Как работает подбор",
-    ai_note: "Подбор здесь выполняет ИИ-ассистент по публичному каталогу ASISA. Менеджер всегда подтверждает детали и расчёт.",
+    ai_note: "Здесь вам помогает ИИ-ассистент с общей информацией о страховках. Менеджер всегда подтверждает детали и расчёт.",
     o_student: "Студенческая страховка",
     o_travel: "Путешествия / международная",
     o_reembolso: "С возмещением расходов",
@@ -337,7 +343,9 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     title: 'Онлайн-подбор страховки',
     status: '● онлайн',
     greeting:
-      'Здравствуйте! 👋 Помогу подобрать страховку за пару минут. Ответьте на несколько вопросов.',
+      'Здравствуйте! 👋 Расскажите, какая страховка вам нужна — отвечу на вопросы и передам менеджеру.',
+    to_manager: 'Связаться с менеджером',
+    assist_off: 'Передаю вас менеджеру — он ответит на вопросы и поможет с выбором.',
     reply_time: 'Обычно отвечаем в течение часа в рабочее время.',
     here: 'Можете продолжить переписку прямо здесь — менеджер ответит, как только подключится.',
     contWa: 'Продолжить в WhatsApp',

@@ -34,37 +34,6 @@ export function getOfficeContacts(): OfficeContacts {
   return { whatsappNumber, telegramUsername, viberNumber };
 }
 
-/** Данные, из которых собирается предзаполненное сообщение менеджеру. */
-export interface HandoffMessageParts {
-  /** Базовое приветствие (lead_msg). */
-  intro: string;
-  /** Подпись и значение «цель» (s2_h + answers.goal). */
-  goalLine: string;
-  /** Подпись и значение «кого страхуем». */
-  whoLine: string;
-  /** Подпись и значение «район». */
-  cityLine: string;
-  /** Подпись и значение «срочность». */
-  urgencyLine: string;
-  /** Подпись и значение «имя». */
-  nameLine: string;
-}
-
-/**
- * Собирает многострочный текст сообщения (как в прототипе) и URL-кодирует его.
- */
-function encodeMessage(parts: HandoffMessageParts): string {
-  const text = [
-    parts.intro,
-    parts.goalLine,
-    parts.whoLine,
-    parts.cityLine,
-    parts.urgencyLine,
-    parts.nameLine,
-  ].join('\n');
-  return encodeURIComponent(text);
-}
-
 /**
  * Строит deep-link на выбранный мессенджер с предзаполненным сообщением.
  *
@@ -74,14 +43,14 @@ function encodeMessage(parts: HandoffMessageParts): string {
  *
  * @param messenger - целевой мессенджер
  * @param contacts  - контакты офиса
- * @param parts     - части сообщения (для кодирования текста)
+ * @param message   - текст предзаполненного сообщения менеджеру
  */
 export function buildHandoffLink(
   messenger: ChatMessenger,
   contacts: OfficeContacts,
-  parts: HandoffMessageParts,
+  message: string,
 ): string {
-  const text = encodeMessage(parts);
+  const text = encodeURIComponent(message);
   switch (messenger) {
     case 'Telegram':
       return `https://t.me/${contacts.telegramUsername}`;
