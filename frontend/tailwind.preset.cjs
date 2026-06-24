@@ -51,6 +51,10 @@ module.exports = {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
         },
+        fadeOut: {
+          '0%': { opacity: '1' },
+          '100%': { opacity: '0' },
+        },
         fadeInUp: {
           '0%': { opacity: '0', transform: 'translateY(16px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
@@ -59,11 +63,34 @@ module.exports = {
           '0%': { opacity: '0', transform: 'translateY(100%)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
+        slideDown: {
+          '0%': { opacity: '1', transform: 'translateY(0)' },
+          '100%': { opacity: '0', transform: 'translateY(100%)' },
+        },
+        // Появление/исчезновение всплывающих окон (попап чата, модалка).
+        popIn: {
+          '0%': { opacity: '0', transform: 'scale(0.96) translateY(8px)' },
+          '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
+        },
+        popOut: {
+          '0%': { opacity: '1', transform: 'scale(1) translateY(0)' },
+          '100%': { opacity: '0', transform: 'scale(0.96) translateY(8px)' },
+        },
+        // Мягкое появление сообщений/карточек в ленте чата.
+        msgIn: {
+          '0%': { opacity: '0', transform: 'translateY(8px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
       },
       animation: {
         fadeIn: 'fadeIn 150ms ease-out',
+        fadeOut: 'fadeOut 150ms ease-in both',
         fadeInUp: 'fadeInUp 500ms cubic-bezier(0.22, 1, 0.36, 1) both',
         slideUp: 'slideUp 260ms cubic-bezier(0.22, 1, 0.36, 1)',
+        slideDown: 'slideDown 220ms ease-in both',
+        popIn: 'popIn 220ms cubic-bezier(0.22, 1, 0.36, 1) both',
+        popOut: 'popOut 180ms ease-in both',
+        msgIn: 'msgIn 260ms cubic-bezier(0.22, 1, 0.36, 1) both',
       },
     },
   },

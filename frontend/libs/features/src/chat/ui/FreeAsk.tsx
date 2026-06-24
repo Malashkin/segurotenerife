@@ -44,22 +44,34 @@ export function FreeAsk({ ct, onAsk, pending, placeholders }: FreeAskProps): JSX
     onAsk(q);
   }
 
-  const placeholder = value === '' ? list[phIdx % list.length] : '';
+  const currentPh = list[phIdx % list.length] ?? '';
 
   return (
     <form className="flex items-center gap-2" onSubmit={handleSubmit}>
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        placeholder={placeholder}
-        aria-label={ct('ask_title')}
-        autoComplete="off"
-        enterKeyHint="send"
-        // text-base (16px) обязателен: при меньшем шрифте iOS Safari зумит
-        // страницу при фокусе на input → ломается вёрстка/скролл.
-        className="min-w-0 flex-1 rounded-xl border-[1.5px] border-slate-200 px-3.5 py-2.5 text-base focus:border-brand focus:outline-none"
-      />
+      {/* Плейсхолдер — фейдовый оверлей (нативный placeholder не анимируется):
+          каждая фраза мягко всплывает (motion-safe:animate-msgIn по key). */}
+      <div className="relative min-w-0 flex-1">
+        {value === '' && (
+          <span
+            key={phIdx}
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 left-[15px] right-3 flex items-center truncate text-base text-slate-400 motion-safe:animate-msgIn"
+          >
+            {currentPh}
+          </span>
+        )}
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          aria-label={ct('ask_title')}
+          autoComplete="off"
+          enterKeyHint="send"
+          // text-base (16px) обязателен: при меньшем шрифте iOS Safari зумит
+          // страницу при фокусе на input → ломается вёрстка/скролл.
+          className="w-full rounded-xl border-[1.5px] border-slate-200 bg-transparent px-3.5 py-2.5 text-base focus:border-brand focus:outline-none"
+        />
+      </div>
       <button
         type="submit"
         aria-label={ct('ask_send')}

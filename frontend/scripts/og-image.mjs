@@ -39,7 +39,14 @@ const html = `<!doctype html><html><head><meta charset="utf-8">
   }
 </style></head>
 <body>
-  <div class="brand"><div class="tile">ST</div><b>Seguro Tenerife</b></div>
+  <div class="brand">
+    <svg width="92" height="92" viewBox="0 0 32 32">
+      <path d="M16 2.5 L27 7 V15 C27 22.4 22.2 27.4 16 29.5 C9.8 27.4 5 22.4 5 15 V7 Z" fill="#fff"/>
+      <circle cx="11.6" cy="12.2" r="2" fill="#0f766e"/>
+      <path d="M7.5 21.8 L12.4 15.2 L15.4 19 L19 13.4 L24.5 21.8 Z" fill="#0f766e"/>
+    </svg>
+    <b>Seguro Tenerife</b>
+  </div>
   <h1>Подбор страховки на Тенерифе под вашу ситуацию</h1>
   <p>Виза и ВНЖ · семья · стоматология · питомцы — на вашем языке</p>
   <div class="chips">

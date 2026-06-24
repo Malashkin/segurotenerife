@@ -8,7 +8,7 @@
  * Доступность: role="dialog" aria-modal, Esc закрывает, фокус в окно при открытии,
  * клик по фону закрывает, уважение prefers-reduced-motion (без анимаций).
  */
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLang } from '@shared/i18n';
 import { useUiStore } from '@shared/store';
 import { LEGAL, type LegalDocId } from './legalContent';
@@ -26,8 +26,28 @@ export function LegalModal(): JSX.Element | null {
   const { lang } = useLang();
   const panelRef = useRef<HTMLDivElement>(null);
 
+  // Плавный вход/выход: держим контент во время exit-анимации (activeDoc хранит
+  // показываемый документ даже после того, как стор обнулил legalDoc).
+  const [activeDoc, setActiveDoc] = useState<LegalDocId | null>(null);
+  const [closing, setClosing] = useState(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    if (!isLegalDocId(legalDoc)) return;
+    if (isLegalDocId(legalDoc)) {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+      setActiveDoc(legalDoc);
+      setClosing(false);
+    } else if (activeDoc) {
+      setClosing(true);
+      closeTimer.current = setTimeout(() => {
+        setActiveDoc(null);
+        setClosing(false);
+      }, 200);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [legalDoc]);
+
+  useEffect(() => {
+    if (!activeDoc) return;
     panelRef.current?.focus();
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') closeLegal();
@@ -40,15 +60,17 @@ export function LegalModal(): JSX.Element | null {
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = prevOverflow;
     };
-  }, [legalDoc, closeLegal]);
+  }, [activeDoc, closeLegal]);
 
-  if (!isLegalDocId(legalDoc)) return null;
+  if (!activeDoc) return null;
 
-  const doc = LEGAL[lang][legalDoc];
+  const doc = LEGAL[lang][activeDoc];
 
   return (
     <div
-      className="fixed inset-0 z-[80] flex items-end justify-center bg-black/40 p-0 motion-safe:animate-[fadeIn_150ms_ease-out] sm:items-center sm:p-4"
+      className={`fixed inset-0 z-[80] flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4 ${
+        closing ? 'motion-safe:animate-fadeOut' : 'motion-safe:animate-fadeIn'
+      }`}
       onMouseDown={(e) => {
         // Клик именно по фону (не по содержимому) закрывает.
         if (e.target === e.currentTarget) closeLegal();
@@ -60,7 +82,11 @@ export function LegalModal(): JSX.Element | null {
         aria-modal="true"
         aria-label={doc.title}
         tabIndex={-1}
-        className="flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl outline-none sm:max-h-[85vh] sm:max-w-2xl sm:rounded-2xl"
+        className={`flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl outline-none sm:max-h-[85vh] sm:max-w-2xl sm:rounded-2xl ${
+          closing
+            ? 'motion-safe:animate-slideDown sm:motion-safe:animate-popOut'
+            : 'motion-safe:animate-slideUp sm:motion-safe:animate-popIn'
+        }`}
       >
         {/* Шапка */}
         <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4 sm:px-7">

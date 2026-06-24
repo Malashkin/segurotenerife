@@ -1,11 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Seguro Tenerife">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Seguro Tenerife">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="st" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#0d9488"/>
       <stop offset="1" stop-color="#0ea5e9"/>
     </linearGradient>
   </defs>
-  <rect width="64" height="64" rx="14" fill="url(#g)"/>
-  <text x="50%" y="50%" dy="0.07em" text-anchor="middle" dominant-baseline="middle"
-        font-family="Sora, Inter, system-ui, sans-serif" font-weight="800" font-size="30" fill="#fff">ST</text>
+  <!-- Щит — защита/страхование -->
+  <path d="M16 2.5 L27 7 V15 C27 22.4 22.2 27.4 16 29.5 C9.8 27.4 5 22.4 5 15 V7 Z" fill="url(#st)"/>
+  <!-- Солнце -->
+  <circle cx="11.6" cy="12.2" r="2" fill="#fff" opacity=".95"/>
+  <!-- Тейде — горный силуэт Тенерифе -->
+  <path d="M7.5 21.8 L12.4 15.2 L15.4 19 L19 13.4 L24.5 21.8 Z" fill="#fff"/>
 </svg>

@@ -135,8 +135,16 @@ export function ChatWidget(): JSX.Element {
     >
       {/* Шапка. pr-14 — место под ✕ из ChatLauncher (абсолют в правом углу). */}
       <div className="relative flex items-center gap-3 bg-gradient-to-br from-brand-dark to-brand py-[14px] pl-[18px] pr-14 text-white">
-        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/20 font-extrabold">
-          ST
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/20">
+          {/* Логотип-щит (белый, т.к. фон шапки цветной). */}
+          <svg className="h-6 w-6" viewBox="0 0 32 32" aria-hidden="true">
+            <path
+              d="M16 2.5 L27 7 V15 C27 22.4 22.2 27.4 16 29.5 C9.8 27.4 5 22.4 5 15 V7 Z"
+              fill="#fff"
+            />
+            <circle cx="11.6" cy="12.2" r="2" fill="#0f766e" />
+            <path d="M7.5 21.8 L12.4 15.2 L15.4 19 L19 13.4 L24.5 21.8 Z" fill="#0f766e" />
+          </svg>
         </div>
         <div className="flex min-w-0 flex-col leading-tight">
           <b className="truncate text-[0.98rem]">{ct('title')}</b>
@@ -166,7 +174,7 @@ export function ChatWidget(): JSX.Element {
           ) : (
             <div
               key={m.id}
-              className={m.author === 'user' ? 'max-w-[84%] self-end' : 'max-w-[84%] self-start'}
+              className={`max-w-[84%] motion-safe:animate-msgIn ${m.author === 'user' ? 'self-end' : 'self-start'}`}
             >
               <div
                 className={
@@ -183,7 +191,7 @@ export function ChatWidget(): JSX.Element {
 
         {/* «печатает» / «подбираем менеджера» — компактные инлайн-индикаторы */}
         {asking && (
-          <div className="max-w-[84%] self-start" role="status" aria-label="…">
+          <div className="max-w-[84%] self-start motion-safe:animate-fadeIn" role="status" aria-label="…">
             <div className="inline-flex items-center gap-1 rounded-2xl rounded-bl-sm border border-slate-200 bg-white px-[15px] py-[13px]">
               <span className="h-[7px] w-[7px] rounded-full bg-slate-300 motion-safe:animate-pulse" />
               <span className="h-[7px] w-[7px] rounded-full bg-slate-300 [animation-delay:0.2s] motion-safe:animate-pulse" />
@@ -192,7 +200,7 @@ export function ChatWidget(): JSX.Element {
           </div>
         )}
         {matching && (
-          <div className="self-start" role="status">
+          <div className="self-start motion-safe:animate-msgIn" role="status">
             <div className="inline-flex items-center gap-2.5 rounded-2xl rounded-bl-sm border border-slate-200 bg-white px-[15px] py-3">
               <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-brand-tint border-t-brand" />
               <span className="text-[0.9rem] font-medium text-ink">{ct('load_h')}</span>
@@ -243,7 +251,7 @@ function HandoffCard({
   ];
 
   return (
-    <div className="self-stretch rounded-2xl border border-slate-200 bg-white p-3.5">
+    <div className="self-stretch rounded-2xl border border-slate-200 bg-white p-3.5 motion-safe:animate-msgIn">
       <div className="flex flex-col gap-2">
         {ordered.map((m, idx) => (
           <a

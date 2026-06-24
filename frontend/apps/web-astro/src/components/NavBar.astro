@@ -19,11 +19,17 @@ const NAV = [
 <header class="sticky top-0 z-50 border-b border-slate-200 bg-bg/85 backdrop-blur-md">
   <div class="mx-auto flex h-[68px] w-[min(1160px,calc(100vw-40px))] items-center gap-4">
     <a href="#top" class="flex items-center gap-2.5">
-      <span
-        class="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[10px] bg-gradient-to-br from-brand to-sky font-heading text-sm font-extrabold text-white"
-      >
-        ST
-      </span>
+      <svg class="h-[34px] w-[34px] shrink-0" viewBox="0 0 32 32" aria-hidden="true">
+        <defs>
+          <linearGradient id="logoNav" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#0d9488" />
+            <stop offset="1" stop-color="#0ea5e9" />
+          </linearGradient>
+        </defs>
+        <path d="M16 2.5 L27 7 V15 C27 22.4 22.2 27.4 16 29.5 C9.8 27.4 5 22.4 5 15 V7 Z" fill="url(#logoNav)" />
+        <circle cx="11.6" cy="12.2" r="2" fill="#fff" opacity=".95" />
+        <path d="M7.5 21.8 L12.4 15.2 L15.4 19 L19 13.4 L24.5 21.8 Z" fill="#fff" />
+      </svg>
       <span class="hidden font-heading text-lg font-bold leading-tight text-ink sm:block">
         Seguro Tenerife
         <small class="block font-sans text-[0.68rem] font-medium tracking-wide text-muted">

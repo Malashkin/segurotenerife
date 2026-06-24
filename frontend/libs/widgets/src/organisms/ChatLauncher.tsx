@@ -11,7 +11,7 @@
  * Сам чат-сценарий — в ChatWidget (@features), он стартует при монтировании
  * (т.е. при открытии окна).
  */
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUiStore } from '@shared/store';
 import { ChatWidget } from '@features';
@@ -79,11 +79,31 @@ export function ChatLauncher(): JSX.Element {
     };
   }, [chatOpen, closeChat]);
 
+  // Плавное открытие/закрытие: держим попап в DOM на время exit-анимации.
+  const [rendered, setRendered] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (chatOpen) {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+      setRendered(true);
+      setClosing(false);
+    } else if (rendered) {
+      setClosing(true);
+      closeTimer.current = setTimeout(() => {
+        setRendered(false);
+        setClosing(false);
+      }, 190);
+    }
+    // rendered намеренно не в зависимостях — реагируем только на смену chatOpen.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatOpen]);
+
   return (
     <>
-      {/* Всплывающее окно чата. Монтируется только когда открыто — чат стартует
-          при открытии (ChatWidget сам инициирует сценарий на mount). */}
-      {chatOpen && (
+      {/* Всплывающее окно чата. Держим в DOM на время анимаций входа/выхода;
+          чат стартует при монтировании (ChatWidget сам инициирует сценарий). */}
+      {rendered && (
         <div
           ref={dialogRef}
           role="dialog"
@@ -98,6 +118,9 @@ export function ChatLauncher(): JSX.Element {
             // налезает на шапку с переключателем языка даже на низких окнах.
             'inset-x-2 top-16 bottom-2 sm:inset-x-auto sm:right-6 sm:top-20 sm:bottom-[6.5rem]',
             'sm:w-[400px] sm:max-w-[calc(100vw-3rem)]',
+            // Плавные вход/выход (растём от угла FAB). Уважаем reduced-motion.
+            'origin-bottom sm:origin-bottom-right',
+            closing ? 'motion-safe:animate-popOut' : 'motion-safe:animate-popIn',
           )}
         >
           {/* Кнопка закрытия в углу окна (дублирует тоггл FAB — для наглядности). */}
