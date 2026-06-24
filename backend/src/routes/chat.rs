@@ -272,13 +272,36 @@ pub async fn ask(
 /// только при сочетании «менеджер/человек» + действие «связаться/перевести/хочу».
 /// Обычный вопрос вроде «что делает менеджер?» не триггерит (нет слова-действия).
 fn wants_manager(question: &str) -> bool {
-    let s = question.to_lowercase();
-    const SUBJ: [&str; 6] = ["менеджер", "manager", "gestor", "менеджером", "человек", "оператор"];
-    const ACT: [&str; 13] = [
-        "связ", "перевед", "переключ", "соедин", "contact", "hablar", "pasar",
-        "talk", "reach", "speak", "зв'яз", "з'єдна", "хочу к",
+    // Нормализуем апострофы (укр. «з'єднайте» и т.п. — разные юникод-варианты).
+    let s: String = question
+        .to_lowercase()
+        .chars()
+        .map(|c| match c {
+            '\u{2019}' | '\u{02BC}' | '\u{02B9}' | '`' | '\u{00B4}' => '\'',
+            _ => c,
+        })
+        .collect();
+    const SUBJ: [&str; 8] = [
+        "менеджер", "manager", "gestor", "менеджером", "человек", "оператор",
+        "консультант", "agente",
     ];
-    SUBJ.iter().any(|w| s.contains(w)) && ACT.iter().any(|w| s.contains(w))
+    const ACT: [&str; 14] = [
+        "связ", "перевед", "переключ", "соедин", "contact", "hablar", "pasar",
+        "talk", "reach", "speak", "зв'яз", "з'єдна", "хочу к", "write",
+    ];
+    // (1) Явный запрос менеджера/человека.
+    let manager = SUBJ.iter().any(|w| s.contains(w)) && ACT.iter().any(|w| s.contains(w));
+    // (2) Вопрос про цену/расчёт/оформление — цены не называем, ведём к менеджеру.
+    const PRICE: [&str; 17] = [
+        "сколько стоит", "стоимость", "цена", "цену", "по цене", "расчит", "рассчит",
+        "посчита", "precio", "cuánto cuesta", "cuanto cuesta", "coste", "how much",
+        "price", "quote", "скільки кошту", "вартість",
+    ];
+    const BUY: [&str; 9] = [
+        "оформить", "оформити", "оформля", "купить", "купити", "comprar", "contratar",
+        "buy", "purchase",
+    ];
+    manager || PRICE.iter().any(|w| s.contains(w)) || BUY.iter().any(|w| s.contains(w))
 }
 
 #[cfg(test)]
@@ -295,8 +318,26 @@ mod tests {
             "I want to contact a manager",
             "quiero hablar con un gestor",
             "can I talk to a manager",
+            "з'єднайте з менеджером",      // укр. апостроф U+2019
+            "зʼєднайте з менеджером",      // укр. апостроф U+02BC
         ] {
             assert!(wants_manager(q), "должно триггерить: {q}");
+        }
+    }
+
+    #[test]
+    fn detects_price_and_buy_intent() {
+        // Цена/расчёт/оформление — ведём к менеджеру (цены не называем).
+        for q in [
+            "сколько стоит страховка?",
+            "посчитайте стоимость на год",
+            "¿cuánto cuesta el seguro?",
+            "how much does it cost per year?",
+            "скільки коштує поліс?",
+            "хочу оформить полис",
+            "quiero contratar el seguro",
+        ] {
+            assert!(wants_manager(q), "должно триггерить (цена/оформление): {q}");
         }
     }
 
@@ -305,8 +346,8 @@ mod tests {
         for q in [
             "что покрывает медполис для ВНЖ?",
             "что делает менеджер?",
-            "сколько стоит страховка?",
             "входит ли стоматология?",
+            "сколько процедур входит в полис?", // «сколько», но не про цену
         ] {
             assert!(!wants_manager(q), "не должно триггерить: {q}");
         }
