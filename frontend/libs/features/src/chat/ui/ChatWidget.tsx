@@ -152,11 +152,10 @@ export function ChatWidget(): JSX.Element {
         offerHandoff('agent');
         return;
       }
-      // Тема «липкая»: общий 'med' НЕ затирает уже известный конкретный вид
-      // (dental/pet/travel/…). Иначе общий вопрос-уточнение сбрасывал бы тип лида.
-      if (reply.topic && (reply.topic !== 'med' || !topicRef.current)) {
-        topicRef.current = reply.topic;
-      }
+      // Тема лида = ПЕРВАЯ установленная потребность (или интент карточки). Не
+      // перезаписываем: проходной под-вопрос («а стоматология входит?») или
+      // мис-ретривал не должны подменять основную потребность клиента.
+      if (reply.topic && !topicRef.current) topicRef.current = reply.topic;
       void trackEvent('answer_received', {
         lang,
         meta: { topic: reply.topic ?? null, handoff: reply.handoff },
