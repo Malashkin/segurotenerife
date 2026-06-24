@@ -63,16 +63,14 @@ pub async fn forward(
     }
 
     // Карточка лида получателям в Telegram (если настроен бот + chat_id) — со всех
-    // каналов, чтобы лид всегда попадал к нам в учёт.
+    // каналов. Состав: имя + вид страховки + канал, в который перешёл клиент.
     let delivered = crate::telegram::send_lead(
         &state.http,
         &state.config,
         &crate::telegram::Lead {
             name: Some(body.name.trim()),
-            question: body.question.as_deref(),
             topic: body.topic.as_deref(),
             messenger: body.messenger.as_deref(),
-            lang,
         },
     )
     .await;

@@ -17,27 +17,23 @@ fn esc(s: &str) -> String {
     s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;")
 }
 
-/// Лид для пересылки получателям.
+/// Лид для пересылки получателям: имя + вид страховки + канал (мессенджер).
 pub struct Lead<'a> {
     pub name: Option<&'a str>,
-    pub question: Option<&'a str>,
     /// Вид страховки (человекочитаемый лейбл, как видит клиент).
     pub topic: Option<&'a str>,
-    /// Выбранный клиентом мессенджер (где ждать клиента).
+    /// Мессенджер, в который перешёл клиент (WhatsApp|Telegram|Viber).
     pub messenger: Option<&'a str>,
-    pub lang: &'a str,
 }
 
 /// Собирает HTML-текст карточки лида (пустые поля → «—»).
 fn lead_text(lead: &Lead<'_>) -> String {
     let dash = |s: Option<&str>| esc(s.map(str::trim).filter(|s| !s.is_empty()).unwrap_or("—"));
     format!(
-        "🆕 <b>Новый лид · Seguro Tenerife</b>\n\n👤 Имя: {}\n📨 Мессенджер: {}\n🛡 Страховка: {}\n🌐 Язык: {}\n💬 Вопрос: {}",
+        "🆕 <b>Новый лид · Seguro Tenerife</b>\n\n👤 Имя: {}\n🛡 Страховка: {}\n📨 Перешёл в: {}",
         dash(lead.name),
-        dash(lead.messenger),
         dash(lead.topic),
-        esc(lead.lang),
-        dash(lead.question),
+        dash(lead.messenger),
     )
 }
 
@@ -95,33 +91,29 @@ mod tests {
     }
 
     #[test]
-    fn lead_text_includes_all_fields() {
+    fn lead_text_includes_name_topic_channel() {
         let text = lead_text(&Lead {
             name: Some("Анна"),
-            question: Some("Какой полис для ВНЖ?"),
             topic: Some("Медицинская для визы / ВНЖ"),
             messenger: Some("Telegram"),
-            lang: "ru",
         });
         assert!(text.contains("Имя: Анна"));
-        assert!(text.contains("Мессенджер: Telegram"));
         assert!(text.contains("Страховка: Медицинская для визы / ВНЖ"));
-        assert!(text.contains("Язык: ru"));
-        assert!(text.contains("Вопрос: Какой полис для ВНЖ?"));
+        assert!(text.contains("Перешёл в: Telegram"));
+        // Лишних полей в карточке нет.
+        assert!(!text.contains("Язык"));
+        assert!(!text.contains("Вопрос"));
     }
 
     #[test]
     fn lead_text_uses_dash_for_empty_and_escapes() {
         let text = lead_text(&Lead {
             name: Some("  "),
-            question: None,
             topic: None,
             messenger: Some("<b>"),
-            lang: "en",
         });
         assert!(text.contains("Имя: —"));
-        assert!(text.contains("Вопрос: —"));
         assert!(text.contains("Страховка: —"));
-        assert!(text.contains("Мессенджер: &lt;b&gt;"));
+        assert!(text.contains("Перешёл в: &lt;b&gt;"));
     }
 }
