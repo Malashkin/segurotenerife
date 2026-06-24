@@ -152,7 +152,11 @@ export function ChatWidget(): JSX.Element {
         offerHandoff('agent');
         return;
       }
-      if (reply.topic) topicRef.current = reply.topic;
+      // Тема «липкая»: общий 'med' НЕ затирает уже известный конкретный вид
+      // (dental/pet/travel/…). Иначе общий вопрос-уточнение сбрасывал бы тип лида.
+      if (reply.topic && (reply.topic !== 'med' || !topicRef.current)) {
+        topicRef.current = reply.topic;
+      }
       void trackEvent('answer_received', {
         lang,
         meta: { topic: reply.topic ?? null, handoff: reply.handoff },

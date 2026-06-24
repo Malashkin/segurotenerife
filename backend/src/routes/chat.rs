@@ -113,11 +113,15 @@ pub async fn ask(
     // 1. Ретривал: интент (если есть) + текст вопроса → релевантные сервис-доки.
     let docs = kb.retrieve(question, body.intent.as_deref(), TOP_K);
     let retrieved_ids: Vec<String> = docs.iter().map(|d| d.id.clone()).collect();
-    // Тема диалога: интент верхнего релевантного дока (med|dental|travel…). Фронт
-    // подставит локализованный вид страховки в сообщение менеджеру.
-    let topic = docs
-        .first()
-        .and_then(|d| d.intents.first().cloned());
+    // Тема диалога (вид страховки). Явный интент карточки — самый надёжный сигнал
+    // (его и эхо-возвращаем); иначе берём интент верхнего релевантного дока.
+    // Фронт держит тему «липкой» и подставляет локализованный лейбл менеджеру.
+    let topic = body
+        .intent
+        .as_deref()
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+        .or_else(|| docs.first().and_then(|d| d.intents.first().cloned()));
     let relevant = crate::knowledge::KnowledgeBase::render(&docs);
 
     // 2. Кэшируемый системный блок: правила + индекс всех сервисов (стабилен →
