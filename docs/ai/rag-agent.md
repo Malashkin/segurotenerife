@@ -1,7 +1,7 @@
 ---
 audience: [backend, ai]
 owner: seguro-tenerife
-updated: 2026-06-19
+updated: 2026-06-24
 ---
 
 # RAG-агент консультанта подбора
@@ -35,10 +35,24 @@ updated: 2026-06-19
 бренд; (б) правило в системном промпте; (в) `strip_brand`-гейт на выходе.
 
 ## Контракт
-`POST /api/chat` → `{ question, lang?, intent? }` → `{ answer }`.
-Фронт: `askQuestion(question, lang, intent?)` (`@shared/api`); `ChatWidget`
-передаёт активный интент карточки. Без `ANTHROPIC_API_KEY`/корпуса → 503,
-фронт молча откатывается к гайдовому чату.
+`POST /api/chat` → `{ question, lang?, intent?, history?, session_id? }` →
+`{ answer, handoff, topic? }`. `handoff` — сигнал «пора к менеджеру» (маркер
+`[[HANDOFF]]` от модели ИЛИ детектор `wants_manager`); `topic` — вид страховки
+(первый интент поднятых доков) для предзаполнения сообщения менеджеру.
+Фронт: `askQuestion(question, lang, intent?, history?)` (`@shared/api`);
+`ChatWidget` передаёт активный интент карточки и последние реплики (контекст).
+Без `ANTHROPIC_API_KEY`/корпуса → 503, фронт молча откатывается к гайдовому чату.
+
+### Передача менеджеру и лиды
+`POST /api/handoff` → `{ name, question?, topic?, messenger?, lang? }` →
+`{ ok, lead_id }`. Имя **обязательно**. Хендофф (1) сохраняет лид в таблицу
+`leads` (видно в админке: `name`, `goal`=вид страховки, `messenger`, языки;
+`contact` пустой — на этом шаге контакт не собираем) и (2) пересылает менеджеру
+в Telegram (`telegram::send_lead`, если заданы `TELEGRAM_BOT_TOKEN` +
+`TELEGRAM_MANAGER_CHAT_ID`; иначе no-op). Фронт: `forwardHandoff(input)` —
+не бросает, мессенджер открывается deep-link'ом в любом случае. WhatsApp/Viber
+несут предзаполненный текст; Telegram текст в ссылке не принимает (ник
+планируется захватывать вебхуком бота — TODO).
 
 ## Как расширять
 - **Контент:** добавить/обогатить доки в `services.json` (бренд-нейтрально!),

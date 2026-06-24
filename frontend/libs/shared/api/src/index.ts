@@ -31,7 +31,13 @@ export {
   type InitAnalyticsOptions,
 } from './posthog';
 
-export { askQuestion, forwardHandoff, type ChatReply, type ChatTurn } from './chat';
+export {
+  askQuestion,
+  forwardHandoff,
+  type ChatReply,
+  type ChatTurn,
+  type HandoffInput,
+} from './chat';
 
 export { createLeadSchema, validateLead, MESSENGERS } from './schema';
 

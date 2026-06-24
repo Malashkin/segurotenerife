@@ -30,19 +30,28 @@ export interface ChatTurn {
   content: string;
 }
 
+/** Параметры передачи лида менеджеру (имя обязательно). */
+export interface HandoffInput {
+  name: string;
+  question?: string;
+  /** Вид страховки (интент: med|dental|travel…). */
+  topic?: string;
+  /** Выбранный мессенджер (WhatsApp|Telegram|Viber). */
+  messenger?: string;
+  lang: string;
+}
+
 /**
- * Пересылает лид менеджеру в Telegram (бот) через backend. Не бросает: при любой
- * ошибке/недоступности возвращает false (фронт всё равно откроет t.me-чат).
+ * Сохраняет лид на backend и пересылает менеджеру в Telegram. Не бросает: при
+ * любой ошибке/недоступности возвращает false (фронт всё равно откроет чат
+ * мессенджера). Имя обязательно — карточка не даёт нажать без него.
  */
-export async function forwardHandoff(
-  name: string | undefined,
-  question: string | undefined,
-  lang: string,
-): Promise<boolean> {
+export async function forwardHandoff(input: HandoffInput): Promise<boolean> {
   try {
-    const body: Record<string, unknown> = { lang };
-    if (name) body.name = name;
-    if (question) body.question = question;
+    const body: Record<string, unknown> = { name: input.name, lang: input.lang };
+    if (input.question) body.question = input.question;
+    if (input.topic) body.topic = input.topic;
+    if (input.messenger) body.messenger = input.messenger;
     const data = await apiRequest<{ ok?: boolean }>('/api/handoff', { method: 'POST', body });
     return data.ok === true;
   } catch {

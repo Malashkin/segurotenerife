@@ -18,7 +18,14 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { useUiStore, DEFAULT_MESSENGER, type ChatMessenger } from '@shared/store';
-import { trackEvent, askQuestion, forwardHandoff, captureEvent, type ChatTurn } from '@shared/api';
+import {
+  trackEvent,
+  askQuestion,
+  forwardHandoff,
+  captureEvent,
+  type ChatTurn,
+  type HandoffInput,
+} from '@shared/api';
 import { FreeAsk } from './FreeAsk';
 import { useChatI18n } from '../model/useChatI18n';
 import { CHAT_INTENTS } from '../model/intents';
@@ -284,9 +291,12 @@ export function ChatWidget(): JSX.Element {
   );
 }
 
-/** Инлайн-карточка контактов менеджера в ленте: имя (опц.) + кнопки мессенджеров.
- *  WhatsApp/Viber — deep-link с предзаполненным текстом (имя + вопрос). Telegram
- *  не принимает текст в ссылке → дополнительно шлём лид менеджеру через бота. */
+/** Инлайн-карточка контактов менеджера в ленте: имя (обязательно) + кнопки
+ *  мессенджеров. Имя обязательно («Как к вам обращаться») — пока не введено,
+ *  кнопки мессенджеров заблокированы. WhatsApp/Viber — deep-link с
+ *  предзаполненным текстом (имя + вид страховки); контакт у них не собираем.
+ *  Telegram не принимает текст в ссылке → лид + ник дозахватываем через бота.
+ *  Любой переход сохраняет лид на backend (форвард менеджеру + учёт в админке). */
 function HandoffCard({
   ct,
   lang,
@@ -300,52 +310,78 @@ function HandoffCard({
 }): JSX.Element {
   const contacts = getOfficeContacts();
   const [name, setName] = useState('');
+  const [nameError, setNameError] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const ordered: ChatMessenger[] = [
     DEFAULT_MESSENGER,
     ...MESSENGERS.filter((m) => m !== DEFAULT_MESSENGER),
   ];
 
   const trimmedName = name.trim();
+  const hasName = trimmedName.length > 0;
   // Локализованный вид страховки по теме диалога (med|dental|travel…).
   const typeLabel = topic && CHAT_INTENTS[topic] ? ct(CHAT_INTENTS[topic].goalKey) : '';
   // Сообщение менеджеру:
-  //   [Меня зовут <имя>. | Здравствуйте!] Мне нужно посчитать стоимость страховки[: <вид>].
+  //   Меня зовут <имя>. Мне нужно посчитать стоимость страховки[: <вид>].
   //   \n\nSeguro Tenerife
-  const greeting = trimmedName ? `${ct('hand_name_pre')} ${trimmedName}. ` : `${ct('hand_hello')} `;
-  const message = `${greeting}${ct('hand_need_quote')}${typeLabel ? `: ${typeLabel}` : ''}.\n\nSeguro Tenerife`;
+  const message = `${ct('hand_name_pre')} ${trimmedName}. ${ct('hand_need_quote')}${typeLabel ? `: ${typeLabel}` : ''}.\n\nSeguro Tenerife`;
 
-  const handleClick = (m: ChatMessenger): void => {
-    void trackEvent('handoff_clicked', { lang, meta: { messenger: m } });
-    // Telegram-ссылка не несёт текст → передаём лид менеджеру через бота.
-    if (m === 'Telegram') {
-      void forwardHandoff(trimmedName || undefined, lastQuestion || undefined, lang);
+  const handleClick = (m: ChatMessenger, e: React.MouseEvent): void => {
+    // Имя обязательно: без него не открываем мессенджер, подсвечиваем поле.
+    if (!hasName) {
+      e.preventDefault();
+      setNameError(true);
+      inputRef.current?.focus();
+      return;
     }
+    void trackEvent('handoff_clicked', { lang, meta: { messenger: m } });
+    // Сохраняем лид + форвардим менеджеру (для всех мессенджеров).
+    const payload: HandoffInput = { name: trimmedName, messenger: m, lang };
+    if (lastQuestion) payload.question = lastQuestion;
+    if (topic) payload.topic = topic;
+    void forwardHandoff(payload);
   };
 
   return (
     <div className="self-stretch rounded-2xl border border-slate-200 bg-white p-3.5 motion-safe:animate-msgIn">
-      {/* Имя — необязательно; подставляется в сообщение менеджеру. 16px (iOS). */}
+      {/* Имя — обязательно («Как к вам обращаться»). 16px (iOS не зумит). */}
       <input
+        ref={inputRef}
         type="text"
         value={name}
-        onChange={(e) => setName(e.target.value)}
+        onChange={(e) => {
+          setName(e.target.value);
+          if (e.target.value.trim()) setNameError(false);
+        }}
         placeholder={ct('hand_name_ph')}
         autoComplete="name"
-        className="mb-2.5 w-full rounded-xl border-[1.5px] border-slate-200 px-3.5 py-2.5 text-base focus:border-brand focus:outline-none"
+        aria-invalid={nameError}
+        aria-label={ct('hand_name_ph')}
+        className={`w-full rounded-xl border-[1.5px] px-3.5 py-2.5 text-base focus:outline-none ${
+          nameError ? 'border-red-400 focus:border-red-500' : 'border-slate-200 focus:border-brand'
+        }`}
       />
-      <div className="flex flex-col gap-2">
+      {nameError && (
+        <p className="mt-1.5 text-[0.8rem] text-red-500 motion-safe:animate-fadeIn">
+          {ct('hand_name_req')}
+        </p>
+      )}
+      <div className="mt-2.5 flex flex-col gap-2">
         {ordered.map((m, idx) => (
           <a
             key={m}
             href={buildHandoffLink(m, contacts, message)}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => handleClick(m)}
-            className={
+            onClick={(e) => handleClick(m, e)}
+            aria-disabled={!hasName}
+            className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-[0.95rem] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+              !hasName ? 'cursor-not-allowed opacity-50' : ''
+            } ${
               idx === 0
-                ? 'inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-5 py-3 text-[0.95rem] font-semibold text-white transition-colors hover:bg-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand'
-                : 'inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-[0.95rem] font-semibold text-ink transition-colors hover:border-brand hover:text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand'
-            }
+                ? 'bg-brand text-white hover:bg-brand-dark'
+                : 'border border-slate-200 bg-white text-ink hover:border-brand hover:text-brand-dark'
+            }`}
           >
             {ct(continueLabelKey(m))}
           </a>

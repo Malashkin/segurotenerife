@@ -72,6 +72,14 @@ test.describe('web — чат-консультант', () => {
     await expect(links.first()).toBeVisible({ timeout: 7000 });
     expect(await links.count()).toBeGreaterThanOrEqual(1);
 
+    // Имя обязательно: пока не введено — кнопки мессенджеров заблокированы.
+    await expect(links.first()).toHaveAttribute('aria-disabled', 'true');
+    const nameInput = chat.getByPlaceholder('Как к вам обращаться?');
+    await expect(nameInput).toBeVisible();
+    await nameInput.fill('Анна');
+    // После ввода имени — мессенджеры активны.
+    await expect(links.first()).toHaveAttribute('aria-disabled', 'false');
+
     // КЛЮЧЕВОЕ: хендофф — не тупик, ввод остаётся → можно продолжать спрашивать.
     // (В карточке есть поле имени, поэтому берём последний input — это поле ввода
     // вопроса в подвале.)
