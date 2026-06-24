@@ -18,7 +18,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { useUiStore, DEFAULT_MESSENGER, type ChatMessenger } from '@shared/store';
-import { trackEvent, askQuestion, captureEvent } from '@shared/api';
+import { trackEvent, askQuestion, captureEvent, type ChatTurn } from '@shared/api';
 import { FreeAsk } from './FreeAsk';
 import { useChatI18n } from '../model/useChatI18n';
 import { CHAT_INTENTS } from '../model/intents';
@@ -26,6 +26,8 @@ import { buildHandoffLink, continueLabelKey, getOfficeContacts } from '../model/
 
 /** Длительность анимации «подбираем менеджера» перед показом контактов (мс). */
 const MATCHING_MS = 2200;
+/** Бездействие, после которого мягко предлагаем менеджера (мс). */
+const IDLE_MS = 60_000;
 /** Мессенджеры на хендоффе (Instagram не предлагаем). */
 const MESSENGERS: readonly ChatMessenger[] = ['WhatsApp', 'Telegram', 'Viber'];
 
@@ -59,16 +61,23 @@ export function ChatWidget(): JSX.Element {
   const idRef = useRef(0);
   const bodyRef = useRef<HTMLDivElement>(null);
   const matchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startedRef = useRef(false);
   const intentKeyRef = useRef<string | null>(null);
   // Последний вопрос пользователя — добавим в предзаполненное сообщение менеджеру.
   const lastQuestionRef = useRef<string>('');
+  // Зеркала состояний для таймера бездействия (читаем актуальное в колбэке).
+  const askingRef = useRef(false);
+  const matchingRef = useRef(false);
+  askingRef.current = asking;
+  matchingRef.current = matching;
 
   const pushText = (author: 'user' | 'bot', text: string) =>
     setMessages((prev) => [...prev, { id: idRef.current++, kind: 'text', author, text }]);
 
   /** Показать карточку контактов менеджера (инлайн, с короткой анимацией). */
-  function offerHandoff(source: 'agent' | 'button'): void {
+  function offerHandoff(source: 'agent' | 'button' | 'idle'): void {
+    if (matchingRef.current) return;
     setMessages((prev) => {
       // Не дублируем, если последняя реплика — уже карточка хендоффа.
       if (prev.at(-1)?.kind === 'handoff') return prev;
@@ -88,12 +97,19 @@ export function ChatWidget(): JSX.Element {
   async function handleAsk(question: string): Promise<void> {
     const q = question.trim();
     if (!q || asking || matching) return;
+    // История диалога ДО текущего вопроса (без приветствия — первого bot-сообщения),
+    // последние реплики, для удержания контекста на бэкенде.
+    const history: ChatTurn[] = messages
+      .filter((m): m is Extract<Msg, { kind: 'text' }> => m.kind === 'text')
+      .slice(1)
+      .slice(-10)
+      .map((m) => ({ role: m.author === 'user' ? 'user' : 'assistant', content: m.text }));
     lastQuestionRef.current = q;
     pushText('user', q);
     setAsking(true);
     void trackEvent('question_asked', { lang });
     try {
-      const reply = await askQuestion(q, lang, intentKeyRef.current ?? undefined);
+      const reply = await askQuestion(q, lang, intentKeyRef.current ?? undefined, history);
       if (reply === null) {
         pushText('bot', ct('assist_off'));
         setAsking(false);
@@ -132,6 +148,23 @@ export function ChatWidget(): JSX.Element {
   useEffect(() => {
     const el = bodyRef.current;
     if (el) el.scrollTop = el.scrollHeight;
+  }, [messages.length, asking, matching]);
+
+  /** Перезапустить таймер бездействия. По истечении — мягко предложить менеджера. */
+  function armIdle(): void {
+    if (idleTimer.current) clearTimeout(idleTimer.current);
+    idleTimer.current = setTimeout(() => {
+      if (!askingRef.current && !matchingRef.current) offerHandoff('idle');
+    }, IDLE_MS);
+  }
+
+  // Перезапускаем таймер бездействия при любой активности/смене состояния.
+  useEffect(() => {
+    armIdle();
+    return () => {
+      if (idleTimer.current) clearTimeout(idleTimer.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages.length, asking, matching]);
 
   const userMsgCount = messages.filter((m) => m.kind === 'text' && m.author === 'user').length;
@@ -243,6 +276,7 @@ export function ChatWidget(): JSX.Element {
           onAsk={handleAsk}
           pending={asking || matching}
           placeholders={rotatingPlaceholders}
+          onActivity={armIdle}
         />
       </div>
     </div>

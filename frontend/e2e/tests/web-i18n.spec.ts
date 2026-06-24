@@ -19,6 +19,9 @@ test.describe('web — мультиязычные URL', () => {
     await page.addInitScript(() => {
       try {
         localStorage.setItem('seguro_cookie_consent', 'accepted');
+        // Фиксируем сохранённый язык, чтобы корень `/` не редиректил по языку
+        // браузера (это поведение проверяется отдельным describe ниже).
+        localStorage.setItem('seguro_lang', 'ru');
       } catch {
         /* игнор */
       }
@@ -50,5 +53,30 @@ test.describe('web — мультиязычные URL', () => {
     await page.waitForURL('**/es/**');
     await expect(page.locator('html')).toHaveAttribute('lang', 'es');
     expect(new URL(page.url()).pathname).toBe('/es/');
+  });
+});
+
+test.describe('web — язык по устройству', () => {
+  // Испанский язык браузера, без сохранённого выбора → корень `/` редиректит на /es/.
+  test.use({ viewport: { width: 1280, height: 900 }, locale: 'es-ES' });
+
+  test('корень / редиректит на язык браузера (es) при отсутствии выбора', async ({ page }) => {
+    await page.goto(`${WEB}/`);
+    await page.waitForURL('**/es/**');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'es');
+  });
+
+  test('сохранённый выбор важнее языка браузера', async ({ page }) => {
+    // Явно выбрана UA — на корне остаёмся/уходим на /uk/, а не на /es/ по браузеру.
+    await page.addInitScript(() => {
+      try {
+        localStorage.setItem('seguro_lang', 'uk');
+      } catch {
+        /* игнор */
+      }
+    });
+    await page.goto(`${WEB}/`);
+    await page.waitForURL('**/uk/**');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'uk');
   });
 });

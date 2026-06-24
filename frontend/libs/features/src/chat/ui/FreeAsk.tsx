@@ -16,12 +16,14 @@ export interface FreeAskProps {
   pending: boolean;
   /** Фразы для циклящегося плейсхолдера (пока поле пустое). */
   placeholders?: string[];
+  /** Вызывается при активности пользователя (ввод) — для сброса таймера бездействия. */
+  onActivity?: () => void;
 }
 
 /** Интервал смены фразы-плейсхолдера (мс). */
 const ROTATE_MS = 2200;
 
-export function FreeAsk({ ct, onAsk, pending, placeholders }: FreeAskProps): JSX.Element {
+export function FreeAsk({ ct, onAsk, pending, placeholders, onActivity }: FreeAskProps): JSX.Element {
   const [value, setValue] = useState('');
   const [phIdx, setPhIdx] = useState(0);
   const list = placeholders && placeholders.length > 0 ? placeholders : [ct('ask_ph')];
@@ -63,7 +65,10 @@ export function FreeAsk({ ct, onAsk, pending, placeholders }: FreeAskProps): JSX
         <input
           type="text"
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => {
+            setValue(e.target.value);
+            onActivity?.();
+          }}
           aria-label={ct('ask_title')}
           autoComplete="off"
           enterKeyHint="send"

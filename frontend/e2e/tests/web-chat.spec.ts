@@ -26,6 +26,7 @@ test.describe('web — чат-консультант', () => {
     await page.addInitScript(() => {
       try {
         localStorage.setItem('seguro_cookie_consent', 'accepted');
+        localStorage.setItem('seguro_lang', 'ru'); // не редиректить корень по языку браузера
       } catch {
         /* игнор */
       }

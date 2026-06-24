@@ -9,7 +9,17 @@ test.describe('web — согласие на куки', () => {
   test.use({ viewport: { width: 1280, height: 900 } });
 
   // Корень `/` — русская версия (Astro), отсюда RU-подписи баннера. Согласие НЕ
-  // ставим — баннер (React-остров) должен показаться после гидрации.
+  // ставим — баннер должен показаться. seguro_lang=ru фиксируем, чтобы скрипт
+  // языка по браузеру не редиректил корень на /en/.
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      try {
+        localStorage.setItem('seguro_lang', 'ru');
+      } catch {
+        /* игнор */
+      }
+    });
+  });
 
   test('«Принять все» закрывает баннер, выбор сохраняется и не возвращается', async ({ page }) => {
     await page.goto(WEB);

@@ -108,6 +108,30 @@ const jsonld = {
     />
 
     <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonld)} />
+
+    <!-- Язык по устройству: на корне `/` (RU по умолчанию) перенаправляем на язык
+         браузера (es/uk/en), уважая явный выбор из localStorage. Раннее в <head>
+         — чтобы редирект случился до отрисовки и без «мигания». -->
+    <script is:inline>
+      (function () {
+        try {
+          var p = location.pathname;
+          if (p !== '/' && p !== '') return; // только корень
+          var sup = ['ru', 'es', 'uk', 'en'];
+          var stored = null;
+          try { stored = localStorage.getItem('seguro_lang'); } catch (e) {}
+          if (stored && stored !== 'ru' && sup.indexOf(stored) !== -1) {
+            location.replace('/' + stored + '/'); return;
+          }
+          if (!stored) {
+            var nav = (navigator.language || '').slice(0, 2).toLowerCase();
+            var map = { be: 'ru', ru: 'ru', uk: 'uk', en: 'en', es: 'es' };
+            var t = map[nav];
+            if (t && t !== 'ru') location.replace('/' + t + '/');
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body class="min-h-screen bg-bg text-ink">
     <slot />
@@ -119,6 +143,18 @@ const jsonld = {
         const el = (e.target as HTMLElement | null)?.closest<HTMLElement>('[data-ui]');
         if (!el) return;
         window.dispatchEvent(new CustomEvent('seguro:ui', { detail: { ...el.dataset } }));
+      });
+
+      // Запоминаем явный выбор языка (клик по переключателю) — чтобы корень `/`
+      // уважал его и не редиректил по языку браузера.
+      document.addEventListener('click', (e) => {
+        const a = (e.target as HTMLElement | null)?.closest<HTMLElement>('[data-setlang]');
+        if (!a) return;
+        try {
+          localStorage.setItem('seguro_lang', a.dataset.setlang as string);
+        } catch {
+          /* приватный режим — игнор */
+        }
       });
     </script>
 

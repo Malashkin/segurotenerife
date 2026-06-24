@@ -22,6 +22,12 @@ interface ChatAnswerDto {
   handoff?: boolean;
 }
 
+/** Реплика истории диалога (для удержания контекста на бэкенде). */
+export interface ChatTurn {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 /**
  * Спрашивает агента подбора.
  *
@@ -35,10 +41,12 @@ export async function askQuestion(
   question: string,
   lang: string,
   intent?: string,
+  history?: ChatTurn[],
 ): Promise<ChatReply | null> {
   try {
     const body: Record<string, unknown> = { question, lang };
     if (intent) body.intent = intent;
+    if (history && history.length > 0) body.history = history;
     // session_id (если есть согласие на аналитику) группирует диалог в Langfuse.
     const sid = getSessionId();
     if (sid) body.session_id = sid;
