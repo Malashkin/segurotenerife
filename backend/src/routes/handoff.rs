@@ -1,18 +1,10 @@
 //! `POST /api/handoff` — фиксация лида из чата при передаче менеджеру.
 //!
 //! Сохраняет лид в таблицу `leads` (виден в админке) и шлёт карточку лида
-//! получателям в Telegram (владелец для учёта + менеджер(ы)). Имя обязательно.
-//!
-//! Telegram-канал особый: клиент уходит НЕ к менеджеру напрямую, а в бота
-//! (`t.me/<bot>?start=<lead_id>`); ник + карточку дошлёт вебхук бота
-//! (`telegram::webhook`), когда клиент нажмёт Start. Поэтому для `messenger =
-//! Telegram` карточку здесь НЕ шлём (чтобы не дублировать без ника) — только
-//! сохраняем лид. Для WhatsApp/Viber шлём карточку сразу (контакт неизвестен).
-//!
-//! `lead_id` приходит с фронта (UUID, сгенерированный клиентом) — чтобы
-//! Telegram-deep-link `?start=<lead_id>` можно было построить синхронно (без
-//! ожидания ответа сервера и блокировки попапа). Если не пришёл/невалиден —
-//! генерируем свой. Публичный, под общим rate-limit.
+//! получателям в Telegram (владелец для учёта + менеджер(ы)) — со всех каналов.
+//! Имя обязательно. Контакт клиента на этом шаге не собираем (для Telegram клиент
+//! сам копирует заготовленное сообщение и идёт в чат менеджера). Публичный, под
+//! общим rate-limit.
 
 use axum::{extract::State, Json};
 use serde::Deserialize;
@@ -38,9 +30,6 @@ pub struct HandoffIn {
     /// Выбранный мессенджер (WhatsApp|Telegram|Viber).
     #[validate(length(max = 16))]
     pub messenger: Option<String>,
-    /// UUID лида, сгенерированный клиентом (для синхронного Telegram deep-link).
-    #[validate(length(max = 36))]
-    pub lead_id: Option<String>,
 }
 
 pub async fn forward(
@@ -52,21 +41,13 @@ pub async fn forward(
 
     let lang = body.lang.as_deref().unwrap_or("ru");
     let messenger = body.messenger.as_deref().unwrap_or("—");
-    let is_telegram = messenger.eq_ignore_ascii_case("Telegram");
-    // Используем клиентский lead_id, если это валидный UUID; иначе генерируем.
-    let lead_id = body
-        .lead_id
-        .as_deref()
-        .and_then(|s| Uuid::parse_str(s.trim()).ok())
-        .unwrap_or_else(Uuid::new_v4);
+    let lead_id = Uuid::new_v4();
 
-    // Сохраняем лид (контакт пока пустой — для Telegram дозахватим ник в вебхуке).
-    // consent=true: переход к менеджеру = согласие на связь.
+    // Сохраняем лид. consent=true: переход к менеджеру = согласие на связь.
     let res = sqlx::query(
         "INSERT INTO leads \
          (id, name, contact, messenger, comm_lang, goal, ui_lang, consent) \
-         VALUES ($1, $2, $3, $4, $5, $6, $7, true) \
-         ON CONFLICT (id) DO NOTHING",
+         VALUES ($1, $2, $3, $4, $5, $6, $7, true)",
     )
     .bind(lead_id)
     .bind(body.name.trim())
@@ -81,25 +62,21 @@ pub async fn forward(
         tracing::warn!(error = %e, "handoff lead insert failed");
     }
 
-    // Для Telegram карточку дошлёт вебхук (с ником) — здесь не дублируем.
-    let delivered = if is_telegram {
-        false
-    } else {
-        crate::telegram::send_lead(
-            &state.http,
-            &state.config,
-            &crate::telegram::Lead {
-                name: Some(body.name.trim()),
-                question: body.question.as_deref(),
-                topic: body.topic.as_deref(),
-                messenger: body.messenger.as_deref(),
-                contact: None,
-                lang,
-            },
-        )
-        .await
-    };
+    // Карточка лида получателям в Telegram (если настроен бот + chat_id) — со всех
+    // каналов, чтобы лид всегда попадал к нам в учёт.
+    let delivered = crate::telegram::send_lead(
+        &state.http,
+        &state.config,
+        &crate::telegram::Lead {
+            name: Some(body.name.trim()),
+            question: body.question.as_deref(),
+            topic: body.topic.as_deref(),
+            messenger: body.messenger.as_deref(),
+            lang,
+        },
+    )
+    .await;
 
-    tracing::info!(messenger, is_telegram, delivered, "handoff lead saved");
+    tracing::info!(messenger, delivered, "handoff lead saved");
     Ok(Json(json!({ "ok": true, "lead_id": lead_id })))
 }

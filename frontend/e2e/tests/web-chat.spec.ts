@@ -80,6 +80,13 @@ test.describe('web — чат-консультант', () => {
     // После ввода имени — мессенджеры активны.
     await expect(links.first()).toHaveAttribute('aria-disabled', 'false');
 
+    // Telegram: клик раскрывает панель «скопировать заготовку + перейти в чат».
+    await chat.getByRole('button', { name: /Telegram/i }).click();
+    await expect(chat.getByText(/Скопируйте сообщение/i)).toBeVisible();
+    await expect(chat.getByText(/Меня зовут Анна\./i)).toBeVisible();
+    await expect(chat.getByRole('button', { name: /Скопировать сообщение/i })).toBeVisible();
+    await expect(chat.getByRole('link', { name: /Открыть чат менеджера/i })).toBeVisible();
+
     // КЛЮЧЕВОЕ: хендофф — не тупик, ввод остаётся → можно продолжать спрашивать.
     // (В карточке есть поле имени, поэтому берём последний input — это поле ввода
     // вопроса в подвале.)

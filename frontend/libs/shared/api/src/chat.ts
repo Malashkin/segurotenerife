@@ -38,8 +38,6 @@ export interface HandoffInput {
   topic?: string;
   /** Выбранный мессенджер (WhatsApp|Telegram|Viber). */
   messenger?: string;
-  /** UUID лида, сгенерированный клиентом (для Telegram ?start=<lead_id>). */
-  leadId?: string;
   lang: string;
 }
 
@@ -54,7 +52,6 @@ export async function forwardHandoff(input: HandoffInput): Promise<boolean> {
     if (input.question) body.question = input.question;
     if (input.topic) body.topic = input.topic;
     if (input.messenger) body.messenger = input.messenger;
-    if (input.leadId) body.lead_id = input.leadId;
     const data = await apiRequest<{ ok?: boolean }>('/api/handoff', { method: 'POST', body });
     return data.ok === true;
   } catch {

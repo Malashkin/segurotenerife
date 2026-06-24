@@ -46,13 +46,14 @@ updated: 2026-06-24
 ### Передача менеджеру и лиды
 `POST /api/handoff` → `{ name, question?, topic?, messenger?, lang? }` →
 `{ ok, lead_id }`. Имя **обязательно**. Хендофф (1) сохраняет лид в таблицу
-`leads` (видно в админке: `name`, `goal`=вид страховки, `messenger`, языки;
-`contact` пустой — на этом шаге контакт не собираем) и (2) пересылает менеджеру
-в Telegram (`telegram::send_lead`, если заданы `TELEGRAM_BOT_TOKEN` +
-`TELEGRAM_MANAGER_CHAT_ID`; иначе no-op). Фронт: `forwardHandoff(input)` —
-не бросает, мессенджер открывается deep-link'ом в любом случае. WhatsApp/Viber
-несут предзаполненный текст; Telegram текст в ссылке не принимает (ник
-планируется захватывать вебхуком бота — TODO).
+`leads` (видно в админке: `name`, `goal`=вид страховки, `messenger`, языки) и
+(2) шлёт карточку лида получателям в Telegram (`telegram::send_lead`, список
+chat_id в `TELEGRAM_MANAGER_CHAT_ID` через запятую — владелец+менеджер; без
+`TELEGRAM_BOT_TOKEN` — no-op) со **всех** каналов. Фронт: `forwardHandoff(input)`
+— не бросает. WhatsApp/Viber открываются deep-link'ом с предзаполненным текстом;
+Telegram текст не предзаполняет, поэтому клиенту показывается заготовка с кнопкой
+«Скопировать» + ссылка в чат менеджера. Детали каналов:
+[../architecture/lead-flow.md](../architecture/lead-flow.md).
 
 ## Как расширять
 - **Контент:** добавить/обогатить доки в `services.json` (бренд-нейтрально!),

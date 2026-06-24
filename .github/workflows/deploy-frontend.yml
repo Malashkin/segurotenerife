@@ -33,8 +33,6 @@ jobs:
       VITE_WHATSAPP_NUMBER: '34658516901'
       VITE_VIBER_NUMBER: '34658516901'
       VITE_TELEGRAM_USERNAME: mmalashkin
-      # Бот для захвата ника клиента в Telegram (?start=<lead_id> → вебхук бота).
-      VITE_TELEGRAM_BOT_USERNAME: seguro_tenerife_bot
     steps:
       - uses: actions/checkout@v4
 

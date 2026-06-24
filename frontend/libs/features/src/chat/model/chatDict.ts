@@ -109,6 +109,10 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     hand_name_pre: 'My name is',
     hand_hello: 'Hello!',
     hand_need_quote: "I'd like a quote for insurance",
+    tg_copy_instr: 'Copy the message and send it to the manager in Telegram:',
+    tg_copy: 'Copy message',
+    tg_copied: 'Copied ✓',
+    tg_open: 'Open manager chat',
     // CHAT_I18N
     title: 'Online insurance finder',
     status: '● online',
@@ -196,6 +200,10 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     hand_name_pre: 'Me llamo',
     hand_hello: '¡Hola!',
     hand_need_quote: 'Quiero calcular el precio del seguro',
+    tg_copy_instr: 'Copia el mensaje y envíalo al gestor en Telegram:',
+    tg_copy: 'Copiar mensaje',
+    tg_copied: 'Copiado ✓',
+    tg_open: 'Abrir chat del gestor',
     title: 'Buscador de seguros online',
     status: '● en línea',
     greeting:
@@ -282,6 +290,10 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     hand_name_pre: 'Мене звати',
     hand_hello: 'Вітаю!',
     hand_need_quote: 'Хочу розрахувати вартість страхування',
+    tg_copy_instr: 'Скопіюйте повідомлення та надішліть його менеджеру в Telegram:',
+    tg_copy: 'Скопіювати повідомлення',
+    tg_copied: 'Скопійовано ✓',
+    tg_open: 'Відкрити чат менеджера',
     title: 'Онлайн-підбір страховки',
     status: '● онлайн',
     greeting:
@@ -368,6 +380,10 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     hand_name_pre: 'Меня зовут',
     hand_hello: 'Здравствуйте!',
     hand_need_quote: 'Мне нужно посчитать стоимость страховки',
+    tg_copy_instr: 'Скопируйте сообщение и отправьте его менеджеру в Telegram:',
+    tg_copy: 'Скопировать сообщение',
+    tg_copied: 'Скопировано ✓',
+    tg_open: 'Открыть чат менеджера',
     title: 'Онлайн-подбор страховки',
     status: '● онлайн',
     greeting:

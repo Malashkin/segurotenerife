@@ -52,9 +52,6 @@ pub struct Config {
     /// без них пересылка в Telegram выключена (фронт откатывается на t.me-ссылку).
     pub telegram_bot_token: Option<String>,
     pub telegram_manager_chat_id: Option<String>,
-    /// Секрет вебхука Telegram (`X-Telegram-Bot-Api-Secret-Token`). Если задан —
-    /// принимаем апдейты только с этим заголовком (защита публичного эндпойнта).
-    pub telegram_webhook_secret: Option<String>,
 }
 
 impl Config {
@@ -118,9 +115,6 @@ impl Config {
             telegram_manager_chat_id: std::env::var("TELEGRAM_MANAGER_CHAT_ID")
                 .ok()
                 .filter(|s| !s.is_empty()),
-            telegram_webhook_secret: std::env::var("TELEGRAM_WEBHOOK_SECRET")
-                .ok()
-                .filter(|s| !s.is_empty()),
         })
     }
 
@@ -162,7 +156,6 @@ impl Config {
             langfuse_base_url: "https://cloud.langfuse.com".into(),
             telegram_bot_token: None,
             telegram_manager_chat_id: None,
-            telegram_webhook_secret: None,
         }
     }
 }

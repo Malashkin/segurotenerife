@@ -42,14 +42,29 @@ type Msg =
   | { id: number; kind: 'text'; author: 'user' | 'bot'; text: string }
   | { id: number; kind: 'handoff' };
 
-/** UUID лида: crypto.randomUUID, с фолбэком для старых сред. */
-function newLeadId(): string {
-  const c = globalThis.crypto;
-  if (c && typeof c.randomUUID === 'function') return c.randomUUID();
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (ch) => {
-    const r = (Math.random() * 16) | 0;
-    return (ch === 'x' ? r : (r & 0x3) | 0x8).toString(16);
-  });
+/** Копирует текст в буфер: clipboard API, с фолбэком на execCommand. */
+async function copyText(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    /* фолбэк ниже */
+  }
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -303,10 +318,10 @@ export function ChatWidget(): JSX.Element {
 
 /** Инлайн-карточка контактов менеджера в ленте: имя (обязательно) + кнопки
  *  мессенджеров. Имя обязательно («Как к вам обращаться») — пока не введено,
- *  кнопки мессенджеров заблокированы. WhatsApp/Viber — deep-link с
- *  предзаполненным текстом (имя + вид страховки); контакт у них не собираем.
- *  Telegram не принимает текст в ссылке → лид + ник дозахватываем через бота.
- *  Любой переход сохраняет лид на backend (форвард менеджеру + учёт в админке). */
+ *  кнопки заблокированы. WhatsApp/Viber — deep-link с предзаполненным текстом.
+ *  Telegram не предзаполняет текст → показываем заготовку сообщения с кнопкой
+ *  «Скопировать» + ссылкой в чат менеджера (клиент вставляет и отправляет сам).
+ *  Любой выбор сохраняет лид на backend (карточка в Telegram-бот + учёт). */
 function HandoffCard({
   ct,
   lang,
@@ -321,11 +336,11 @@ function HandoffCard({
   const contacts = getOfficeContacts();
   const [name, setName] = useState('');
   const [nameError, setNameError] = useState(false);
-  // UUID лида — генерим на клиенте, чтобы Telegram-ссылку t.me/<bot>?start=<id>
-  // построить синхронно (без ожидания сервера → без блокировки попапа), и тем же
-  // id сохранить лид на бэкенде.
-  const [leadId] = useState(newLeadId);
+  const [tgOpen, setTgOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Лид по каждому мессенджеру шлём не более одного раза (на повторных кликах).
+  const sentRef = useRef<Set<ChatMessenger>>(new Set());
   const ordered: ChatMessenger[] = [
     DEFAULT_MESSENGER,
     ...MESSENGERS.filter((m) => m !== DEFAULT_MESSENGER),
@@ -335,28 +350,53 @@ function HandoffCard({
   const hasName = trimmedName.length > 0;
   // Локализованный вид страховки по теме диалога (med|dental|travel…).
   const typeLabel = topic && CHAT_INTENTS[topic] ? ct(CHAT_INTENTS[topic].goalKey) : '';
-  // Сообщение менеджеру:
+  // Заготовленное сообщение менеджеру:
   //   Меня зовут <имя>. Мне нужно посчитать стоимость страховки[: <вид>].
   //   \n\nSeguro Tenerife
   const message = `${ct('hand_name_pre')} ${trimmedName}. ${ct('hand_need_quote')}${typeLabel ? `: ${typeLabel}` : ''}.\n\nSeguro Tenerife`;
 
-  const handleClick = (m: ChatMessenger, e: React.MouseEvent): void => {
-    // Имя обязательно: без него не открываем мессенджер, подсвечиваем поле.
-    if (!hasName) {
-      e.preventDefault();
-      setNameError(true);
-      inputRef.current?.focus();
-      return;
-    }
+  /** Сохраняет лид на backend (один раз на мессенджер) + аналитика. */
+  const sendLead = (m: ChatMessenger): void => {
+    if (sentRef.current.has(m)) return;
+    sentRef.current.add(m);
     void trackEvent('handoff_clicked', { lang, meta: { messenger: m } });
-    // Сохраняем лид + форвардим менеджеру (для всех мессенджеров).
     // topic — человекочитаемый вид страховки (как в сообщении клиента), чтобы
-    // менеджер в карточке видел «Медицинская для визы / ВНЖ», а не ключ «med».
-    const payload: HandoffInput = { name: trimmedName, messenger: m, lang, leadId };
+    // в карточке менеджер видел «Медицинская для визы / ВНЖ», а не ключ «med».
+    const payload: HandoffInput = { name: trimmedName, messenger: m, lang };
     if (lastQuestion) payload.question = lastQuestion;
     if (typeLabel) payload.topic = typeLabel;
     void forwardHandoff(payload);
   };
+
+  const requireName = (): boolean => {
+    if (hasName) return true;
+    setNameError(true);
+    inputRef.current?.focus();
+    return false;
+  };
+
+  /** WhatsApp/Viber — прямой переход (deep-link с предзаполненным текстом). */
+  const handleDirect = (m: ChatMessenger, e: React.MouseEvent): void => {
+    if (!requireName()) {
+      e.preventDefault();
+      return;
+    }
+    sendLead(m);
+  };
+
+  /** Telegram — раскрываем панель «скопировать заготовку + перейти в чат». */
+  const handleTelegram = (): void => {
+    if (!requireName()) return;
+    setTgOpen(true);
+    sendLead('Telegram');
+  };
+
+  const handleCopy = async (): Promise<void> => {
+    if (await copyText(message)) setCopied(true);
+  };
+
+  const btnBase =
+    'inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-[0.95rem] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand';
 
   return (
     <div className="self-stretch rounded-2xl border border-slate-200 bg-white p-3.5 motion-safe:animate-msgIn">
@@ -368,6 +408,7 @@ function HandoffCard({
         onChange={(e) => {
           setName(e.target.value);
           if (e.target.value.trim()) setNameError(false);
+          setCopied(false); // заготовка изменилась — сбрасываем «Скопировано»
         }}
         placeholder={ct('hand_name_ph')}
         autoComplete="name"
@@ -383,25 +424,70 @@ function HandoffCard({
         </p>
       )}
       <div className="mt-2.5 flex flex-col gap-2">
-        {ordered.map((m, idx) => (
-          <a
-            key={m}
-            href={buildHandoffLink(m, contacts, message, leadId)}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => handleClick(m, e)}
-            aria-disabled={!hasName}
-            className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-[0.95rem] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
-              !hasName ? 'cursor-not-allowed opacity-50' : ''
-            } ${
-              idx === 0
-                ? 'bg-brand text-white hover:bg-brand-dark'
-                : 'border border-slate-200 bg-white text-ink hover:border-brand hover:text-brand-dark'
-            }`}
-          >
-            {ct(continueLabelKey(m))}
-          </a>
-        ))}
+        {ordered.map((m, idx) => {
+          const tone =
+            idx === 0
+              ? 'bg-brand text-white hover:bg-brand-dark'
+              : 'border border-slate-200 bg-white text-ink hover:border-brand hover:text-brand-dark';
+          const cls = `${btnBase} ${!hasName ? 'cursor-not-allowed opacity-50' : ''} ${tone}`;
+
+          if (m === 'Telegram') {
+            return (
+              <div key={m} className="flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={handleTelegram}
+                  aria-disabled={!hasName}
+                  aria-expanded={tgOpen}
+                  className={cls}
+                >
+                  {ct(continueLabelKey(m))}
+                </button>
+                {tgOpen && (
+                  <div className="rounded-xl border border-slate-200 bg-[#f5f8f8] p-3 motion-safe:animate-msgIn">
+                    <p className="mb-2 text-[0.82rem] text-muted">{ct('tg_copy_instr')}</p>
+                    <div className="mb-2.5 whitespace-pre-line rounded-lg border border-slate-200 bg-white px-3 py-2 text-[0.9rem] leading-relaxed text-ink">
+                      {message}
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void handleCopy()}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[0.9rem] font-semibold text-brand-dark transition-colors hover:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                      >
+                        <CopyIcon copied={copied} />
+                        {copied ? ct('tg_copied') : ct('tg_copy')}
+                      </button>
+                      <a
+                        href={buildHandoffLink('Telegram', contacts, message)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => sendLead('Telegram')}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-[0.9rem] font-semibold text-white transition-colors hover:bg-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                      >
+                        {ct('tg_open')} →
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          return (
+            <a
+              key={m}
+              href={buildHandoffLink(m, contacts, message)}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => handleDirect(m, e)}
+              aria-disabled={!hasName}
+              className={cls}
+            >
+              {ct(continueLabelKey(m))}
+            </a>
+          );
+        })}
       </div>
       <p className="mt-2.5 flex items-center justify-center gap-1.5 text-center text-[0.82rem] font-medium text-brand-dark">
         <span aria-hidden>⏱️</span>
@@ -409,5 +495,19 @@ function HandoffCard({
       </p>
       <p className="mt-1 text-center text-[0.8rem] text-muted">{ct('handoff_or_continue')}</p>
     </div>
+  );
+}
+
+/** Иконка копирования (или галочка, когда скопировано). */
+function CopyIcon({ copied }: { copied: boolean }): JSX.Element {
+  return copied ? (
+    <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M4 10.5 8 14.5 16 5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ) : (
+    <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <rect x="7" y="7" width="9" height="11" rx="2" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M13 4.5H6A2 2 0 0 0 4 6.5v8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
   );
 }
