@@ -26,8 +26,6 @@ import { buildHandoffLink, continueLabelKey, getOfficeContacts } from '../model/
 
 /** Длительность анимации «подбираем менеджера» перед показом контактов (мс). */
 const MATCHING_MS = 2200;
-/** Стартовые вопросы-подсказки на первом экране (ключи словаря `chat`). */
-const STARTER_KEYS = ['starter_visa', 'starter_price', 'starter_dental'] as const;
 /** Мессенджеры на хендоффе (Instagram не предлагаем). */
 const MESSENGERS: readonly ChatMessenger[] = ['WhatsApp', 'Telegram', 'Viber'];
 
@@ -123,10 +121,11 @@ export function ChatWidget(): JSX.Element {
 
   const userMsgCount = messages.filter((m) => m.kind === 'text' && m.author === 'user').length;
   const lastIsHandoff = messages.at(-1)?.kind === 'handoff';
-  const onFirstScreen = userMsgCount === 0 && !asking;
   // Кнопку «к менеджеру» показываем только после первого ответа и не когда
   // карточка уже на экране / идёт анимация.
   const showToManager = userMsgCount > 0 && !asking && !matching && !lastIsHandoff;
+  // Фразы для циклящегося плейсхолдера ввода (вместо блока чипсов).
+  const rotatingPlaceholders = ct('rot_phrases').split('|').filter(Boolean);
 
   return (
     <div
@@ -202,31 +201,9 @@ export function ChatWidget(): JSX.Element {
         )}
       </div>
 
-      {/* Подвал: ввод всегда доступен; над ним — подсказки (первый экран) и
-          кнопка «к менеджеру» (после первого ответа). */}
+      {/* Подвал: ввод всегда доступен; над ним — кнопка «к менеджеру»
+          (после первого ответа). Подсказки тем — в циклящемся плейсхолдере ввода. */}
       <div className="border-t border-slate-200 bg-white px-4 py-[14px]">
-        {onFirstScreen && (
-          <div className="mb-3">
-            <p className="mb-2 text-[0.78rem] font-medium text-muted">{ct('starters_label')}</p>
-            <div className="flex flex-wrap gap-2">
-              {STARTER_KEYS.map((key) => (
-                <button
-                  key={key}
-                  type="button"
-                  data-testid="chat-starter"
-                  onClick={() => {
-                    captureEvent('chat_starter_clicked', { key });
-                    void handleAsk(ct(key));
-                  }}
-                  className="rounded-full border border-slate-200 bg-slate-50 px-3.5 py-2 text-left text-[0.85rem] font-medium text-slate-600 transition-colors hover:border-brand hover:bg-brand-tint hover:text-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-                >
-                  {ct(key)}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
         {showToManager && (
           <button
             type="button"
@@ -238,7 +215,12 @@ export function ChatWidget(): JSX.Element {
           </button>
         )}
 
-        <FreeAsk ct={ct} onAsk={handleAsk} pending={asking || matching} />
+        <FreeAsk
+          ct={ct}
+          onAsk={handleAsk}
+          pending={asking || matching}
+          placeholders={rotatingPlaceholders}
+        />
       </div>
     </div>
   );
