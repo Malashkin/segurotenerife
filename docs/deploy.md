@@ -71,28 +71,34 @@ cargo run --bin hash_password -- 'ВашСложныйПароль'
 
 ---
 
-## 2. Frontend (две SPA) на Vercel / Netlify
+## 2. Frontend — два проекта на Cloudflare Pages
 
-Обе сборки — статика Vite. Каждое приложение деплоится как отдельный проект
-(или два проекта в монорепо), указывая на свой подкаталог.
+Домен `segurotenerife.com` уже на Cloudflare → фронт там же (CDN + WAF в одном
+месте). Два проекта Pages из одного монорепо (Connect to Git → репозиторий):
 
-### Общие настройки
-| Параметр | `apps/web-astro` (Astro) | `apps/admin` (Vite) |
+| Параметр | **web** (публичный) | **admin** (дашборд) |
 |---|---|---|
-| Root directory | `frontend` | `frontend` |
-| Install | `pnpm install` | `pnpm install` |
-| Build command | `pnpm build:web` | `pnpm build:admin` |
-| Output directory | `apps/web-astro/dist` | `apps/admin/dist` |
+| Production branch | `main` | `main` |
+| Root directory (advanced) | `frontend` | `frontend` |
+| Build command | `pnpm install && pnpm build:web` | `pnpm install && pnpm build:admin` |
+| Build output directory | `apps/web-astro/dist` | `apps/admin/dist` |
+| Custom domain | `segurotenerife.com` (+ `www` → 301) | `admin.segurotenerife.com` |
 
-> web — статический Astro по локалям (`/`,`/es/`,`/uk/`,`/en/`); хост должен
-> отдавать `/<lang>/index.html` для подпапок (Netlify/Vercel/CF — обычно из коробки).
+- Node ≥20 (Pages env `NODE_VERSION=20`); corepack включает pnpm автоматически.
+- web — статический Astro по локалям (`/`,`/es/`,`/uk/`,`/en/`); Pages отдаёт
+  `/<lang>/index.html` для подпапок из коробки. admin — без клиентского роутера,
+  SPA-fallback не нужен.
+- **CORS/cookie:** backend `ALLOWED_ORIGINS` = эти два https-origin; refresh-cookie
+  admin работает, потому что фронт и API под одним сайтом `segurotenerife.com`
+  (API на `api.segurotenerife.com`). Поэтому API нужен на своём поддомене, а не
+  на `*.up.railway.app` (иначе cookie third-party и вход в админку ломается).
 
 ### Переменные окружения фронтенда
 web на Astro (`apps/web-astro`) читает `PUBLIC_*` и `VITE_*`; admin (Vite) — `VITE_*`.
 
 | Переменная | Значение |
 |---|---|
-| `VITE_API_URL` / `PUBLIC_API_URL` | URL backend на Railway, напр. `https://seguro-backend.up.railway.app` |
+| `VITE_API_URL` / `PUBLIC_API_URL` | `https://api.segurotenerife.com` (поддомен → Railway, проксирован Cloudflare) |
 | `VITE_WHATSAPP_NUMBER` | номер WhatsApp офиса (формат wa.me, только цифры) |
 | `VITE_TELEGRAM_USERNAME` | username Telegram офиса (без `@`) |
 | `VITE_VIBER_NUMBER` | номер Viber (по умолчанию = WhatsApp) |
