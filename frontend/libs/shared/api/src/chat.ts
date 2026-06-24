@@ -11,15 +11,17 @@
 import { apiRequest, ApiError } from './client';
 import { getSessionId } from './events';
 
-/** Ответ агента: текст + сигнал «передать менеджеру». */
+/** Ответ агента: текст + сигнал «передать менеджеру» + тема (вид страховки). */
 export interface ChatReply {
   answer: string;
   handoff: boolean;
+  topic?: string;
 }
 
 interface ChatAnswerDto {
   answer: string;
   handoff?: boolean;
+  topic?: string | null;
 }
 
 /** Реплика истории диалога (для удержания контекста на бэкенде). */
@@ -71,7 +73,9 @@ export async function askQuestion(
     const sid = getSessionId();
     if (sid) body.session_id = sid;
     const data = await apiRequest<ChatAnswerDto>('/api/chat', { method: 'POST', body });
-    return { answer: data.answer, handoff: data.handoff ?? false };
+    const reply: ChatReply = { answer: data.answer, handoff: data.handoff ?? false };
+    if (data.topic) reply.topic = data.topic;
+    return reply;
   } catch (e) {
     // 503 — фича выключена на сервере (нет ключа/корпуса): тихий фолбэк.
     if (e instanceof ApiError && e.status === 503) return null;

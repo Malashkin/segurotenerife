@@ -66,6 +66,8 @@ export function ChatWidget(): JSX.Element {
   const intentKeyRef = useRef<string | null>(null);
   // Последний вопрос пользователя — добавим в предзаполненное сообщение менеджеру.
   const lastQuestionRef = useRef<string>('');
+  // Тема диалога (вид страховки): из интента карточки или из ответов агента (topic).
+  const topicRef = useRef<string | null>(null);
   // Зеркала состояний для таймера бездействия (читаем актуальное в колбэке).
   const askingRef = useRef(false);
   const matchingRef = useRef(false);
@@ -116,6 +118,7 @@ export function ChatWidget(): JSX.Element {
         offerHandoff('agent');
         return;
       }
+      if (reply.topic) topicRef.current = reply.topic;
       pushText('bot', reply.answer);
       setAsking(false);
       if (reply.handoff) offerHandoff('agent');
@@ -135,6 +138,7 @@ export function ChatWidget(): JSX.Element {
     pushText('bot', ct('greeting'));
     if (chatIntent && CHAT_INTENTS[chatIntent]) {
       intentKeyRef.current = chatIntent;
+      topicRef.current = chatIntent;
       void handleAsk(ct(CHAT_INTENTS[chatIntent].goalKey));
       clearChatIntent();
     }
@@ -209,7 +213,13 @@ export function ChatWidget(): JSX.Element {
       >
         {messages.map((m) =>
           m.kind === 'handoff' ? (
-            <HandoffCard key={m.id} ct={ct} lang={lang} lastQuestion={lastQuestionRef.current} />
+            <HandoffCard
+              key={m.id}
+              ct={ct}
+              lang={lang}
+              lastQuestion={lastQuestionRef.current}
+              topic={topicRef.current}
+            />
           ) : (
             <div
               key={m.id}
@@ -281,10 +291,12 @@ function HandoffCard({
   ct,
   lang,
   lastQuestion,
+  topic,
 }: {
   ct: (key: string) => string;
   lang: string;
   lastQuestion: string;
+  topic: string | null;
 }): JSX.Element {
   const contacts = getOfficeContacts();
   const [name, setName] = useState('');
@@ -294,9 +306,13 @@ function HandoffCard({
   ];
 
   const trimmedName = name.trim();
-  // Предзаполненный текст менеджеру: имя (если есть) + приветствие + последний вопрос.
-  const namePart = trimmedName ? `${ct('hand_name_pre')} ${trimmedName}. ` : '';
-  const message = `${namePart}${ct('lead_msg')}${lastQuestion ? `\n\n${lastQuestion}` : ''}`;
+  // Локализованный вид страховки по теме диалога (med|dental|travel…).
+  const typeLabel = topic && CHAT_INTENTS[topic] ? ct(CHAT_INTENTS[topic].goalKey) : '';
+  // Сообщение менеджеру:
+  //   [Меня зовут <имя>. | Здравствуйте!] Мне нужно посчитать стоимость страховки[: <вид>].
+  //   \n\nSeguro Tenerife
+  const greeting = trimmedName ? `${ct('hand_name_pre')} ${trimmedName}. ` : `${ct('hand_hello')} `;
+  const message = `${greeting}${ct('hand_need_quote')}${typeLabel ? `: ${typeLabel}` : ''}.\n\nSeguro Tenerife`;
 
   const handleClick = (m: ChatMessenger): void => {
     void trackEvent('handoff_clicked', { lang, meta: { messenger: m } });

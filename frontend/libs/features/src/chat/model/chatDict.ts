@@ -106,6 +106,8 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     lead_msg: 'Hi! I filled out the insurance finder on the website.',
     hand_name_ph: 'Your name (optional)',
     hand_name_pre: 'My name is',
+    hand_hello: 'Hello!',
+    hand_need_quote: "I'd like a quote for insurance",
     // CHAT_I18N
     title: 'Online insurance finder',
     status: '● online',
@@ -190,6 +192,8 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     lead_msg: '¡Hola! He completado el buscador de seguros en la web.',
     hand_name_ph: 'Tu nombre (opcional)',
     hand_name_pre: 'Me llamo',
+    hand_hello: '¡Hola!',
+    hand_need_quote: 'Quiero calcular el precio del seguro',
     title: 'Buscador de seguros online',
     status: '● en línea',
     greeting:
@@ -273,6 +277,8 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     lead_msg: 'Вітаю! Заповнив підбір страховки на сайті.',
     hand_name_ph: "Ваше ім'я (необов'язково)",
     hand_name_pre: 'Мене звати',
+    hand_hello: 'Вітаю!',
+    hand_need_quote: 'Хочу розрахувати вартість страхування',
     title: 'Онлайн-підбір страховки',
     status: '● онлайн',
     greeting:
@@ -356,6 +362,8 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     lead_msg: 'Здравствуйте! Заполнил подбор страховки на сайте.',
     hand_name_ph: 'Ваше имя (необязательно)',
     hand_name_pre: 'Меня зовут',
+    hand_hello: 'Здравствуйте!',
+    hand_need_quote: 'Мне нужно посчитать стоимость страховки',
     title: 'Онлайн-подбор страховки',
     status: '● онлайн',
     greeting:
