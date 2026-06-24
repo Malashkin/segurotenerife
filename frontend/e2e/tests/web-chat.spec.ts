@@ -63,7 +63,14 @@ test.describe('web — чат-консультант', () => {
     await expect(chat.getByText('Какой полис для ВНЖ?')).toBeVisible();
     await expect(chat.getByText(/сертификат/i)).toBeVisible();
 
-    // Кнопка «к менеджеру» появляется только ПОСЛЕ первого ответа.
+    // После ПЕРВОГО вопроса кнопки «к менеджеру» ещё НЕТ (не навязываем рано).
+    await expect(chat.getByTestId('chat-to-manager')).toHaveCount(0);
+
+    // Второй вопрос — диалог развился, кнопка появляется логично.
+    await chat.locator('input[type="text"]').last().fill('А входит ли стоматология?');
+    await chat.getByRole('button', { name: /Спросить/i }).click();
+    await expect(chat.getByText('А входит ли стоматология?')).toBeVisible();
+
     await expect(chat.getByTestId('chat-to-manager')).toBeVisible();
     await chat.getByTestId('chat-to-manager').click();
 
@@ -97,7 +104,9 @@ test.describe('web — чат-консультант', () => {
     await expect(chat.getByText('А что со стоматологией?')).toBeVisible();
   });
 
-  test('агент сам уводит к менеджеру при handoff=true', async ({ page }) => {
+  test('агент при handoff=true показывает кнопку «к менеджеру», не авто-карточку', async ({
+    page,
+  }) => {
     // Переопределяем стаб: агент отвечает и сигналит handoff.
     await page.route('**/api/chat', (route) =>
       route.fulfill({
@@ -110,8 +119,33 @@ test.describe('web — чат-консультант', () => {
     const chat = await openChat(page);
     await chat.locator('input[type="text"]').fill('Хочу к менеджеру');
     await chat.getByRole('button', { name: /Спросить/i }).click();
-    // Без нажатия кнопки — сам переходит к контактам (после ~3с анимации).
+
+    // НЕ авто-всплытие: появляется инлайн-кнопка «Связаться с менеджером»,
+    // а контакты — только после клика по ней.
+    const connect = chat.getByTestId('chat-connect');
+    await expect(connect).toBeVisible({ timeout: 6000 });
     const links = chat.locator('a[target="_blank"]');
-    await expect(links.first()).toBeVisible({ timeout: 8000 });
+    await expect(links).toHaveCount(0); // карточка ещё не появилась сама
+
+    await connect.click();
+    await expect(links.first()).toBeVisible({ timeout: 7000 });
+  });
+
+  test('история чата сохраняется и очищается', async ({ page }) => {
+    await page.goto(WEB);
+    let chat = await openChat(page);
+    await chat.locator('input[type="text"]').fill('Какой полис для ВНЖ?');
+    await chat.getByRole('button', { name: /Спросить/i }).click();
+    await expect(chat.getByText('Какой полис для ВНЖ?')).toBeVisible();
+
+    // Перезагрузка страницы → история восстановлена из localStorage.
+    await page.reload();
+    chat = await openChat(page);
+    await expect(chat.getByText('Какой полис для ВНЖ?')).toBeVisible();
+
+    // Очистка → история пропадает, остаётся приветствие.
+    await chat.getByRole('button', { name: /Очистить историю/i }).click();
+    await expect(chat.getByText('Какой полис для ВНЖ?')).toHaveCount(0);
+    await expect(chat.getByText(/Расскажите, какая страховка/i)).toBeVisible();
   });
 });

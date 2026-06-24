@@ -40,6 +40,8 @@ const MESSENGERS: readonly ChatMessenger[] = ['WhatsApp', 'Telegram', 'Viber'];
 
 type Msg =
   | { id: number; kind: 'text'; author: 'user' | 'bot'; text: string }
+  // Инлайн-кнопка «Связаться с менеджером» в конце ответа (по сигналу агента).
+  | { id: number; kind: 'connect' }
   | { id: number; kind: 'handoff' };
 
 /** Копирует текст в буфер: clipboard API, с фолбэком на execCommand. */
@@ -80,6 +82,43 @@ function cleanReply(text: string): string {
     .replace(/(^|\n)\s*[-*•]\s+/g, '$1• ')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
+}
+
+/** Ключ localStorage для истории чата (сохраняется между открытиями). */
+const CHAT_STORE_KEY = 'seguro_chat_v1';
+/** Максимум сообщений в сторе (чтобы не раздувать localStorage). */
+const CHAT_STORE_MAX = 60;
+
+/** Загружает сохранённую историю чата (или null, если нет/недоступно). */
+function loadChat(): { messages: Msg[]; topic: string | null } | null {
+  try {
+    const raw = localStorage.getItem(CHAT_STORE_KEY);
+    if (!raw) return null;
+    const p = JSON.parse(raw) as { messages?: Msg[]; topic?: string | null };
+    if (!p || !Array.isArray(p.messages) || p.messages.length === 0) return null;
+    return { messages: p.messages, topic: p.topic ?? null };
+  } catch {
+    return null;
+  }
+}
+
+/** Сохраняет историю чата (последние CHAT_STORE_MAX сообщений). */
+function saveChat(messages: Msg[], topic: string | null): void {
+  try {
+    const trimmed = messages.slice(-CHAT_STORE_MAX);
+    localStorage.setItem(CHAT_STORE_KEY, JSON.stringify({ v: 1, messages: trimmed, topic }));
+  } catch {
+    /* приватный режим / нет места — игнорируем */
+  }
+}
+
+/** Удаляет сохранённую историю чата. */
+function clearChatStore(): void {
+  try {
+    localStorage.removeItem(CHAT_STORE_KEY);
+  } catch {
+    /* игнор */
+  }
 }
 
 export function ChatWidget(): JSX.Element {
@@ -127,6 +166,24 @@ export function ChatWidget(): JSX.Element {
     });
   }
 
+  /** Показать инлайн-кнопку «Связаться с менеджером» после ответа (по сигналу
+   *  агента / при фолбэке). Карточка мессенджеров появится по клику — НЕ
+   *  авто-всплывает (авто-всплытие только по 60с бездействия). */
+  function offerConnectButton(): void {
+    setMessages((prev) => {
+      const last = prev.at(-1)?.kind;
+      if (last === 'connect' || last === 'handoff') return prev;
+      captureEvent('chat_handoff_offered', { source: 'agent', lang });
+      return [...prev, { id: idRef.current++, kind: 'connect' }];
+    });
+  }
+
+  /** Клик по инлайн-кнопке «Связаться с менеджером» → показать мессенджеры. */
+  function connectFromButton(): void {
+    setMessages((prev) => prev.filter((m) => m.kind !== 'connect'));
+    offerHandoff('button');
+  }
+
   /** Вопрос агенту: реплика пользователя → ответ; при handoff — карточка менеджера. */
   async function handleAsk(question: string): Promise<void> {
     const q = question.trim();
@@ -149,7 +206,7 @@ export function ChatWidget(): JSX.Element {
         void trackEvent('agent_fallback', { lang, meta: { reason: 'unavailable' } });
         pushText('bot', ct('assist_off'));
         setAsking(false);
-        offerHandoff('agent');
+        offerConnectButton();
         return;
       }
       // Тема лида = ПЕРВАЯ установленная потребность (или интент карточки). Не
@@ -162,13 +219,13 @@ export function ChatWidget(): JSX.Element {
       });
       pushText('bot', reply.answer);
       setAsking(false);
-      if (reply.handoff) offerHandoff('agent');
+      if (reply.handoff) offerConnectButton();
     } catch {
       // Сеть/5xx — тоже считаем как недоступность агента (метрика качества).
       void trackEvent('agent_fallback', { lang, meta: { reason: 'error' } });
       pushText('bot', ct('assist_off'));
       setAsking(false);
-      offerHandoff('agent');
+      offerConnectButton();
     }
   }
 
@@ -178,10 +235,19 @@ export function ChatWidget(): JSX.Element {
     if (startedRef.current) return;
     startedRef.current = true;
     void trackEvent('chat_started', { lang });
-    pushText('bot', ct('greeting'));
+    // Восстанавливаем прошлый диалог из localStorage (если есть) — иначе приветствие.
+    const saved = loadChat();
+    if (saved) {
+      setMessages(saved.messages);
+      topicRef.current = saved.topic;
+      idRef.current = saved.messages.reduce((m, x) => Math.max(m, x.id), 0) + 1;
+    } else {
+      pushText('bot', ct('greeting'));
+    }
+    // Если открыто из карточки «Виды страховок» — авто-вопрос по выбранному типу.
     if (chatIntent && CHAT_INTENTS[chatIntent]) {
       intentKeyRef.current = chatIntent;
-      topicRef.current = chatIntent;
+      if (!topicRef.current) topicRef.current = chatIntent;
       void handleAsk(ct(CHAT_INTENTS[chatIntent].goalKey));
       clearChatIntent();
     }
@@ -190,6 +256,24 @@ export function ChatWidget(): JSX.Element {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Сохраняем историю в localStorage при изменении (после старта).
+  useEffect(() => {
+    if (!startedRef.current || messages.length === 0) return;
+    saveChat(messages, topicRef.current);
+  }, [messages]);
+
+  /** Очистить историю чата (стор + лента) → свежее приветствие. */
+  function clearHistory(): void {
+    clearChatStore();
+    topicRef.current = null;
+    intentKeyRef.current = null;
+    lastQuestionRef.current = '';
+    if (matchTimer.current) clearTimeout(matchTimer.current);
+    setMatching(false);
+    idRef.current = 0;
+    setMessages([{ id: idRef.current++, kind: 'text', author: 'bot', text: ct('greeting') }]);
+  }
 
   // Автоскролл ленты вниз.
   useEffect(() => {
@@ -215,10 +299,17 @@ export function ChatWidget(): JSX.Element {
   }, [messages.length, asking, matching]);
 
   const userMsgCount = messages.filter((m) => m.kind === 'text' && m.author === 'user').length;
-  const lastIsHandoff = messages.at(-1)?.kind === 'handoff';
-  // Кнопку «к менеджеру» показываем только после первого ответа и не когда
-  // карточка уже на экране / идёт анимация.
-  const showToManager = userMsgCount > 0 && !asking && !matching && !lastIsHandoff;
+  const lastKind = messages.at(-1)?.kind;
+  const lastIsHandoff = lastKind === 'handoff';
+  // Когда уже показана инлайн-кнопка connect — нижнюю кнопку не дублируем.
+  const lastIsConnect = lastKind === 'connect';
+  // Кнопку «к менеджеру» показываем не после ПЕРВОГО вопроса (рано/навязчиво),
+  // а когда диалог уже развился (≥2 вопросов) и не идёт анимация / карточка уже
+  // на экране. Агент и сам предложит менеджера логично (handoff / 60с бездействия).
+  const showToManager =
+    userMsgCount >= 2 && !asking && !matching && !lastIsHandoff && !lastIsConnect;
+  // Кнопка очистки истории — когда есть что чистить (больше приветствия).
+  const hasHistory = userMsgCount > 0;
   // Фразы для циклящегося плейсхолдера ввода (вместо блока чипсов).
   const rotatingPlaceholders = ct('rot_phrases').split('|').filter(Boolean);
 
@@ -245,6 +336,26 @@ export function ChatWidget(): JSX.Element {
           <b className="truncate text-[0.98rem]">{ct('title')}</b>
           <span className="text-[0.78rem] opacity-90">{ct('status')}</span>
         </div>
+        {hasHistory && (
+          <button
+            type="button"
+            onClick={clearHistory}
+            title={ct('clear_history')}
+            aria-label={ct('clear_history')}
+            className="ml-auto grid h-8 w-8 shrink-0 place-items-center rounded-lg text-white/80 transition-colors hover:bg-white/15 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+          >
+            {/* Иконка корзины. */}
+            <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m2 0v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7m4 4v6m4-6v6"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Лента */}
@@ -263,6 +374,17 @@ export function ChatWidget(): JSX.Element {
               lastQuestion={lastQuestionRef.current}
               topic={topicRef.current}
             />
+          ) : m.kind === 'connect' ? (
+            <div key={m.id} className="self-stretch motion-safe:animate-msgIn">
+              <button
+                type="button"
+                data-testid="chat-connect"
+                onClick={connectFromButton}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-5 py-3 text-[0.92rem] font-semibold text-white transition-colors hover:bg-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+              >
+                {ct('to_manager')}
+              </button>
+            </div>
           ) : (
             <div
               key={m.id}
