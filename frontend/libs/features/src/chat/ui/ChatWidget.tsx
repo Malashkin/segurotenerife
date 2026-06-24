@@ -145,16 +145,24 @@ export function ChatWidget(): JSX.Element {
     try {
       const reply = await askQuestion(q, lang, intentKeyRef.current ?? undefined, history);
       if (reply === null) {
+        // Агент выключен на сервере (нет ключа/корпуса) → фолбэк к менеджеру.
+        void trackEvent('agent_fallback', { lang, meta: { reason: 'unavailable' } });
         pushText('bot', ct('assist_off'));
         setAsking(false);
         offerHandoff('agent');
         return;
       }
       if (reply.topic) topicRef.current = reply.topic;
+      void trackEvent('answer_received', {
+        lang,
+        meta: { topic: reply.topic ?? null, handoff: reply.handoff },
+      });
       pushText('bot', reply.answer);
       setAsking(false);
       if (reply.handoff) offerHandoff('agent');
     } catch {
+      // Сеть/5xx — тоже считаем как недоступность агента (метрика качества).
+      void trackEvent('agent_fallback', { lang, meta: { reason: 'error' } });
       pushText('bot', ct('assist_off'));
       setAsking(false);
       offerHandoff('agent');
@@ -359,13 +367,17 @@ function HandoffCard({
   const sendLead = (m: ChatMessenger): void => {
     if (sentRef.current.has(m)) return;
     sentRef.current.add(m);
-    void trackEvent('handoff_clicked', { lang, meta: { messenger: m } });
+    const meta = { messenger: m, topic: typeLabel || null };
+    void trackEvent('handoff_clicked', { lang, meta });
     // topic — человекочитаемый вид страховки (как в сообщении клиента), чтобы
     // в карточке менеджер видел «Медицинская для визы / ВНЖ», а не ключ «med».
     const payload: HandoffInput = { name: trimmedName, messenger: m, lang };
     if (lastQuestion) payload.question = lastQuestion;
     if (typeLabel) payload.topic = typeLabel;
-    void forwardHandoff(payload);
+    // lead_submitted — подтверждённая бэкендом конверсия в лид.
+    void forwardHandoff(payload).then((ok) => {
+      if (ok) void trackEvent('lead_submitted', { lang, meta });
+    });
   };
 
   const requireName = (): boolean => {
@@ -392,7 +404,10 @@ function HandoffCard({
   };
 
   const handleCopy = async (): Promise<void> => {
-    if (await copyText(message)) setCopied(true);
+    if (await copyText(message)) {
+      setCopied(true);
+      void trackEvent('tg_message_copied', { lang, meta: { topic: typeLabel || null } });
+    }
   };
 
   const btnBase =

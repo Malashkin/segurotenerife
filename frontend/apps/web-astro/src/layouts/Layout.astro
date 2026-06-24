@@ -150,11 +150,16 @@ const jsonld = {
       document.addEventListener('click', (e) => {
         const a = (e.target as HTMLElement | null)?.closest<HTMLElement>('[data-setlang]');
         if (!a) return;
+        const to = a.dataset.setlang as string;
         try {
-          localStorage.setItem('seguro_lang', a.dataset.setlang as string);
+          localStorage.setItem('seguro_lang', to);
         } catch {
           /* приватный режим — игнор */
         }
+        // Явная смена языка → в аналитику (seguro:track → PostHog, gated).
+        window.dispatchEvent(
+          new CustomEvent('seguro:track', { detail: { event: 'lang_switched', props: { to } } }),
+        );
       });
     </script>
 

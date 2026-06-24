@@ -44,7 +44,17 @@ export type FunnelEvent =
   | 'step_completed'
   | 'chat_completed'
   | 'handoff_clicked'
-  | 'question_asked';
+  | 'question_asked'
+  // Получен ответ агента (для воронки вопрос→ответ + сигнал handoff).
+  | 'answer_received'
+  // Агент недоступен/ошибка → показали фолбэк (метрика качества ответов).
+  | 'agent_fallback'
+  // Лид подтверждён бэкендом (POST /api/handoff ok) — конверсия в лид.
+  | 'lead_submitted'
+  // Клиент скопировал заготовку сообщения для Telegram.
+  | 'tg_message_copied'
+  // Явная смена языка интерфейса.
+  | 'lang_switched';
 
 /** Необязательный контекст события. */
 export interface TrackOptions {

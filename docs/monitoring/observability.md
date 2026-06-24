@@ -60,7 +60,13 @@ Langfuse не идут.
   сессий **с маскировкой инпутов** (PII контактной формы) + вся воронка чата
   (фан-аут из `trackEvent`) + семантические события (`scroll_depth`,
   `section_viewed`, `faq_opened`, `chat_opened {source}`,
-  `insurance_intent_selected`, `legal_opened`, `cookie_consent`).
+  `insurance_intent_selected`, `legal_opened`, `cookie_consent`,
+  `lang_switched {to}`).
+- **Воронка чата → лид** (`trackEvent`, фан-аут в PostHog + backend `/api/events`):
+  `chat_started` → `question_asked` → `answer_received {topic, handoff}` /
+  `agent_fallback {reason}` (агент недоступен/ошибка) → `chat_handoff_offered
+  {source}` → `handoff_clicked {messenger, topic}` → `lead_submitted {messenger,
+  topic}` (подтверждённая бэкендом конверсия) + `tg_message_copied` (Telegram).
 - **Admin:** БЕЗ autocapture/записи сессий (на экранах PII лидов) — только явные
   события.
 - **GDPR-гейт:** capture **выключен по умолчанию** (`opt_out_capturing_by_default`);
