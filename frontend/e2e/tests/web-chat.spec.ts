@@ -32,6 +32,9 @@ test.describe('web — чат-консультант', () => {
       }
     });
     await page.route('**/api/events', (route) => route.fulfill({ status: 204, body: '' }));
+    await page.route('**/api/handoff', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) }),
+    );
     // Агент: отвечает и сразу сигналит handoff=false (вопрос ещё открыт).
     await page.route('**/api/chat', (route) =>
       route.fulfill({
@@ -70,8 +73,11 @@ test.describe('web — чат-консультант', () => {
     expect(await links.count()).toBeGreaterThanOrEqual(1);
 
     // КЛЮЧЕВОЕ: хендофф — не тупик, ввод остаётся → можно продолжать спрашивать.
-    await expect(chat.locator('input[type="text"]')).toBeVisible();
-    await chat.locator('input[type="text"]').fill('А что со стоматологией?');
+    // (В карточке есть поле имени, поэтому берём последний input — это поле ввода
+    // вопроса в подвале.)
+    const footerInput = chat.locator('input[type="text"]').last();
+    await expect(footerInput).toBeVisible();
+    await footerInput.fill('А что со стоматологией?');
     await chat.getByRole('button', { name: /Спросить/i }).click();
     await expect(chat.getByText('А что со стоматологией?')).toBeVisible();
   });

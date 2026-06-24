@@ -18,7 +18,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { useUiStore, DEFAULT_MESSENGER, type ChatMessenger } from '@shared/store';
-import { trackEvent, askQuestion, captureEvent, type ChatTurn } from '@shared/api';
+import { trackEvent, askQuestion, forwardHandoff, captureEvent, type ChatTurn } from '@shared/api';
 import { FreeAsk } from './FreeAsk';
 import { useChatI18n } from '../model/useChatI18n';
 import { CHAT_INTENTS } from '../model/intents';
@@ -209,16 +209,7 @@ export function ChatWidget(): JSX.Element {
       >
         {messages.map((m) =>
           m.kind === 'handoff' ? (
-            <HandoffCard
-              key={m.id}
-              ct={ct}
-              lang={lang}
-              message={
-                lastQuestionRef.current
-                  ? `${ct('lead_msg')}\n\n${lastQuestionRef.current}`
-                  : ct('lead_msg')
-              }
-            />
+            <HandoffCard key={m.id} ct={ct} lang={lang} lastQuestion={lastQuestionRef.current} />
           ) : (
             <div
               key={m.id}
@@ -283,24 +274,49 @@ export function ChatWidget(): JSX.Element {
   );
 }
 
-/** Инлайн-карточка контактов менеджера в ленте. */
+/** Инлайн-карточка контактов менеджера в ленте: имя (опц.) + кнопки мессенджеров.
+ *  WhatsApp/Viber — deep-link с предзаполненным текстом (имя + вопрос). Telegram
+ *  не принимает текст в ссылке → дополнительно шлём лид менеджеру через бота. */
 function HandoffCard({
   ct,
   lang,
-  message,
+  lastQuestion,
 }: {
   ct: (key: string) => string;
   lang: string;
-  message: string;
+  lastQuestion: string;
 }): JSX.Element {
   const contacts = getOfficeContacts();
+  const [name, setName] = useState('');
   const ordered: ChatMessenger[] = [
     DEFAULT_MESSENGER,
     ...MESSENGERS.filter((m) => m !== DEFAULT_MESSENGER),
   ];
 
+  const trimmedName = name.trim();
+  // Предзаполненный текст менеджеру: имя (если есть) + приветствие + последний вопрос.
+  const namePart = trimmedName ? `${ct('hand_name_pre')} ${trimmedName}. ` : '';
+  const message = `${namePart}${ct('lead_msg')}${lastQuestion ? `\n\n${lastQuestion}` : ''}`;
+
+  const handleClick = (m: ChatMessenger): void => {
+    void trackEvent('handoff_clicked', { lang, meta: { messenger: m } });
+    // Telegram-ссылка не несёт текст → передаём лид менеджеру через бота.
+    if (m === 'Telegram') {
+      void forwardHandoff(trimmedName || undefined, lastQuestion || undefined, lang);
+    }
+  };
+
   return (
     <div className="self-stretch rounded-2xl border border-slate-200 bg-white p-3.5 motion-safe:animate-msgIn">
+      {/* Имя — необязательно; подставляется в сообщение менеджеру. 16px (iOS). */}
+      <input
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder={ct('hand_name_ph')}
+        autoComplete="name"
+        className="mb-2.5 w-full rounded-xl border-[1.5px] border-slate-200 px-3.5 py-2.5 text-base focus:border-brand focus:outline-none"
+      />
       <div className="flex flex-col gap-2">
         {ordered.map((m, idx) => (
           <a
@@ -308,7 +324,7 @@ function HandoffCard({
             href={buildHandoffLink(m, contacts, message)}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => void trackEvent('handoff_clicked', { lang, meta: { messenger: m } })}
+            onClick={() => handleClick(m)}
             className={
               idx === 0
                 ? 'inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-5 py-3 text-[0.95rem] font-semibold text-white transition-colors hover:bg-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand'

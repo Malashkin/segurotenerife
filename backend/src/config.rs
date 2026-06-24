@@ -46,6 +46,12 @@ pub struct Config {
     pub langfuse_public_key: Option<String>,
     pub langfuse_secret_key: Option<String>,
     pub langfuse_base_url: String,
+
+    /// Telegram-бот для пересылки лидов менеджеру. Токен — секрет. chat_id
+    /// менеджера получаем после того, как он нажал Start у бота. Оба опциональны:
+    /// без них пересылка в Telegram выключена (фронт откатывается на t.me-ссылку).
+    pub telegram_bot_token: Option<String>,
+    pub telegram_manager_chat_id: Option<String>,
 }
 
 impl Config {
@@ -103,6 +109,12 @@ impl Config {
                 .filter(|s| !s.is_empty()),
             langfuse_base_url: std::env::var("LANGFUSE_BASE_URL")
                 .unwrap_or_else(|_| "https://cloud.langfuse.com".into()),
+            telegram_bot_token: std::env::var("TELEGRAM_BOT_TOKEN")
+                .ok()
+                .filter(|s| !s.is_empty()),
+            telegram_manager_chat_id: std::env::var("TELEGRAM_MANAGER_CHAT_ID")
+                .ok()
+                .filter(|s| !s.is_empty()),
         })
     }
 
@@ -142,6 +154,8 @@ impl Config {
             langfuse_public_key: None,
             langfuse_secret_key: None,
             langfuse_base_url: "https://cloud.langfuse.com".into(),
+            telegram_bot_token: None,
+            telegram_manager_chat_id: None,
         }
     }
 }

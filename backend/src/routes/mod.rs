@@ -3,6 +3,7 @@
 pub mod auth;
 pub mod chat;
 pub mod events;
+pub mod handoff;
 pub mod health;
 pub mod leads;
 
@@ -29,6 +30,8 @@ pub fn router(state: AppState) -> Router {
                 rate_limit::chat_rate_limit_mw,
             )),
         )
+        // Передача лида менеджеру в Telegram (бот).
+        .route("/api/handoff", post(handoff::forward))
         // Аутентификация менеджера (JWT).
         .route("/api/auth/login", post(auth::login))
         .route("/api/auth/refresh", post(auth::refresh))

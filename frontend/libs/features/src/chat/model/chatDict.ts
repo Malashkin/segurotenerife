@@ -104,6 +104,8 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     val_contact: 'Enter a phone or username',
     val_consent: 'Consent to data processing is required',
     lead_msg: 'Hi! I filled out the insurance finder on the website.',
+    hand_name_ph: 'Your name (optional)',
+    hand_name_pre: 'My name is',
     // CHAT_I18N
     title: 'Online insurance finder',
     status: '● online',
@@ -186,6 +188,8 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     val_contact: 'Indica un teléfono o usuario',
     val_consent: 'Se requiere el consentimiento de datos',
     lead_msg: '¡Hola! He completado el buscador de seguros en la web.',
+    hand_name_ph: 'Tu nombre (opcional)',
+    hand_name_pre: 'Me llamo',
     title: 'Buscador de seguros online',
     status: '● en línea',
     greeting:
@@ -267,6 +271,8 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     val_contact: 'Вкажіть телефон або username',
     val_consent: 'Потрібна згода на обробку даних',
     lead_msg: 'Вітаю! Заповнив підбір страховки на сайті.',
+    hand_name_ph: "Ваше ім'я (необов'язково)",
+    hand_name_pre: 'Мене звати',
     title: 'Онлайн-підбір страховки',
     status: '● онлайн',
     greeting:
@@ -348,6 +354,8 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     val_contact: 'Укажите телефон или username',
     val_consent: 'Нужно согласие на обработку данных',
     lead_msg: 'Здравствуйте! Заполнил подбор страховки на сайте.',
+    hand_name_ph: 'Ваше имя (необязательно)',
+    hand_name_pre: 'Меня зовут',
     title: 'Онлайн-подбор страховки',
     status: '● онлайн',
     greeting:

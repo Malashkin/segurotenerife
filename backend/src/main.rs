@@ -14,6 +14,7 @@ mod knowledge;
 mod langfuse;
 mod rate_limit;
 mod routes;
+mod telegram;
 
 use std::{net::SocketAddr, sync::Arc};
 

@@ -29,6 +29,26 @@ export interface ChatTurn {
 }
 
 /**
+ * Пересылает лид менеджеру в Telegram (бот) через backend. Не бросает: при любой
+ * ошибке/недоступности возвращает false (фронт всё равно откроет t.me-чат).
+ */
+export async function forwardHandoff(
+  name: string | undefined,
+  question: string | undefined,
+  lang: string,
+): Promise<boolean> {
+  try {
+    const body: Record<string, unknown> = { lang };
+    if (name) body.name = name;
+    if (question) body.question = question;
+    const data = await apiRequest<{ ok?: boolean }>('/api/handoff', { method: 'POST', body });
+    return data.ok === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Спрашивает агента подбора.
  *
  * @param question - вопрос пользователя.
