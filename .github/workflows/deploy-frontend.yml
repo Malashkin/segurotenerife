@@ -38,7 +38,8 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # Astro 6 требует Node >= 22 (Node 20 отклоняется на astro build).
+          node-version: 22
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
 
