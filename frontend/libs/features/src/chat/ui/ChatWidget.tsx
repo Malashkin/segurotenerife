@@ -33,6 +33,21 @@ type Msg =
   | { id: number; kind: 'text'; author: 'user' | 'bot'; text: string }
   | { id: number; kind: 'handoff' };
 
+/**
+ * Чистит остаточную Markdown-разметку из ответа агента (пузырь рендерит обычный
+ * текст, поэтому «звёздочки»/решётки показались бы буквально). Жирный/курсив →
+ * без маркеров, заголовки/markdown-списки → обычные строки с «• ».
+ */
+function cleanReply(text: string): string {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/__(.*?)__/g, '$1')
+    .replace(/(^|\n)\s{0,3}#{1,6}\s*/g, '$1')
+    .replace(/(^|\n)\s*[-*•]\s+/g, '$1• ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 export function ChatWidget(): JSX.Element {
   const { ct, lang } = useChatI18n();
   const chatIntent = useUiStore((s) => s.chatIntent);
@@ -183,7 +198,7 @@ export function ChatWidget(): JSX.Element {
                     : 'whitespace-pre-line rounded-2xl rounded-bl-sm border border-slate-200 bg-white px-[15px] py-[11px] text-[0.96rem] leading-relaxed text-ink'
                 }
               >
-                {m.text}
+                {m.author === 'bot' ? cleanReply(m.text) : m.text}
               </div>
             </div>
           ),
