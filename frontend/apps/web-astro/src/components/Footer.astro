@@ -7,6 +7,9 @@ import type { AppLocale } from '@shared/i18n';
 const { locale } = Astro.props as { locale: AppLocale };
 const t = getT(locale);
 
+// База локали — чтобы ссылки/якоря работали с любой страницы (статьи, блог, «о нас»).
+const homeBase = locale === 'ru' ? '/' : `/${locale}/`;
+
 const linkClass =
   'block w-full py-1 text-left text-[0.92rem] text-[#94a3b8] transition-colors hover:text-white focus-visible:text-white focus-visible:outline-none';
 
@@ -22,9 +25,9 @@ const COLUMNS = [
   {
     headingKey: 'foot_h2',
     links: [
-      { kind: 'anchor', href: '#how', key: 'nav_how' },
-      { kind: 'anchor', href: '#articles', key: 'nav_articles' },
-      { kind: 'anchor', href: '#faq', key: 'nav_faq' },
+      { kind: 'anchor', href: `${homeBase}blog/`, key: 'nav_blog' },
+      { kind: 'anchor', href: `${homeBase}about/`, key: 'nav_about' },
+      { kind: 'anchor', href: `${homeBase}#faq`, key: 'nav_faq' },
       { kind: 'chat', key: 'foot_l4' },
     ],
   },

@@ -1,0 +1,13 @@
+---
+/** Хаб блога на локалях с префиксом: /uk|en|es/blog/ */
+import BlogIndex from '../../../components/BlogIndex.astro';
+import type { AppLocale } from '@shared/i18n';
+
+export function getStaticPaths() {
+  return (['en', 'es', 'uk'] as AppLocale[]).map((locale) => ({ params: { locale } }));
+}
+
+const { locale } = Astro.params as { locale: AppLocale };
+---
+
+<BlogIndex locale={locale} />

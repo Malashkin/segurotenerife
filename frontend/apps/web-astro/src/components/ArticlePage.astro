@@ -113,6 +113,16 @@ const fmtDate = (updated ?? date).toLocaleDateString(
   locale === 'uk' ? 'uk-UA' : locale === 'en' ? 'en-GB' : locale === 'es' ? 'es-ES' : 'ru-RU',
   { year: 'numeric', month: 'long', day: 'numeric' },
 );
+
+// Ссылки «поделиться» (URL-based, без JS-SDK).
+const shareUrl = encodeURIComponent(canonical);
+const shareText = encodeURIComponent(title);
+const share = {
+  whatsapp: `https://wa.me/?text=${encodeURIComponent(`${title} ${canonical}`)}`,
+  telegram: `https://t.me/share/url?url=${shareUrl}&text=${shareText}`,
+  facebook: `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`,
+  x: `https://twitter.com/intent/tweet?url=${shareUrl}&text=${shareText}`,
+};
 ---
 
 <Layout
@@ -144,6 +154,69 @@ const fmtDate = (updated ?? date).toLocaleDateString(
         <div class="article-body mt-7">
           <Content />
         </div>
+
+        <!-- Поделиться. -->
+        <div class="mt-8 flex flex-wrap items-center gap-2 border-t border-slate-200 pt-5">
+          <span class="mr-1 text-[0.85rem] font-semibold text-muted">{t('share_label')}</span>
+          <a
+            href={share.whatsapp}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="WhatsApp"
+            class="grid h-9 w-9 place-items-center rounded-full border border-slate-200 text-slate-600 transition-colors hover:border-brand hover:text-brand-dark"
+          >
+            <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.7 14.9L2 22l5.3-1.4A10 10 0 1 0 12 2Zm5.5 14c-.2.7-1.4 1.3-2 1.4-.5.1-1.1.1-1.8-.1-.4-.1-1-.3-1.6-.6-2.9-1.3-4.8-4.2-5-4.4-.1-.2-1.1-1.5-1.1-2.9 0-1.4.7-2 1-2.3.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 1.9c.1.2.1.4 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.5.1.3.7 1.1 1.4 1.8 1 .8 1.7 1.1 2 1.2.2.1.4.1.5-.1l.6-.7c.2-.2.3-.2.6-.1l1.8.9c.2.1.4.2.5.3 0 .2 0 .8-.2 1.4Z"/></svg>
+          </a>
+          <a
+            href={share.telegram}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Telegram"
+            class="grid h-9 w-9 place-items-center rounded-full border border-slate-200 text-slate-600 transition-colors hover:border-brand hover:text-brand-dark"
+          >
+            <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.9 4.3 18.7 19c-.2 1-.9 1.3-1.7.8l-4.6-3.4-2.2 2.1c-.2.2-.5.5-.9.5l.3-4.6 8.4-7.6c.4-.3-.1-.5-.6-.2L7.3 13 2.8 11.6c-1-.3-1-1 .2-1.5l17-6.6c.8-.3 1.5.2 1.2 1.5Z"/></svg>
+          </a>
+          <a
+            href={share.facebook}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Facebook"
+            class="grid h-9 w-9 place-items-center rounded-full border border-slate-200 text-slate-600 transition-colors hover:border-brand hover:text-brand-dark"
+          >
+            <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 21v-8h2.7l.4-3.1h-3.1V7.9c0-.9.3-1.5 1.6-1.5h1.6V3.6c-.3 0-1.3-.1-2.4-.1-2.4 0-4 1.4-4 4.1v2.3H7.5V13h2.8v8h3.2Z"/></svg>
+          </a>
+          <a
+            href={share.x}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="X"
+            class="grid h-9 w-9 place-items-center rounded-full border border-slate-200 text-slate-600 transition-colors hover:border-brand hover:text-brand-dark"
+          >
+            <svg class="h-[16px] w-[16px]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.2 2H21l-6.6 7.6L22 22h-6.8l-4.3-5.6L5.9 22H3l7-8.1L2.3 2H9l3.9 5.1L18.2 2Zm-1.2 18h1.5L7.1 3.9H5.5L17 20Z"/></svg>
+          </a>
+          <button
+            type="button"
+            data-share-copy={canonical}
+            aria-label={t('share_copy')}
+            class="grid h-9 w-9 place-items-center rounded-full border border-slate-200 text-slate-600 transition-colors hover:border-brand hover:text-brand-dark"
+          >
+            <svg class="h-[17px] w-[17px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1" stroke-linecap="round"/><path d="M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+
+        <script is:inline>
+          document.querySelectorAll('[data-share-copy]').forEach((b) => {
+            b.addEventListener('click', async () => {
+              try {
+                await navigator.clipboard.writeText(b.getAttribute('data-share-copy'));
+                b.classList.add('!border-brand', '!text-brand-dark');
+                setTimeout(() => b.classList.remove('!border-brand', '!text-brand-dark'), 1500);
+              } catch {
+                /* буфер недоступен */
+              }
+            });
+          });
+        </script>
 
         {
           faq && faq.length > 0 && (
