@@ -17,8 +17,28 @@ interface Props {
   description: string;
   /** SEO-ключевые слова (целевые запросы + варианты написания). Опц. */
   keywords?: string;
+  /** Канонический URL страницы (по умолчанию — корень локали). */
+  canonicalUrl?: string;
+  /** og:type (website | article). */
+  ogType?: string;
+  /** Доп. JSON-LD узлы (Article/Breadcrumb/FAQ статьи). */
+  extraSchema?: Record<string, unknown>[];
+  /** Включать ли FAQPage лендинга (на статьях — false, у них свой FAQ). */
+  includeSiteFaq?: boolean;
+  /** hreflang-альтернативы (для статей — переводы той же статьи). */
+  alternates?: { hreflang: string; href: string }[];
 }
-const { locale, title, description, keywords } = Astro.props;
+const {
+  locale,
+  title,
+  description,
+  keywords,
+  canonicalUrl,
+  ogType = 'website',
+  extraSchema = [],
+  includeSiteFaq = true,
+  alternates,
+} = Astro.props;
 
 // Код верификации Google Search Console (из env, без правки кода). Если задан —
 // добавим <meta name="google-site-verification">.
@@ -32,7 +52,7 @@ const OG_LOCALE: Record<AppLocale, string> = {
   uk: 'uk_UA',
 };
 
-const canonical = getAbsoluteLocaleUrl(locale, '/');
+const canonical = canonicalUrl ?? getAbsoluteLocaleUrl(locale, '/');
 const ogImage = new URL('og-image.png', Astro.site).href;
 
 // FAQPage JSON-LD из словаря локали (faq1..faq6) — для rich-результатов.
@@ -74,7 +94,8 @@ const jsonld = {
       name: 'Seguro Tenerife',
       inLanguage: [locale],
     },
-    { '@type': 'FAQPage', mainEntity: faqItems },
+    ...(includeSiteFaq && faqItems.length ? [{ '@type': 'FAQPage', mainEntity: faqItems }] : []),
+    ...extraSchema,
   ],
 };
 ---
@@ -91,13 +112,22 @@ const jsonld = {
     {googleVerify && <meta name="google-site-verification" content={googleVerify} />}
     <link rel="canonical" href={canonical} />
 
-    {LOCALES.map((l) => <link rel="alternate" hreflang={l} href={getAbsoluteLocaleUrl(l, '/')} />)}
-    <link rel="alternate" hreflang="x-default" href={getAbsoluteLocaleUrl('ru', '/')} />
+    {
+      (alternates ?? LOCALES.map((l) => ({ hreflang: l, href: getAbsoluteLocaleUrl(l, '/') }))).map(
+        (a) => <link rel="alternate" hreflang={a.hreflang} href={a.href} />,
+      )
+    }
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href={(alternates ?? []).find((a) => a.hreflang === 'ru')?.href ??
+        getAbsoluteLocaleUrl('ru', '/')}
+    />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="theme-color" content="#0d9488" />
 
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={ogType} />
     <meta property="og:site_name" content="Seguro Tenerife" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />

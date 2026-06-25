@@ -1,0 +1,17 @@
+---
+/** Статьи блога на локалях с префиксом: /uk|en|es/blog/<slug>. */
+import { getCollection } from 'astro:content';
+import ArticlePage from '../../../components/ArticlePage.astro';
+
+export async function getStaticPaths() {
+  const arts = await getCollection('articles', (a) => a.data.locale !== 'ru');
+  return arts.map((entry) => ({
+    params: { locale: entry.data.locale, slug: entry.data.urlSlug },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+---
+
+<ArticlePage entry={entry} />

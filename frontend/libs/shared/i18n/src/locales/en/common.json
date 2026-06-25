@@ -122,7 +122,7 @@
   "art_eyebrow": "Knowledge base",
   "art_h2": "Articles and guides for life in Tenerife",
   "art_p": "We explain what insurance you need for a visa and residency, and how private healthcare works on the island.",
-  "art_read": "Read →",
+  "art_read": "Read",
   "art_soon": "Coming soon",
   "a1_tag": "Residency & visas",
   "a1_t": "What insurance you need for residency in Spain in 2026",
@@ -185,5 +185,9 @@
   "cookie_accept": "Accept all",
   "cookie_necessary": "Only necessary",
   "cookie_more": "Learn more",
-  "consent_privacy": "Privacy policy"
+  "consent_privacy": "Privacy policy",
+  "blog_title": "Articles & guides",
+  "art_cta_h": "Need insurance for your situation?",
+  "art_cta_p": "Ask in the chat — we'll answer and a manager will calculate it for free.",
+  "art_cta_btn": "Open chat"
 }

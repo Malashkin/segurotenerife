@@ -1,0 +1,189 @@
+---
+/**
+ * Страница статьи блога: Layout (SEO-head + Article/Breadcrumb/FAQ schema) +
+ * шапка/подвал/чат лендинга + рендер Markdown. URL: /blog/<slug> (ru),
+ * /<locale>/blog/<slug> (uk/en/es). hreflang — на переводы той же статьи.
+ */
+import type { CollectionEntry } from 'astro:content';
+import { getCollection, render } from 'astro:content';
+import Layout from '../layouts/Layout.astro';
+import NavBar from './NavBar.astro';
+import Footer from './Footer.astro';
+import Overlays from '../islands/Overlays.tsx';
+import { getT } from '../i18n/t';
+import type { AppLocale } from '@shared/i18n';
+
+interface Props {
+  entry: CollectionEntry<'articles'>;
+}
+const { entry } = Astro.props;
+const { locale, urlSlug: slug, title, description, keywords, tag, date, updated, faq } = entry.data;
+const t = getT(locale);
+const { Content } = await render(entry);
+
+const path = (loc: string, s: string) => (loc === 'ru' ? `/blog/${s}` : `/${loc}/blog/${s}`);
+const canonical = new URL(path(locale, slug), Astro.site).href;
+const homeHref = locale === 'ru' ? Astro.site!.href : new URL(`/${locale}/`, Astro.site).href;
+
+// Переводы той же статьи (общий slug) → hreflang-альтернативы.
+const all = await getCollection('articles');
+const alternates = all
+  .filter((a) => a.data.urlSlug === slug)
+  .map((a) => ({ hreflang: a.data.locale, href: new URL(path(a.data.locale, a.data.urlSlug), Astro.site).href }));
+
+const logo = new URL('favicon.svg', Astro.site).href;
+const ogImage = new URL('og-image.png', Astro.site).href;
+
+const blogPosting = {
+  '@type': 'BlogPosting',
+  headline: title,
+  description,
+  inLanguage: locale,
+  datePublished: date.toISOString(),
+  dateModified: (updated ?? date).toISOString(),
+  image: ogImage,
+  mainEntityOfPage: canonical,
+  author: { '@type': 'Organization', name: 'Seguro Tenerife' },
+  publisher: {
+    '@type': 'Organization',
+    name: 'Seguro Tenerife',
+    logo: { '@type': 'ImageObject', url: logo },
+  },
+};
+const breadcrumb = {
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Seguro Tenerife', item: homeHref },
+    { '@type': 'ListItem', position: 2, name: t('blog_title'), item: `${homeHref}#articles` },
+    { '@type': 'ListItem', position: 3, name: title, item: canonical },
+  ],
+};
+const faqSchema = faq?.length
+  ? {
+      '@type': 'FAQPage',
+      mainEntity: faq.map((f) => ({
+        '@type': 'Question',
+        name: f.q,
+        acceptedAnswer: { '@type': 'Answer', text: f.a },
+      })),
+    }
+  : null;
+const extraSchema = [blogPosting, breadcrumb, ...(faqSchema ? [faqSchema] : [])];
+
+const fmtDate = (updated ?? date).toLocaleDateString(
+  locale === 'uk' ? 'uk-UA' : locale === 'en' ? 'en-GB' : locale === 'es' ? 'es-ES' : 'ru-RU',
+  { year: 'numeric', month: 'long', day: 'numeric' },
+);
+---
+
+<Layout
+  locale={locale}
+  title={`${title} | Seguro Tenerife`}
+  description={description}
+  keywords={keywords}
+  canonicalUrl={canonical}
+  ogType="article"
+  includeSiteFaq={false}
+  extraSchema={extraSchema}
+  alternates={alternates}
+>
+  <div id="top">
+    <NavBar locale={locale} />
+    <main class="bg-white">
+      <article class="mx-auto w-[min(760px,calc(100vw-40px))] py-12">
+        <nav class="mb-4 text-[0.82rem] text-muted" aria-label="breadcrumb">
+          <a href={homeHref} class="hover:text-brand-dark">Seguro Tenerife</a>
+          <span class="mx-1.5">/</span>
+          <a href={`${homeHref}#articles`} class="hover:text-brand-dark">{t('blog_title')}</a>
+        </nav>
+        <span class="text-[0.76rem] font-bold uppercase tracking-wider text-brand-dark">{tag}</span>
+        <h1 class="mt-2 font-heading text-[1.9rem] font-bold leading-tight text-ink sm:text-[2.3rem]">
+          {title}
+        </h1>
+        <p class="mt-2 text-[0.84rem] text-muted">{fmtDate}</p>
+
+        <div class="article-body mt-7">
+          <Content />
+        </div>
+
+        {
+          faq && faq.length > 0 && (
+            <section class="mt-10">
+              <h2 class="font-heading text-[1.4rem] font-bold text-ink">{t('faq_h2')}</h2>
+              <div class="mt-4 flex flex-col gap-3">
+                {faq.map((f) => (
+                  <details class="rounded-xl border border-slate-200 bg-bg p-4">
+                    <summary class="cursor-pointer font-semibold text-ink">{f.q}</summary>
+                    <p class="mt-2 text-[0.95rem] leading-relaxed text-muted">{f.a}</p>
+                  </details>
+                ))}
+              </div>
+            </section>
+          )
+        }
+
+        <!-- CTA: открыть чат-консультанта (мост seguro:ui → остров). -->
+        <aside class="mt-10 rounded-2xl bg-gradient-to-br from-brand-dark to-brand p-6 text-white">
+          <h2 class="font-heading text-[1.25rem] font-bold">{t('art_cta_h')}</h2>
+          <p class="mt-1.5 text-[0.95rem] opacity-90">{t('art_cta_p')}</p>
+          <button
+            type="button"
+            data-ui="open-chat"
+            class="mt-4 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-[0.95rem] font-semibold text-brand-dark transition-transform hover:scale-[1.02]"
+          >
+            {t('art_cta_btn')}
+          </button>
+        </aside>
+      </article>
+    </main>
+    <Footer locale={locale} />
+  </div>
+  <Overlays client:only="react" locale={locale} />
+</Layout>
+
+<style>
+  .article-body :global(h2) {
+    font-family: var(--font-heading, inherit);
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1.3;
+    margin: 1.8rem 0 0.7rem;
+    color: #0f172a;
+  }
+  .article-body :global(h3) {
+    font-size: 1.12rem;
+    font-weight: 700;
+    margin: 1.3rem 0 0.5rem;
+    color: #0f172a;
+  }
+  .article-body :global(p) {
+    margin: 0.7rem 0;
+    line-height: 1.7;
+    color: #334155;
+  }
+  .article-body :global(ul),
+  .article-body :global(ol) {
+    margin: 0.7rem 0;
+    padding-left: 1.3rem;
+    line-height: 1.7;
+    color: #334155;
+  }
+  .article-body :global(li) {
+    margin: 0.3rem 0;
+  }
+  .article-body :global(strong) {
+    color: #0f172a;
+  }
+  .article-body :global(a) {
+    color: #0f766e;
+    text-decoration: underline;
+  }
+  .article-body :global(blockquote) {
+    margin: 1rem 0;
+    border-left: 3px solid #0d9488;
+    background: #f0fdfa;
+    padding: 0.8rem 1rem;
+    border-radius: 0 0.5rem 0.5rem 0;
+    color: #0f172a;
+  }
+</style>

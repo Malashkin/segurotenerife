@@ -122,7 +122,7 @@
   "art_eyebrow": "Base de conocimiento",
   "art_h2": "Artículos y guías para vivir en Tenerife",
   "art_p": "Explicamos qué seguro necesitas para el visado y la residencia, y cómo funciona la sanidad privada en la isla.",
-  "art_read": "Leer →",
+  "art_read": "Leer",
   "art_soon": "Próximamente",
   "a1_tag": "Residencia y visados",
   "a1_t": "Qué seguro necesitas para la residencia en España en 2026",
@@ -185,5 +185,9 @@
   "cookie_accept": "Aceptar todo",
   "cookie_necessary": "Solo necesarias",
   "cookie_more": "Más información",
-  "consent_privacy": "Política de privacidad"
+  "consent_privacy": "Política de privacidad",
+  "blog_title": "Artículos y guías",
+  "art_cta_h": "¿Necesitas un seguro para tu caso?",
+  "art_cta_p": "Pregunta en el chat — respondemos y un gestor lo calcula gratis.",
+  "art_cta_btn": "Abrir chat"
 }
