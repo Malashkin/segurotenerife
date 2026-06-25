@@ -25,8 +25,8 @@ jobs:
       # Публичные значения (безопасно в коде): URL API + публичный PostHog-ключ.
       PUBLIC_API_URL: https://api.segurotenerife.com
       VITE_API_URL: https://api.segurotenerife.com
-      PUBLIC_POSTHOG_KEY: phc_arcGvtgDBgFjvJtr3p2aAaB0zlhT0sinuHEnwLasbBx
-      VITE_POSTHOG_KEY: phc_arcGvtgDBgFjvJtr3p2aAaB0zlhT0sinuHEnwLasbBx
+      PUBLIC_POSTHOG_KEY: phc_phmVq5JExsz99aR7ohtmqy8YWLdP4rr4ZvoGLzF7mDsi
+      VITE_POSTHOG_KEY: phc_phmVq5JExsz99aR7ohtmqy8YWLdP4rr4ZvoGLzF7mDsi
       PUBLIC_POSTHOG_HOST: https://eu.i.posthog.com
       VITE_POSTHOG_HOST: https://eu.i.posthog.com
       # Контакты офиса для deep-link'ов хендоффа (ТЕСТ — на время проверки).
