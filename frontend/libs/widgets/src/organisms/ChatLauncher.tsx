@@ -128,7 +128,7 @@ export function ChatLauncher(): JSX.Element {
             type="button"
             onClick={closeChat}
             aria-label={t('chat_close')}
-            className="absolute right-2 top-2 z-10 grid h-8 w-8 place-items-center rounded-full bg-white/20 text-white transition-colors hover:bg-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="absolute right-2 top-[18px] z-10 grid h-8 w-8 place-items-center rounded-full bg-white/20 text-white transition-colors hover:bg-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
           >
             <CloseIcon />
           </button>
