@@ -127,6 +127,9 @@ export function initAnalytics(opts: InitAnalyticsOptions = {}): void {
   try {
     posthog.init(key, {
       api_host: host,
+      // Когда api_host — наш прокси (/ph), ui_host указывает PostHog, где живёт
+      // дашборд (для тулбара/ссылок). EU-облако.
+      ui_host: 'https://eu.posthog.com',
       // GDPR: не трекаем до явного согласия (баннер куки → opt_in).
       opt_out_capturing_by_default: true,
       autocapture,
