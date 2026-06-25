@@ -36,6 +36,20 @@ updated: 2026-06-25
 > Опечатки/варианты держим в `keywords` (тег невидим). В видимый текст спам не
 > выносим — Google и сам исправляет опечатки в запросах.
 
+## Блог (статьи под SEO/GEO)
+
+- **Контент:** `src/content/articles/{locale}/{slug}.md` (Astro Content Layer).
+  Поле `urlSlug` (не `slug` — зарезервирован), `locale`, `title`, `description`,
+  `keywords`, `date`, `faq[]`. Frontmatter со значениями, содержащими `:` —
+  **в кавычках** (иначе YAML падает).
+- **Страницы:** `/blog/<slug>/` (ru) и `/<locale>/blog/<slug>/` (uk/en/es) с
+  завершающим слешем (совпадает с canonical и sitemap, без 308).
+- **Разметка (GEO):** `BlogPosting` + `BreadcrumbList` + `FAQPage` (Q&A —
+  AI-движки их любят), hreflang на переводы, og:type=article.
+- **Карточки** секции «Статьи» кликабельны там, где статья для локали есть;
+  иначе «Скоро».
+- Сейчас опубликовано: **6 тем × ru + uk** (12 статей). en/es — следующим шагом.
+
 ## Чтобы проиндексироваться в Google (действия владельца)
 
 1. **Google Search Console** → добавить ресурс `segurotenerife.com`.

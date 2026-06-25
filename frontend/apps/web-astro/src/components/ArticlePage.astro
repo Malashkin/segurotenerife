@@ -21,7 +21,9 @@ const { locale, urlSlug: slug, title, description, keywords, tag, date, updated,
 const t = getT(locale);
 const { Content } = await render(entry);
 
-const path = (loc: string, s: string) => (loc === 'ru' ? `/blog/${s}` : `/${loc}/blog/${s}`);
+// С завершающим слешем — совпадает с финальным URL (Cloudflare) и sitemap,
+// чтобы canonical не указывал на 308-редирект.
+const path = (loc: string, s: string) => (loc === 'ru' ? `/blog/${s}/` : `/${loc}/blog/${s}/`);
 const canonical = new URL(path(locale, slug), Astro.site).href;
 const homeHref = locale === 'ru' ? Astro.site!.href : new URL(`/${locale}/`, Astro.site).href;
 

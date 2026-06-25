@@ -22,7 +22,8 @@ const ARTICLES = [
 
 const published = await getCollection('articles', (a) => a.data.locale === locale);
 const have = new Set(published.map((a) => a.data.urlSlug));
-const hrefFor = (slug: string) => (locale === 'ru' ? `/blog/${slug}` : `/${locale}/blog/${slug}`);
+const hrefFor = (slug: string) =>
+  locale === 'ru' ? `/blog/${slug}/` : `/${locale}/blog/${slug}/`;
 ---
 
 <section id="articles" data-section="articles" class="bg-gradient-to-b from-white to-brand-tint2 py-16">
