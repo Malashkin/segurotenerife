@@ -15,8 +15,14 @@ interface Props {
   locale: AppLocale;
   title: string;
   description: string;
+  /** SEO-ключевые слова (целевые запросы + варианты написания). Опц. */
+  keywords?: string;
 }
-const { locale, title, description } = Astro.props;
+const { locale, title, description, keywords } = Astro.props;
+
+// Код верификации Google Search Console (из env, без правки кода). Если задан —
+// добавим <meta name="google-site-verification">.
+const googleVerify = import.meta.env.PUBLIC_GOOGLE_SITE_VERIFICATION as string | undefined;
 
 const LOCALES: AppLocale[] = ['ru', 'en', 'es', 'uk'];
 const OG_LOCALE: Record<AppLocale, string> = {
@@ -44,12 +50,21 @@ const jsonld = {
   '@context': 'https://schema.org',
   '@graph': [
     {
-      '@type': 'Organization',
+      // InsuranceAgency — сигнал локального бизнеса (помогает в локальном поиске
+      // «страховка Тенерифе» и на картах).
+      '@type': ['Organization', 'InsuranceAgency'],
       '@id': `${Astro.site}#org`,
       name: 'Seguro Tenerife',
       url: Astro.site?.href,
       logo: new URL('favicon.svg', Astro.site).href,
-      areaServed: { '@type': 'Place', name: 'Tenerife, Canary Islands, Spain' },
+      image: ogImage,
+      description,
+      areaServed: [
+        { '@type': 'Place', name: 'Tenerife' },
+        { '@type': 'Place', name: 'Canary Islands' },
+        { '@type': 'Country', name: 'Spain' },
+      ],
+      address: { '@type': 'PostalAddress', addressRegion: 'Canary Islands', addressCountry: 'ES' },
       knowsLanguage: ['ru', 'uk', 'es', 'en'],
     },
     {
@@ -71,7 +86,9 @@ const jsonld = {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <meta name="robots" content="index, follow" />
+    {keywords && <meta name="keywords" content={keywords} />}
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    {googleVerify && <meta name="google-site-verification" content={googleVerify} />}
     <link rel="canonical" href={canonical} />
 
     {LOCALES.map((l) => <link rel="alternate" hreflang={l} href={getAbsoluteLocaleUrl(l, '/')} />)}

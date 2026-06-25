@@ -21,7 +21,12 @@ const { locale } = Astro.props as { locale: AppLocale };
 const meta = SEO_META[locale];
 ---
 
-<Layout locale={locale} title={meta.title} description={meta.description}>
+<Layout
+  locale={locale}
+  title={meta.title}
+  description={meta.description}
+  keywords={meta.keywords}
+>
   <div id="top">
     <NavBar locale={locale} />
     <main>
