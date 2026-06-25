@@ -64,3 +64,39 @@ describe('analytics (PostHog)', () => {
     expect(cfg.disable_session_recording).toBe(true);
   });
 });
+
+describe('detectTrafficChannel (GEO vs обычный трафик)', () => {
+  const setEnv = (referrer: string, search = '') => {
+    Object.defineProperty(document, 'referrer', { value: referrer, configurable: true });
+    Object.defineProperty(window, 'location', {
+      value: { search, hostname: 'segurotenerife.com' },
+      configurable: true,
+    });
+  };
+
+  it('AI-движки (ChatGPT/Perplexity/Gemini/Claude) → channel=ai + ai_engine', async () => {
+    const { detectTrafficChannel } = await import('./posthog');
+    setEnv('https://chatgpt.com/');
+    expect(detectTrafficChannel()).toMatchObject({ traffic_channel: 'ai', ai_engine: 'ChatGPT' });
+    setEnv('https://www.perplexity.ai/search');
+    expect(detectTrafficChannel()).toMatchObject({ traffic_channel: 'ai', ai_engine: 'Perplexity' });
+    setEnv('https://gemini.google.com/');
+    expect(detectTrafficChannel()).toMatchObject({ traffic_channel: 'ai', ai_engine: 'Gemini' });
+  });
+
+  it('AI по utm_source (Perplexity) → channel=ai', async () => {
+    const { detectTrafficChannel } = await import('./posthog');
+    setEnv('', '?utm_source=perplexity');
+    expect(detectTrafficChannel()).toMatchObject({ traffic_channel: 'ai', ai_engine: 'Perplexity' });
+  });
+
+  it('поисковики/соцсети/прямой — НЕ ai', async () => {
+    const { detectTrafficChannel } = await import('./posthog');
+    setEnv('https://www.google.com/search');
+    expect(detectTrafficChannel().traffic_channel).toBe('search');
+    setEnv('https://t.me/somechannel');
+    expect(detectTrafficChannel().traffic_channel).toBe('social');
+    setEnv('');
+    expect(detectTrafficChannel().traffic_channel).toBe('direct');
+  });
+});

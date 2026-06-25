@@ -62,6 +62,11 @@ Langfuse не идут.
   `section_viewed`, `faq_opened`, `chat_opened {source}`,
   `insurance_intent_selected`, `legal_opened`, `cookie_consent`,
   `lang_switched {to}`).
+- **Канал трафика (GEO vs обычный)** — super-property на всех событиях:
+  `traffic_channel` = `ai` | `search` | `social` | `direct` | `referral` +
+  `ai_engine` (ChatGPT/Perplexity/Gemini/Claude/Copilot…). Определяется по
+  referrer/utm_source при входе (first-touch за сессию). В PostHog: фильтр/
+  разбивка по `traffic_channel = ai` показывает приход из AI-движков (GEO).
 - **Воронка чата → лид** (`trackEvent`, фан-аут в PostHog + backend `/api/events`):
   `chat_started` → `question_asked` → `answer_received {topic, handoff}` /
   `agent_fallback {reason}` (агент недоступен/ошибка) → `chat_handoff_offered

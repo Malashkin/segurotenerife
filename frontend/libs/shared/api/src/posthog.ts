@@ -38,6 +38,79 @@ export interface InitAnalyticsOptions {
 }
 
 /**
+ * Определяет канал трафика по referrer/UTM. `ai` — приход из AI-движков (GEO:
+ * ChatGPT, Perplexity, Gemini, Claude, Copilot…), отдельно от обычного поиска.
+ */
+export function detectTrafficChannel(): {
+  traffic_channel: string;
+  ai_engine?: string;
+  channel_source?: string;
+} {
+  try {
+    const ref = (document.referrer || '').toLowerCase();
+    const host = ref ? new URL(ref).hostname.replace(/^www\./, '') : '';
+    const utm = (new URLSearchParams(window.location.search).get('utm_source') || '').toLowerCase();
+
+    // AI-движки по домену реферера.
+    const AI: Record<string, string> = {
+      'chatgpt.com': 'ChatGPT',
+      'chat.openai.com': 'ChatGPT',
+      'openai.com': 'ChatGPT',
+      'perplexity.ai': 'Perplexity',
+      'gemini.google.com': 'Gemini',
+      'bard.google.com': 'Gemini',
+      'claude.ai': 'Claude',
+      'copilot.microsoft.com': 'Copilot',
+      'you.com': 'You.com',
+      'poe.com': 'Poe',
+      'phind.com': 'Phind',
+      'meta.ai': 'Meta AI',
+    };
+    const AI_UTM: Record<string, string> = {
+      perplexity: 'Perplexity',
+      chatgpt: 'ChatGPT',
+      openai: 'ChatGPT',
+      gemini: 'Gemini',
+      copilot: 'Copilot',
+    };
+
+    for (const [d, engine] of Object.entries(AI)) {
+      if (host === d || host.endsWith('.' + d)) {
+        return { traffic_channel: 'ai', ai_engine: engine, channel_source: host };
+      }
+    }
+    const utmEngine = AI_UTM[utm];
+    if (utmEngine) return { traffic_channel: 'ai', ai_engine: utmEngine, channel_source: `utm:${utm}` };
+    if (host === 'bing.com' && /chat|copilot/.test(ref)) {
+      return { traffic_channel: 'ai', ai_engine: 'Copilot', channel_source: host };
+    }
+    if (/(^|\.)(google|bing|yandex|duckduckgo|yahoo|baidu|ecosia)\./.test(host)) {
+      return { traffic_channel: 'search', channel_source: host };
+    }
+    if (/(^|\.)(facebook|instagram|t\.me|telegram|vk\.com|x\.com|twitter|linkedin|youtube|tiktok|reddit)/.test(host)) {
+      return { traffic_channel: 'social', channel_source: host };
+    }
+    if (!host) return { traffic_channel: 'direct' };
+    return { traffic_channel: 'referral', channel_source: host };
+  } catch {
+    return { traffic_channel: 'unknown' };
+  }
+}
+
+/** First-touch канал за сессию (внутренняя навигация не пересчитывает). */
+function resolveTrafficChannel(): ReturnType<typeof detectTrafficChannel> {
+  try {
+    const cached = window.sessionStorage.getItem('seguro_traffic');
+    if (cached) return JSON.parse(cached);
+    const tc = detectTrafficChannel();
+    window.sessionStorage.setItem('seguro_traffic', JSON.stringify(tc));
+    return tc;
+  } catch {
+    return detectTrafficChannel();
+  }
+}
+
+/**
  * Инициализирует PostHog. Безопасна: без ключа/вне браузера — no-op.
  * Capture не начнётся, пока не вызовут setAnalyticsConsent(true) (или согласие
  * уже сохранено) — это требование GDPR.
@@ -64,6 +137,13 @@ export function initAnalytics(opts: InitAnalyticsOptions = {}): void {
       session_recording: { maskAllInputs: true },
       persistence: 'localStorage+cookie',
       loaded: (ph) => {
+        // Канал трафика (ai/search/social/direct/referral) — super-property на
+        // ВСЕ события, чтобы в PostHog различать GEO-трафик из AI-движков.
+        try {
+          ph.register(resolveTrafficChannel());
+        } catch {
+          /* не критично */
+        }
         // Если согласие уже было дано ранее — включаем capture сразу.
         try {
           if (window.localStorage.getItem(CONSENT_KEY) === 'accepted') {
