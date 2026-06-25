@@ -27,9 +27,9 @@ jobs:
       VITE_API_URL: https://api.segurotenerife.com
       PUBLIC_POSTHOG_KEY: phc_phmVq5JExsz99aR7ohtmqy8YWLdP4rr4ZvoGLzF7mDsi
       VITE_POSTHOG_KEY: phc_phmVq5JExsz99aR7ohtmqy8YWLdP4rr4ZvoGLzF7mDsi
-      # Реверс-прокси PostHog через /ph/* включим после проверки самой функции
-      # (см. pages-functions/ph). Пока хост прямой.
-      PUBLIC_POSTHOG_HOST: https://eu.i.posthog.com
+      # Web ходит в PostHog через наш реверс-прокси /ph/* (обход блокировщиков/ITP,
+      # _worker.js проверен). Admin — напрямую (им пользуется менеджер).
+      PUBLIC_POSTHOG_HOST: https://segurotenerife.com/ph
       VITE_POSTHOG_HOST: https://eu.i.posthog.com
       # Контакты офиса для deep-link'ов хендоффа (ТЕСТ — на время проверки).
       VITE_WHATSAPP_NUMBER: '34658516901'
