@@ -74,6 +74,12 @@ Langfuse не идут.
   topic}` (подтверждённая бэкендом конверсия) + `tg_message_copied` (Telegram).
 - **Admin:** БЕЗ autocapture/записи сессий (на экранах PII лидов) — только явные
   события.
+- **Реверс-прокси (web):** PostHog ходит через наш домен `segurotenerife.com/ph/*`
+  (Cloudflare Pages `_worker.js` → `apps/web-astro/pages-functions/_worker.js`,
+  копируется в `dist/_worker.js` в CI). Зачем: блокировщики/Safari ITP режут
+  `i.posthog.com` и теряют аналитику; первый-сторонний `/ph` не блокируется.
+  Хост web = `PUBLIC_POSTHOG_HOST=https://segurotenerife.com/ph`, `ui_host` =
+  `eu.posthog.com`. Admin ходит напрямую (`VITE_POSTHOG_HOST=eu.i.posthog.com`).
 - **GDPR-гейт:** capture **выключен по умолчанию** (`opt_out_capturing_by_default`);
   включается только после согласия в баннере куки (`setAnalyticsConsent`). Ключ —
   публичный `phc_…` (безопасен в клиенте); персональный `phx_…` в клиент НЕ кладём.
