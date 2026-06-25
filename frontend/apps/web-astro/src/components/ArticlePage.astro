@@ -33,6 +33,43 @@ const alternates = all
   .filter((a) => a.data.urlSlug === slug)
   .map((a) => ({ hreflang: a.data.locale, href: new URL(path(a.data.locale, a.data.urlSlug), Astro.site).href }));
 
+// Перекрёстные ссылки: для каждой темы — 3 релевантные статьи той же локали.
+const RELATED: Record<string, string[]> = {
+  'insurance-for-residency-visa': [
+    'copay-or-no-copay',
+    'digital-nomad-visa-insurance',
+    'private-healthcare-tenerife',
+  ],
+  'digital-nomad-visa-insurance': [
+    'insurance-for-residency-visa',
+    'copay-or-no-copay',
+    'autonomo-business-insurance',
+  ],
+  'private-healthcare-tenerife': [
+    'insurance-for-residency-visa',
+    'family-insurance-tenerife',
+    'copay-or-no-copay',
+  ],
+  'copay-or-no-copay': [
+    'insurance-for-residency-visa',
+    'private-healthcare-tenerife',
+    'family-insurance-tenerife',
+  ],
+  'family-insurance-tenerife': [
+    'insurance-for-residency-visa',
+    'private-healthcare-tenerife',
+    'copay-or-no-copay',
+  ],
+  'autonomo-business-insurance': [
+    'insurance-for-residency-visa',
+    'digital-nomad-visa-insurance',
+    'copay-or-no-copay',
+  ],
+};
+const related = (RELATED[slug] ?? [])
+  .map((rs) => all.find((a) => a.data.locale === locale && a.data.urlSlug === rs))
+  .filter((a): a is (typeof all)[number] => Boolean(a));
+
 const logo = new URL('favicon.svg', Astro.site).href;
 const ogImage = new URL('og-image.png', Astro.site).href;
 
@@ -118,6 +155,29 @@ const fmtDate = (updated ?? date).toLocaleDateString(
                     <summary class="cursor-pointer font-semibold text-ink">{f.q}</summary>
                     <p class="mt-2 text-[0.95rem] leading-relaxed text-muted">{f.a}</p>
                   </details>
+                ))}
+              </div>
+            </section>
+          )
+        }
+
+        {
+          related.length > 0 && (
+            <section class="mt-10">
+              <h2 class="font-heading text-[1.4rem] font-bold text-ink">{t('art_related')}</h2>
+              <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                {related.map((r) => (
+                  <a
+                    href={path(locale, r.data.urlSlug)}
+                    class="flex flex-col gap-1.5 rounded-xl border border-slate-200 bg-bg p-4 transition-colors hover:border-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  >
+                    <span class="text-[0.72rem] font-bold uppercase tracking-wider text-brand-dark">
+                      {r.data.tag}
+                    </span>
+                    <span class="font-heading text-[1.02rem] font-semibold leading-snug text-ink">
+                      {r.data.title}
+                    </span>
+                  </a>
                 ))}
               </div>
             </section>
