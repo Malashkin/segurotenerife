@@ -12,8 +12,8 @@
  * onUnauthorized() — попытку продлить сессию по refresh-cookie. При успехе токен
  * обновится в App и запрос повторится автоматически; иначе App уйдёт на логин.
  *
- * Колонки (по контракту LeadRow): created_at, name, contact, messenger, lang,
- * goal, city, urgency, status.
+ * Колонки: created_at, name, messenger, lang, goal, status. Contact/city/urgency
+ * из LeadRow не показываем — в текущем чат-флоу они не заполняются.
  *
  * Доступность: семантическая <table> с <caption> (sr-only), <th scope="col">
  * для шапки и <th scope="row"> для имени; даты — через <time dateTime>.
@@ -48,18 +48,9 @@ function formatCreatedAt(iso: string): string {
   return DATE_FORMATTER.format(date);
 }
 
-/** Заголовки колонок (порядок = порядок ячеек в строке). */
-const COLUMNS = [
-  'Created',
-  'Name',
-  'Contact',
-  'Messenger',
-  'Lang',
-  'Goal',
-  'City',
-  'Urgency',
-  'Status',
-] as const;
+/** Заголовки колонок (порядок = порядок ячеек в строке). Contact/City/Urgency
+ *  убраны — в текущем флоу (чат-хендофф) они не заполняются. */
+const COLUMNS = ['Created', 'Name', 'Messenger', 'Lang', 'Goal', 'Status'] as const;
 
 /** Подбирает цвет статус-бейджа по строке статуса (мягкая эвристика). */
 function statusClasses(status: string): string {
@@ -277,21 +268,12 @@ export function LeadsTable({ token, onUnauthorized }: LeadsTableProps): JSX.Elem
                       >
                         <CellValue value={lead.name} />
                       </th>
-                      <td className="whitespace-nowrap px-4 py-3 text-slate-700">
-                        <CellValue value={lead.contact} />
-                      </td>
                       <td className="whitespace-nowrap px-4 py-3 text-slate-700">{lead.messenger}</td>
                       <td className="whitespace-nowrap px-4 py-3 text-slate-700">
                         <CellValue value={lead.comm_lang ?? lead.ui_lang} />
                       </td>
                       <td className="px-4 py-3 text-slate-700">
                         <CellValue value={lead.goal} />
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-slate-700">
-                        <CellValue value={lead.city} />
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-slate-700">
-                        <CellValue value={lead.urgency} />
                       </td>
                       <td className="whitespace-nowrap px-4 py-3">
                         <StatusBadge status={lead.status} />
@@ -311,9 +293,6 @@ export function LeadsTable({ token, onUnauthorized }: LeadsTableProps): JSX.Elem
                       <p className="font-semibold text-slate-900">
                         <CellValue value={lead.name} />
                       </p>
-                      <p className="truncate text-sm text-slate-600">
-                        <CellValue value={lead.contact} />
-                      </p>
                     </div>
                     <StatusBadge status={lead.status} />
                   </div>
@@ -321,8 +300,6 @@ export function LeadsTable({ token, onUnauthorized }: LeadsTableProps): JSX.Elem
                     <LeadField label="Messenger" value={lead.messenger} />
                     <LeadField label="Lang" value={lead.comm_lang ?? lead.ui_lang} />
                     <LeadField label="Goal" value={lead.goal} />
-                    <LeadField label="City" value={lead.city} />
-                    <LeadField label="Urgency" value={lead.urgency} />
                   </dl>
                   <time dateTime={lead.created_at} className="text-xs text-slate-400">
                     {formatCreatedAt(lead.created_at)}
