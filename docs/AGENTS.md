@@ -1,7 +1,7 @@
 ---
 audience: [backend, frontend, devops, testing, ai]
 owner: seguro-tenerife
-updated: 2026-06-19
+updated: 2026-06-26
 ---
 
 # Seguro Tenerife — AGENTS.md
@@ -36,7 +36,8 @@ docs/            эта документация (по ролям)
 | Наблюдаемость (Langfuse, PostHog) | [monitoring/](monitoring/index.md) | backend, frontend, devops |
 | Тесты (cargo/vitest/playwright/mutation) | [testing/](testing/index.md) | testing |
 | Деплой + ENV | [deploy.md](deploy.md) | devops |
-| SEO/домены | [seo/domain-research.md](seo/domain-research.md) | product |
+| SEO/GEO + блог + Google Search Console | [seo/index.md](seo/index.md) | product, frontend |
+| Лиды по каналам (схема) | [architecture/lead-flow.md](architecture/lead-flow.md) | product, backend |
 | UX-обзоры | [ux/](ux/ux-review.md) | product |
 | Changelog | [../CHANGELOG.md](../CHANGELOG.md) | all |
 | Последний тест-прогон | [../TEST_RESULTS.md](../TEST_RESULTS.md) | testing |
@@ -89,4 +90,9 @@ pnpm dev:admin         # Vite dev (admin)
 - **`/api/chat`** платный (вызов Claude) и за rate-limit'ом; в проде нужен
   `TRUST_PROXY_HEADERS=true` (иначе лимит за прокси не работает).
 - Без `ANTHROPIC_API_KEY`/корпуса `/api/chat` → 503; фронт молча откатывается к
-  гайдовому чату.
+  гайдовому чату. **Модель агента в проде — `claude-sonnet-4-6`** (`ANTHROPIC_MODEL`).
+- **Статьи блога** (`web-astro/src/content/articles/*`): поле URL — **`urlSlug`**,
+  НЕ `slug` (зарезервирован Astro → коллизия локалей); значения frontmatter с `:`
+  — в кавычках (иначе YAML падает). См. `architecture/astro-web.md`.
+- **PostHog (web)** ходит через прокси `segurotenerife.com/ph` (Cloudflare
+  `_worker.js`) — обход блокировщиков. Детали — `monitoring/observability.md`.

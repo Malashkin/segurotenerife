@@ -4,6 +4,41 @@
 
 ## [Unreleased]
 
+### Added — Блог и SEO/GEO
+
+**Блог (24 статьи).** 6 тем × 4 языка (ru/uk/en/es) на Astro Content Layer:
+страницы `/blog/<slug>/`, хаб `/blog/`, «О нас» `/about/`, перекрёстные ссылки
+«Похожие статьи», кнопки «поделиться» (WhatsApp/Telegram/Facebook/X/копировать).
+Разметка `BlogPosting`+`BreadcrumbList`+`FAQPage` (для SEO и цитирования
+AI-движками), hreflang на переводы. Карточки секции «Статьи» стали кликабельны.
+Детали — `docs/architecture/astro-web.md`, `docs/seo/index.md`.
+
+**SEO.** Keyword-оптимизированные title/description + `keywords` (с вариантами/
+опечатками) на 4 языках; `InsuranceAgency`-разметка (локальный сигнал Тенерифе);
+опц. `<meta google-site-verification>` из env. Домен подтверждён в Google Search
+Console (TXT в Cloudflare); Cloudflare Crawler Hints/IndexNow включён (Bing/Yandex
++ GEO).
+
+### Added — Реверс-прокси PostHog + различение GEO-трафика
+
+**Прокси `/ph`.** Web ходит в PostHog через свой домен (`segurotenerife.com/ph/*`,
+Cloudflare Pages `_worker.js`) — обход блокировщиков/Safari ITP. Свойство
+`traffic_channel` (ai|search|social|direct|referral) + `ai_engine` различает
+GEO-трафик из AI-движков. Запись сессий (Session Replay, с маскировкой инпутов)
+включена. Исправлен ключ PostHog (был от другого проекта → 401).
+
+### Changed — Качество и UX чата
+
+- **Модель агента: Haiku → `claude-sonnet-4-6`** (прод, `ANTHROPIC_MODEL`) —
+  Haiku коверкал русский и транслитерировал испанские термины. Промпт: тёплый
+  тон, перевод терминов, закрытие диалога приглашением к расчёту у менеджера.
+- **Чат-UX:** приветствие без «передам менеджеру»; инлайн-кнопка «Связаться с
+  менеджером» по сигналу агента (авто-карточка — только по 60с бездействия);
+  кнопка «к менеджеру» после ≥2 вопросов; история чата в localStorage + очистка;
+  Telegram — копирование заготовки. Фикс: приветствие на текущем языке после
+  смены локали.
+- **Админка:** убраны всегда-пустые столбцы Contact/City/Urgency из таблицы лидов.
+
 ### Added — Лиды из чата
 
 **Передача менеджеру с обязательным именем.** В карточке хендоффа поле «Как к

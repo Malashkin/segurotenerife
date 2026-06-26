@@ -1,7 +1,7 @@
 ---
 audience: [backend, frontend, devops]
 owner: seguro-tenerife
-updated: 2026-06-19
+updated: 2026-06-26
 ---
 
 # Observability: Langfuse + PostHog

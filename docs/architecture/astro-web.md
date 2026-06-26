@@ -1,7 +1,7 @@
 ---
 audience: [frontend, devops]
 owner: seguro-tenerife
-updated: 2026-06-19
+updated: 2026-06-26
 ---
 
 # Публичный сайт переехал на Astro (SSG + React-острова)
@@ -47,6 +47,33 @@ e2e гоняется против Astro-сборки (`playwright.config.ts` →
 - `@shared/i18n.initI18n()` получил опции `{ lng, syncUrl }` (обратносовместимо):
   острова Astro инициализируют i18n явной локалью и НЕ трогают URL.
 
+## Блог (Content Layer)
+- **Контент:** `src/content/articles/{locale}/{slug}.md` (Astro 6 Content Layer,
+  `glob`-loader; схема в `src/content.config.ts`). Поле URL — **`urlSlug`** (НЕ
+  `slug` — зарезервирован Astro, иначе коллизия между локалями). Значения
+  frontmatter с `:` — в кавычках (иначе YAML падает). Сейчас 24 статьи
+  (6 тем × ru/uk/en/es).
+- **Страницы:** `/blog/<slug>/` (ru) и `/<locale>/blog/<slug>/` — со слешем
+  (совпадает с canonical/sitemap, без 308). Шаблон `ArticlePage.astro`:
+  `BlogPosting`+`BreadcrumbList`+`FAQPage` schema, hreflang на переводы, блок
+  «Похожие статьи» (карта связей), кнопки «поделиться», CTA в чат.
+- **Хаб** `/blog/` (`BlogIndex.astro`, `ItemList`), **«О нас»** `/about/`
+  (`AboutPage.astro`, контент в `src/i18n/about.ts`, E-E-A-T). Карточки секции
+  «Статьи» (`Articles.astro`) кликабельны, где статья для локали есть.
+- **Layout расширен:** props `keywords`/`canonicalUrl`/`ogType`/`extraSchema`/
+  `alternates`/`includeSiteFaq`; `InsuranceAgency`-разметка (локальный SEO).
+  Детали SEO — [../seo/index.md](../seo/index.md).
+
+## Реверс-прокси PostHog (`/ph`)
+- **Зачем:** блокировщики/Safari ITP режут `i.posthog.com` → теряется аналитика.
+  Проксируем через свой домен (первая сторона).
+- **Как:** Cloudflare Pages **advanced-mode** `dist/_worker.js` (исходник
+  `apps/web-astro/pages-functions/_worker.js`, копируется в `dist/_worker.js` в
+  CI). `/ph/static/*` → `eu-assets.i.posthog.com`, `/ph/*` →
+  `eu.i.posthog.com`, остальное → `env.ASSETS`. Web-хост PostHog =
+  `PUBLIC_POSTHOG_HOST=https://segurotenerife.com/ph`, `ui_host`=`eu.posthog.com`.
+  Admin ходит напрямую. Детали — [../monitoring/observability.md](../monitoring/observability.md).
+
 ## Команды
 ```
 pnpm --filter @seguro/web-astro dev        # дев-сервер
@@ -62,8 +89,8 @@ pnpm --filter @seguro/web-astro typecheck  # astro check
 - **env:** `envPrefix: ['VITE_','PUBLIC_']` в `astro.config.mjs` — чтобы общий
   `@shared/api` видел `VITE_API_URL` (Astro по умолчанию отдаёт клиенту лишь `PUBLIC_*`).
 
-## Осталось (бэклог)
-1. **Деплой:** переключить хостинг на `apps/web-astro/dist`; убедиться, что
-   `/es/ /uk/ /en/` отдаются как свои файлы (Astro генерит подпапки — обычно ок).
-   E2E и сборка (`pnpm build:web`) уже на Astro. Старый `apps/web` и
-   `scripts/seo-prerender.mjs` удалены, URL-логика локалей из `detect.ts` убрана.
+## Деплой (выполнено)
+Прод — **Cloudflare Pages** (проект `seguro-web`, домен `segurotenerife.com`),
+авто-деплой из `.github/workflows/deploy-frontend.yml` (`wrangler pages deploy
+frontend/apps/web-astro/dist`). `/es/ /uk/ /en/` отдаются как свои подпапки.
+Старый `apps/web` и `scripts/seo-prerender.mjs` удалены.
