@@ -1,91 +1,51 @@
 # TEST_RESULTS — Red Ranger
 
-Тестовый прогон по новому коду Волны D (RAG-агент, DDoS/инъекшн-харднинг, PostHog).
-Стек: **Rust** (`cargo`) + **TS** (`vitest` для чистых хелперов; Playwright — e2e).
-Покрытый код: `backend/src/{knowledge,rate_limit}.rs`,
-`frontend/.../{posthog.ts, i18n/t.ts}`.
+Последний прогон — по изменениям сессии (чат-хендофф, прокси PostHog, блог,
+аналитика, админ-таблица). App type: **Web UI (Astro/React) + Rust API** →
+Testing Trophy + e2e.
 
-## Статус: 🟢 PASS
+## Сводка (per-layer)
 
-| Слой | Кол-во | Команда |
+| Слой | Команда | Результат |
 |---|---|---|
-| Backend unit | **28 passed** (knowledge 14 · rate_limit 8 · langfuse 6) | `cargo test` |
-| Backend integration (router/oneshot + mock-сервер) | **3 passed** (rate-limit ×2 · langfuse log_chat) | `cargo test` |
-| Frontend unit (vitest) | **8 passed** | `pnpm test` |
-| E2E (web) | 15 passed | `pnpm e2e` |
-| Lint | 0 warnings | `cargo clippy` |
+| Unit (frontend) | `pnpm -s test` (vitest) | **19 passed** (3 файла) |
+| Unit/integration (backend) | `cargo test` | **40 passed** |
+| E2E (web UI) | `pnpm exec playwright test web-chat` | **3 passed** (приветствие, история+очистка, connect-кнопка, copy-панель, имя обязательно) |
 
-Всего backend: **31 cargo-теста.**
+## Что добавлено в этом прогоне
 
-### knowledge.rs (ретривал + бренд-гейт) — 14 тестов
-Интент важнее лексики; кросс-язычный матч (ru/uk/en→es); интент-only запрос;
-top-k; фолбэк-подборка (порядок/дедуп/непустота); рендер несёт факты покрытия
-(заземление); `strip_brand` — вырезание/флаг, регистронезависимость, мультибренд,
-no-op на чистом тексте; `len`/`is_empty`.
+**`libs/features/src/chat/model/handoff.test.ts`** (новый, 8 тестов) — покрыл
+ранее НЕпокрытую чистую логику deep-link'ов хендоффа (`buildHandoffLink`,
+`continueLabelKey`, `getOfficeContacts`). Ассерты — по СПЕЦИФИКАЦИИ:
+- WhatsApp/Viber несут URL-кодированный текст; Viber — номер через `%2B`;
+- **Telegram — чистый `t.me/<username>` без текста/query** (ключевое недавнее
+  изменение: предзаполнить нельзя, клиент копирует заготовку сам);
+- кодирование защищает от `& = #`, ломающих ссылку;
+- `getOfficeContacts`: дефолты, срез ведущего `@`, фолбэк Viber→WhatsApp.
 
-### rate_limit.rs (защита от DDoS/cost-DoS) — 8 тестов
-Лимит до порога → блок; per-IP изоляция; **сброс окна** (детерминированно через
-инъекцию `now`); **граница окна эксклюзивна** (ровно 60с ещё лимит); **эвикция**
-протухших IP; `client_ip` из XFF/CF-заголовков при доверии прокси и игнор без;
-ответ лимита = **429**.
+Существующее покрытие (зелёное): backend `wants_manager` (manager/price/buy +
+укр. апострофы), `telegram::lead_text`/`recipients`, `detectTrafficChannel`
+(GEO ai/search/social/direct), e2e чата.
 
-> Рефактор для тестируемости: `RateLimiter::allow` → тонкая обёртка над
-> `allow_at(ip, now)` с инъектируемыми часами (детерминизм окна/эвикции без `sleep`).
+## Мутационный гейт (вручную — Stryker не установлен)
 
-### langfuse.rs (трассировка диалогов агента) — 7 тестов
-`build_batch` (5): trace+generation с вопросом/ответом; generation вложен в trace
-и несёт model+usage(токены); sessionId группирует диалог / пустой — опускается;
-metadata (intent/lang/brand_leaked). `enabled` (1): требует ОБА ключа. Интеграция
-(1): `log_chat` реально POST'ит batch на `/api/public/ingestion` с Basic-auth и
-вопросом в теле (mock-сервер на axum, эфемерный порт).
+Stryker отсутствует, добавление в монорепо — тяжело; провёл ручной анализ
+мутантов по изменённой логике `handoff.ts`. Каждый — убит тестом:
 
-> Хелпер `Config::test()` (#[cfg(test)]) + struct-update `..Config::test()` —
-> убрал дублирование 17-полевых литералов в тестах rate_limit/langfuse.
+| Мутант | Чем убит |
+|---|---|
+| Telegram-ссылка получает `?text=…` | `not.toContain('?')`, `not.toContain('text=')` |
+| Viber: `+` вместо `%2B` | `toContain('number=%2B…')`, `not.toContain('number=+')` |
+| WhatsApp: без `encodeURIComponent` | `toContain('%20')`/`%0A` + точное `toBe` |
+| Перепутан хост (`wa.me`↔`t.me`) | точное `toBe(...)` |
+| `continueLabelKey`: своп Tg/Vb/Wa | точные `toBe('contTg'/'contVb'/'contWa')` |
+| `getOfficeContacts`: не срезает `@` | `telegramUsername === 'office'` |
+| Viber-фолбэк удалён | `viberNumber === whatsappNumber` |
 
-### Frontend (vitest) — 8 тестов
-- `@shared/api/posthog.ts` (4): no-op без ключа; **GDPR — init с
-  `opt_out_capturing_by_default` и маскировкой инпутов**; согласие→opt_in /
-  отказ→opt_out / проксирование события; admin-режим без autocapture/recording.
-- `apps/web-astro/src/i18n/t.ts` (4): перевод по локали; разные локали ≠; фоллбэк
-  на сам ключ; `dictFor` непустой.
+Выживших значимых мутантов нет; эквивалентных — нет.
 
-## Mutation (quality gate) — `cargo-mutants`, на изменённых файлах
+## Coverage (диагностика)
 
-Финал (после интеграционных middleware-тестов): **middleware-мутанты убиты.**
-```
-rate_limit.rs: 16 caught · 1 missed · 1 unviable   (было 3 missed)
-knowledge.rs:  ~44 caught · 4 missed · ~timeout/unviable
-overall ≈ 92% killed (viable); прогресс caught: 44 → 51 → 54 → 56
-```
-
-### Оставшиеся выжившие — обоснование (эквивалентные / низкий риск)
-- `knowledge.rs:121 > → >=` (граница `any_positive`) — **эквивалентный**: счёты
-  дискретны, наблюдаемый исход не меняется.
-- `knowledge.rs:137 || → &&` (keyword `==` vs `contains`) — отличие лишь в
-  подстрочном матче; страхует haystack-сигнал (+2). Низкий риск.
-- `knowledge.rs:141 += → -=/*=` — слабый haystack-сигнал (+2); поведение
-  доминируется протестированными keyword (+10) и intent (+100).
-- `knowledge.rs:216 strip_brand + → *` — **TIMEOUT**: мутация даёт panic
-  (выход за границы среза) → фактически детектится.
-- `rate_limit.rs:63 > → >=` (триггер свипа эвикции) — **эквивалентный**: свип —
-  best-effort GC, момент срабатывания не влияет на allow/deny.
-- ✅ `rate_limit.rs:129/145 middleware → Default` — **УБИТЫ** интеграционными
-  тестами `chat/general_middleware_*` (router + `tower::oneshot`, 429 сверх лимита).
-
-**langfuse.rs** (после интеграционного теста: 6 caught · 4 missed; было 2/10):
-- ✅ `enabled` (×3) и `log_chat → ()` — **УБИТЫ** (тесты `enabled_requires_both_keys`
-  + `log_chat_posts_batch_with_auth` через mock-сервер).
-- `log_chat:108/111` (`!is_success()` guard ×3 + `Err`-arm) — **обоснованы**: эти
-  ветки лишь решают, писать ли `tracing::debug!`-строку; на поведение
-  (fire-and-forget, всегда `()`) не влияют. Убирать их = ловить лог-вывод ради
-  нулевого функционального эффекта. Заодно упрощён избыточный `&& != 207` (207 уже
-  входит в `is_success()`).
-
-## Coverage
-Инструмент покрытия не устанавливался — как **диагностику** использован
-mutation-гейт (сильнее % покрытия по качеству ассертов).
-
-## Заметки
-- Live `/api/chat` (вызов Claude) — за фиче-флагом ключа; интеграционно покрыт
-  стаб-e2e фронта; юнит-логика (ретривал/гейт) — здесь.
-- Остальные `.astro`-компоненты и Overlays-мост покрыты Playwright-e2e (трофей).
+Numeric-coverage отдельно не гонял; цель Red Ranger — покрыть риск, а не число.
+Новый файл закрывает все ветки `buildHandoffLink`/`continueLabelKey`/
+`getOfficeContacts` (3 мессенджера × кодирование + 3 ветки env).
