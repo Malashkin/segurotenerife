@@ -235,9 +235,13 @@ export function ChatWidget(): JSX.Element {
     if (startedRef.current) return;
     startedRef.current = true;
     void trackEvent('chat_started', { lang });
-    // Восстанавливаем прошлый диалог из localStorage (если есть) — иначе приветствие.
+    // Восстанавливаем прошлый диалог из localStorage — только если в нём есть
+    // реальные сообщения пользователя. Иначе (нет диалога ИЛИ сохранено лишь
+    // приветствие) показываем свежее приветствие на ТЕКУЩЕМ языке — иначе после
+    // смены языка осталось бы старое приветствие из localStorage.
     const saved = loadChat();
-    if (saved) {
+    const hasUserMsgs = saved?.messages.some((m) => m.kind === 'text' && m.author === 'user');
+    if (saved && hasUserMsgs) {
       setMessages(saved.messages);
       topicRef.current = saved.topic;
       idRef.current = saved.messages.reduce((m, x) => Math.max(m, x.id), 0) + 1;

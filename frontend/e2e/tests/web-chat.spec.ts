@@ -53,7 +53,7 @@ test.describe('web — чат-консультант', () => {
     const chat = await openChat(page);
 
     // Приветствие.
-    await expect(chat.getByText(/Расскажите, какая страховка/i)).toBeVisible();
+    await expect(chat.getByText(/Спросите что угодно о страховке/i)).toBeVisible();
     // На первом экране кнопки «к менеджеру» НЕТ — сначала ценность (ответы).
     await expect(chat.getByTestId('chat-to-manager')).toHaveCount(0);
 
@@ -146,6 +146,6 @@ test.describe('web — чат-консультант', () => {
     // Очистка → история пропадает, остаётся приветствие.
     await chat.getByRole('button', { name: /Очистить историю/i }).click();
     await expect(chat.getByText('Какой полис для ВНЖ?')).toHaveCount(0);
-    await expect(chat.getByText(/Расскажите, какая страховка/i)).toBeVisible();
+    await expect(chat.getByText(/Спросите что угодно о страховке/i)).toBeVisible();
   });
 });

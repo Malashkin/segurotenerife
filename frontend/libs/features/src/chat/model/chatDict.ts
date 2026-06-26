@@ -118,7 +118,7 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     title: 'Online insurance finder',
     status: '● online',
     greeting:
-      "Hi! 👋 Tell me what insurance you're looking for — I'll answer your questions and then connect you with a manager.",
+      "Hi! 👋 Ask me anything about insurance on Tenerife — I'll help you figure it out and find what fits.",
     to_manager: 'Connect me with a manager',
     assist_off: "Let me connect you with a manager — they'll answer your questions and help you choose.",
     reply_time: 'A manager usually replies within an hour during working hours.',
@@ -209,7 +209,7 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     title: 'Buscador de seguros online',
     status: '● en línea',
     greeting:
-      '¡Hola! 👋 Cuéntame qué seguro buscas — respondo tus preguntas y luego te paso con un gestor.',
+      '¡Hola! 👋 Pregúntame lo que quieras sobre seguros en Tenerife — te ayudo a entenderlo y a encontrar lo que encaja.',
     to_manager: 'Hablar con un gestor',
     assist_off: 'Te paso con un gestor — responderá tus preguntas y te ayudará a elegir.',
     reply_time: 'El gestor suele responder en menos de una hora en horario laboral.',
@@ -300,7 +300,7 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     title: 'Онлайн-підбір страховки',
     status: '● онлайн',
     greeting:
-      'Вітаю! 👋 Розкажіть, яке страхування вам потрібне — відповім на запитання та передам менеджеру.',
+      'Вітаю! 👋 Запитайте будь-що про страхування на Тенерифе — допоможу розібратися та підібрати відповідний варіант.',
     to_manager: "Зв'язатися з менеджером",
     assist_off: 'Передаю вас менеджеру — він відповість на запитання та допоможе обрати.',
     reply_time: 'Зазвичай менеджер відповідає протягом години в робочий час.',
@@ -391,7 +391,7 @@ export const CHAT_DICT: Record<AppLocale, ChatDict> = {
     title: 'Онлайн-подбор страховки',
     status: '● онлайн',
     greeting:
-      'Здравствуйте! 👋 Расскажите, какая страховка вам нужна — отвечу на вопросы и передам менеджеру.',
+      'Здравствуйте! 👋 Спросите что угодно о страховке на Тенерифе — помогу разобраться и подобрать подходящий вариант.',
     to_manager: 'Связаться с менеджером',
     assist_off: 'Передаю вас менеджеру — он ответит на вопросы и поможет с выбором.',
     reply_time: 'Обычно менеджер отвечает в течение часа в рабочее время.',
