@@ -35,6 +35,9 @@ import { buildHandoffLink, continueLabelKey, getOfficeContacts } from '../model/
 const MATCHING_MS = 2200;
 /** Бездействие, после которого мягко предлагаем менеджера (мс). */
 const IDLE_MS = 60_000;
+/** Постепенное появление ответа: интервал тика и сколько слов доливаем за тик. */
+const STREAM_TICK_MS = 30;
+const STREAM_WORDS_PER_TICK = 2;
 /** Мессенджеры на хендоффе (Instagram не предлагаем). */
 const MESSENGERS: readonly ChatMessenger[] = ['WhatsApp', 'Telegram', 'Viber'];
 
@@ -129,10 +132,13 @@ export function ChatWidget(): JSX.Element {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [asking, setAsking] = useState(false);
   const [matching, setMatching] = useState(false);
+  // Идёт постепенное «печатание» ответа — блокирует ввод и индикатор «думает».
+  const [streaming, setStreaming] = useState(false);
   const idRef = useRef(0);
   const bodyRef = useRef<HTMLDivElement>(null);
   const matchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const streamTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const startedRef = useRef(false);
   const intentKeyRef = useRef<string | null>(null);
   // Последний вопрос пользователя — добавим в предзаполненное сообщение менеджеру.
@@ -147,6 +153,33 @@ export function ChatWidget(): JSX.Element {
 
   const pushText = (author: 'user' | 'bot', text: string) =>
     setMessages((prev) => [...prev, { id: idRef.current++, kind: 'text', author, text }]);
+
+  /** Постепенно «печатает» ответ бота: добавляет пустую реплику и доливает текст
+   *  словами, чтобы ответ появлялся плавно, а не вспышкой. onDone — после полного
+   *  показа (например, предложить кнопку менеджера). */
+  function streamBotText(text: string, onDone?: () => void): void {
+    setStreaming(true);
+    const id = idRef.current++;
+    setMessages((prev) => [...prev, { id, kind: 'text', author: 'bot', text: '' }]);
+    const tokens = text.match(/\S+\s*/g) ?? [text];
+    let i = 0;
+    if (streamTimer.current) clearInterval(streamTimer.current);
+    streamTimer.current = setInterval(() => {
+      i = Math.min(tokens.length, i + STREAM_WORDS_PER_TICK);
+      const shown = tokens.slice(0, i).join('');
+      setMessages((prev) =>
+        prev.map((m) => (m.id === id && m.kind === 'text' ? { ...m, text: shown } : m)),
+      );
+      const el = bodyRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
+      if (i >= tokens.length) {
+        if (streamTimer.current) clearInterval(streamTimer.current);
+        streamTimer.current = null;
+        setStreaming(false);
+        onDone?.();
+      }
+    }, STREAM_TICK_MS);
+  }
 
   /** Показать карточку контактов менеджера (инлайн, с короткой анимацией). */
   function offerHandoff(source: 'agent' | 'button' | 'idle'): void {
@@ -187,7 +220,7 @@ export function ChatWidget(): JSX.Element {
   /** Вопрос агенту: реплика пользователя → ответ; при handoff — карточка менеджера. */
   async function handleAsk(question: string): Promise<void> {
     const q = question.trim();
-    if (!q || asking || matching) return;
+    if (!q || asking || matching || streaming) return;
     // История диалога ДО текущего вопроса (без приветствия — первого bot-сообщения),
     // последние реплики, для удержания контекста на бэкенде.
     const history: ChatTurn[] = messages
@@ -217,9 +250,11 @@ export function ChatWidget(): JSX.Element {
         lang,
         meta: { topic: reply.topic ?? null, handoff: reply.handoff },
       });
-      pushText('bot', reply.answer);
       setAsking(false);
-      if (reply.handoff) offerConnectButton();
+      // Ответ появляется постепенно; кнопку менеджера предлагаем после показа.
+      streamBotText(reply.answer, () => {
+        if (reply.handoff) offerConnectButton();
+      });
     } catch {
       // Сеть/5xx — тоже считаем как недоступность агента (метрика качества).
       void trackEvent('agent_fallback', { lang, meta: { reason: 'error' } });
@@ -257,6 +292,7 @@ export function ChatWidget(): JSX.Element {
     }
     return () => {
       if (matchTimer.current) clearTimeout(matchTimer.current);
+      if (streamTimer.current) clearInterval(streamTimer.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -274,7 +310,9 @@ export function ChatWidget(): JSX.Element {
     intentKeyRef.current = null;
     lastQuestionRef.current = '';
     if (matchTimer.current) clearTimeout(matchTimer.current);
+    if (streamTimer.current) clearInterval(streamTimer.current);
     setMatching(false);
+    setStreaming(false);
     idRef.current = 0;
     setMessages([{ id: idRef.current++, kind: 'text', author: 'bot', text: ct('greeting') }]);
   }
@@ -311,7 +349,7 @@ export function ChatWidget(): JSX.Element {
   // а когда диалог уже развился (≥2 вопросов) и не идёт анимация / карточка уже
   // на экране. Агент и сам предложит менеджера логично (handoff / 60с бездействия).
   const showToManager =
-    userMsgCount >= 2 && !asking && !matching && !lastIsHandoff && !lastIsConnect;
+    userMsgCount >= 2 && !asking && !matching && !streaming && !lastIsHandoff && !lastIsConnect;
   // Кнопка очистки истории — когда есть что чистить (больше приветствия).
   const hasHistory = userMsgCount > 0;
   // Фразы для циклящегося плейсхолдера ввода (вместо блока чипсов).
@@ -444,7 +482,7 @@ export function ChatWidget(): JSX.Element {
         <FreeAsk
           ct={ct}
           onAsk={handleAsk}
-          pending={asking || matching}
+          pending={asking || matching || streaming}
           placeholders={rotatingPlaceholders}
           onActivity={armIdle}
         />

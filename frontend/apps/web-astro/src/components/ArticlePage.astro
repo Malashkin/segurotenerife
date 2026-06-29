@@ -48,7 +48,23 @@ const RELATED: Record<string, string[]> = {
   'private-healthcare-tenerife': [
     'insurance-for-residency-visa',
     'family-insurance-tenerife',
-    'copay-or-no-copay',
+    'peace-of-mind-insurance-spain',
+  ],
+  // Польза/спокойствие (продаём через ценность).
+  'peace-of-mind-insurance-spain': [
+    'life-insurance-spain',
+    'accident-insurance-spain',
+    'private-healthcare-tenerife',
+  ],
+  'life-insurance-spain': [
+    'peace-of-mind-insurance-spain',
+    'accident-insurance-spain',
+    'family-insurance-tenerife',
+  ],
+  'accident-insurance-spain': [
+    'peace-of-mind-insurance-spain',
+    'life-insurance-spain',
+    'private-healthcare-tenerife',
   ],
   'copay-or-no-copay': [
     'insurance-for-residency-visa',
@@ -58,7 +74,7 @@ const RELATED: Record<string, string[]> = {
   'family-insurance-tenerife': [
     'insurance-for-residency-visa',
     'private-healthcare-tenerife',
-    'copay-or-no-copay',
+    'life-insurance-spain',
   ],
   'autonomo-business-insurance': [
     'insurance-for-residency-visa',
