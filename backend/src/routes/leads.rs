@@ -53,7 +53,7 @@ pub async fn create(
         .get("user-agent")
         .and_then(|v| v.to_str().ok())
         .unwrap_or("");
-    let ip = addr.ip().to_string();
+    let ip = crate::rate_limit::anonymize_ip(addr.ip());
 
     sqlx::query(
         "INSERT INTO leads \

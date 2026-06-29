@@ -30,10 +30,24 @@ pub fn router(state: AppState) -> Router {
                 rate_limit::chat_rate_limit_mw,
             )),
         )
-        // Передача лида менеджеру в Telegram (бот).
-        .route("/api/handoff", post(handoff::forward))
-        // Аутентификация менеджера (JWT).
-        .route("/api/auth/login", post(auth::login))
+        // Передача лида менеджеру в Telegram (бот). Поверх общего лимита — строгий
+        // write-лимит: каждый запрос шлёт карточку менеджеру (анти-спам/флуд).
+        .route(
+            "/api/handoff",
+            post(handoff::forward).route_layer(middleware::from_fn_with_state(
+                state.clone(),
+                rate_limit::write_rate_limit_mw,
+            )),
+        )
+        // Аутентификация менеджера (JWT). Поверх общего лимита — строгий
+        // login-лимит (анти-брутфорс пароля).
+        .route(
+            "/api/auth/login",
+            post(auth::login).route_layer(middleware::from_fn_with_state(
+                state.clone(),
+                rate_limit::login_rate_limit_mw,
+            )),
+        )
         .route("/api/auth/refresh", post(auth::refresh))
         .route("/api/auth/logout", post(auth::logout))
         .with_state(state)

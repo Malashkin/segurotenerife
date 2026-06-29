@@ -50,7 +50,15 @@ pub async fn create(
     body.validate()
         .map_err(|e| AppError::Validation(e.to_string()))?;
 
-    let ip = addr.ip().to_string();
+    // IP анонимизируем (GDPR data-minimisation): для воронки точный IP не нужен.
+    let ip = crate::rate_limit::anonymize_ip(addr.ip());
+
+    // Ограничиваем размер произвольного meta (анти-раздувание строки события):
+    // слишком большой контекст просто отбрасываем, событие сохраняем без него.
+    const MAX_META_BYTES: usize = 4096;
+    let meta = body
+        .meta
+        .filter(|m| m.to_string().len() <= MAX_META_BYTES);
 
     sqlx::query(
         "INSERT INTO events (session_id, event, lang, meta, ip) \
@@ -59,7 +67,7 @@ pub async fn create(
     .bind(&body.session_id)
     .bind(&body.event)
     .bind(&body.lang)
-    .bind(&body.meta)
+    .bind(&meta)
     .bind(&ip)
     .execute(&state.pool)
     .await?;

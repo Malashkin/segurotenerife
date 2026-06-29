@@ -150,6 +150,55 @@ pub async fn chat_rate_limit_mw(
     }
 }
 
+/// Middleware строгого лимита на логин (анти-брутфорс пароля менеджера).
+pub async fn login_rate_limit_mw(
+    State(state): State<AppState>,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    headers: HeaderMap,
+    request: Request,
+    next: Next,
+) -> Response {
+    let ip = client_ip(&headers, addr, state.config.trust_proxy_headers);
+    if state.login_limiter.allow(ip) {
+        next.run(request).await
+    } else {
+        too_many()
+    }
+}
+
+/// Middleware строгого лимита на публичные write-эндпоинты (`/api/handoff`):
+/// ограничивает спам фейк-лидами и флуд карточек менеджеру в Telegram.
+pub async fn write_rate_limit_mw(
+    State(state): State<AppState>,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    headers: HeaderMap,
+    request: Request,
+    next: Next,
+) -> Response {
+    let ip = client_ip(&headers, addr, state.config.trust_proxy_headers);
+    if state.write_limiter.allow(ip) {
+        next.run(request).await
+    } else {
+        too_many()
+    }
+}
+
+/// Анонимизирует IP перед записью в БД (GDPR data-minimisation): обнуляет
+/// host-часть — IPv4 до /24, IPv6 до /48. Достаточно для грубой гео-аналитики,
+/// но не идентифицирует конкретного пользователя.
+pub fn anonymize_ip(ip: IpAddr) -> String {
+    match ip {
+        IpAddr::V4(a) => {
+            let o = a.octets();
+            format!("{}.{}.{}.0", o[0], o[1], o[2])
+        }
+        IpAddr::V6(a) => {
+            let s = a.segments();
+            format!("{:x}:{:x}:{:x}::", s[0], s[1], s[2])
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -175,6 +224,8 @@ mod tests {
             config: Arc::new(cfg),
             limiter: Arc::new(RateLimiter::new(general)),
             chat_limiter: Arc::new(RateLimiter::new(chat)),
+            login_limiter: Arc::new(RateLimiter::new(5)),
+            write_limiter: Arc::new(RateLimiter::new(10)),
             http: reqwest::Client::new(),
             knowledge: None,
         }
@@ -249,6 +300,15 @@ mod tests {
         assert_eq!(client_ip(&h, socket, true).to_string(), "203.0.113.7");
         // Без доверия к прокси — игнорируем заголовок, берём сокет.
         assert_eq!(client_ip(&h, socket, false).to_string(), "10.0.0.1");
+    }
+
+    #[test]
+    fn anonymize_ip_zeroes_host_part() {
+        assert_eq!(anonymize_ip("203.0.113.77".parse().unwrap()), "203.0.113.0");
+        assert_eq!(
+            anonymize_ip("2606:4700:4700::1111".parse().unwrap()),
+            "2606:4700:4700::"
+        );
     }
 
     #[test]

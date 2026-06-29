@@ -24,6 +24,21 @@ pub struct Config {
     pub rate_limit_per_min: u32,
     /// Строгий лимит для платного `/api/chat` (каждый запрос = вызов Claude).
     pub rate_limit_chat_per_min: u32,
+    /// Строгий лимит на `/api/auth/login` (анти-брутфорс пароля менеджера).
+    pub rate_limit_login_per_min: u32,
+    /// Строгий лимит на публичные write-эндпоинты (`/api/handoff` → Telegram):
+    /// ограничивает спам фейк-лидами и флуд карточек менеджеру.
+    pub rate_limit_write_per_min: u32,
+    /// Окружение. `production` включает fail-closed проверки (см. `from_env`):
+    /// запрет `ALLOWED_ORIGINS=*`, `cookie_secure` по умолчанию `true`.
+    pub app_env: String,
+    /// Общий секрет с Cloudflare. Если задан — все запросы (кроме `/health`)
+    /// обязаны нести заголовок `X-Origin-Auth` с этим значением. Cloudflare
+    /// добавляет его Transform-правилом; прямой origin (`*.up.railway.app`) его
+    /// не несёт → недоступен в обход CF, что закрывает подделку `CF-Connecting-IP`
+    /// (иначе rate limit обходится ротацией заголовка). Опционален: без него
+    /// гейт выключен (локально/dev), но в проде настоятельно рекомендуется.
+    pub origin_shared_secret: Option<String>,
     /// Доверять ли прокси-заголовкам (X-Forwarded-For/CF-Connecting-IP) для
     /// определения IP клиента. В проде ЗА прокси (Railway/Cloudflare) — `true`,
     /// иначе rate limit считает всех под одним IP прокси. Локально/без прокси —
@@ -57,6 +72,28 @@ pub struct Config {
 impl Config {
     /// Считывает конфигурацию из окружения. Падает, если нет обязательных секретов.
     pub fn from_env() -> anyhow::Result<Self> {
+        let app_env = std::env::var("APP_ENV").unwrap_or_default();
+        let is_prod = app_env == "production";
+
+        let allowed_origins_raw = std::env::var("ALLOWED_ORIGINS").unwrap_or_else(|_| "*".into());
+        // Fail-closed: в проде нельзя оставлять CORS открытым на любой источник.
+        if is_prod && allowed_origins_raw.trim() == "*" {
+            anyhow::bail!(
+                "ALLOWED_ORIGINS must be an explicit whitelist in production (got '*')"
+            );
+        }
+
+        let origin_shared_secret = std::env::var("ORIGIN_SHARED_SECRET")
+            .ok()
+            .filter(|s| !s.is_empty());
+        if is_prod && origin_shared_secret.is_none() {
+            tracing::warn!(
+                "ORIGIN_SHARED_SECRET is not set — origin may be reachable bypassing Cloudflare, \
+                 allowing CF-Connecting-IP spoofing and rate-limit bypass. Set it and add a \
+                 Cloudflare Transform Rule that injects X-Origin-Auth."
+            );
+        }
+
         Ok(Self {
             database_url: std::env::var("DATABASE_URL")
                 .context("DATABASE_URL is required")?,
@@ -76,12 +113,12 @@ impl Config {
                 .ok()
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(7),
+            // В проде Secure по умолчанию включён (сайт только по HTTPS за CF).
             cookie_secure: std::env::var("COOKIE_SECURE")
                 .ok()
                 .map(|v| v == "true" || v == "1")
-                .unwrap_or(false),
-            allowed_origins_raw: std::env::var("ALLOWED_ORIGINS")
-                .unwrap_or_else(|_| "*".into()),
+                .unwrap_or(is_prod),
+            allowed_origins_raw,
             rate_limit_per_min: std::env::var("RATE_LIMIT_PER_MIN")
                 .ok()
                 .and_then(|v| v.parse().ok())
@@ -90,6 +127,16 @@ impl Config {
                 .ok()
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(8),
+            rate_limit_login_per_min: std::env::var("RATE_LIMIT_LOGIN_PER_MIN")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(5),
+            rate_limit_write_per_min: std::env::var("RATE_LIMIT_WRITE_PER_MIN")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(10),
+            app_env,
+            origin_shared_secret,
             trust_proxy_headers: std::env::var("TRUST_PROXY_HEADERS")
                 .ok()
                 .map(|v| v == "true" || v == "1")
@@ -147,6 +194,10 @@ impl Config {
             allowed_origins_raw: "*".into(),
             rate_limit_per_min: 60,
             rate_limit_chat_per_min: 8,
+            rate_limit_login_per_min: 5,
+            rate_limit_write_per_min: 10,
+            app_env: "test".into(),
+            origin_shared_secret: None,
             trust_proxy_headers: false,
             anthropic_api_key: None,
             anthropic_model: "claude-haiku-4-5".into(),
