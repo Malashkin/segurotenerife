@@ -17,8 +17,6 @@ interface ImportMetaEnv {
   readonly VITE_WHATSAPP_NUMBER?: string;
   /** Username Telegram-аккаунта офиса-партнёра (без @). */
   readonly VITE_TELEGRAM_USERNAME?: string;
-  /** Username Telegram-бота для захвата ника клиента (?start=<lead_id>), без @. */
-  readonly VITE_TELEGRAM_BOT_USERNAME?: string;
   /** Номер Viber офиса-партнёра (по умолчанию = номер WhatsApp). */
   readonly VITE_VIBER_NUMBER?: string;
 }

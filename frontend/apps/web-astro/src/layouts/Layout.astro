@@ -154,7 +154,11 @@ const jsonld = {
       rel="stylesheet"
     />
 
-    <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonld)} />
+    <script
+      is:inline
+      type="application/ld+json"
+      set:html={JSON.stringify(jsonld).replace(/</g, '\\u003c')}
+    />
 
     <!-- Язык по устройству: на корне `/` (RU по умолчанию) перенаправляем на язык
          браузера (es/uk/en), уважая явный выбор из localStorage. Раннее в <head>
