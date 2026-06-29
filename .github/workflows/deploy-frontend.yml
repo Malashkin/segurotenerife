@@ -31,10 +31,11 @@ jobs:
       # _worker.js проверен). Admin — напрямую (им пользуется менеджер).
       PUBLIC_POSTHOG_HOST: https://segurotenerife.com/ph
       VITE_POSTHOG_HOST: https://eu.i.posthog.com
-      # Контакты офиса для deep-link'ов хендоффа (ТЕСТ — на время проверки).
-      VITE_WHATSAPP_NUMBER: '34658516901'
-      VITE_VIBER_NUMBER: '34658516901'
-      VITE_TELEGRAM_USERNAME: mmalashkin
+      # Контакты менеджера для deep-link'ов хендоффа: клиент из чата попадает
+      # прямо к менеджеру (WhatsApp/Viber +34638034463, Telegram @feke2015).
+      VITE_WHATSAPP_NUMBER: '34638034463'
+      VITE_VIBER_NUMBER: '34638034463'
+      VITE_TELEGRAM_USERNAME: feke2015
     steps:
       - uses: actions/checkout@v4
 
