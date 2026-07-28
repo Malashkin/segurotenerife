@@ -13,11 +13,11 @@ const t = getT(locale);
 // Соответствие карточек (a1..a6) и slug'ов статей.
 const ARTICLES = [
   { tagKey: 'a1_tag', titleKey: 'a1_t', descKey: 'a1_p', slug: 'insurance-for-residency-visa' },
-  { tagKey: 'a2_tag', titleKey: 'a2_t', descKey: 'a2_p', slug: 'digital-nomad-visa-insurance' },
-  { tagKey: 'a3_tag', titleKey: 'a3_t', descKey: 'a3_p', slug: 'private-healthcare-tenerife' },
-  { tagKey: 'a4_tag', titleKey: 'a4_t', descKey: 'a4_p', slug: 'copay-or-no-copay' },
+  { tagKey: 'a2_tag', titleKey: 'a2_t', descKey: 'a2_p', slug: 'non-lucrative-visa-insurance' },
+  { tagKey: 'a3_tag', titleKey: 'a3_t', descKey: 'a3_p', slug: 'digital-nomad-visa-insurance' },
+  { tagKey: 'a4_tag', titleKey: 'a4_t', descKey: 'a4_p', slug: 'private-vs-public-healthcare-spain' },
   { tagKey: 'a5_tag', titleKey: 'a5_t', descKey: 'a5_p', slug: 'family-insurance-tenerife' },
-  { tagKey: 'a6_tag', titleKey: 'a6_t', descKey: 'a6_p', slug: 'autonomo-business-insurance' },
+  { tagKey: 'a6_tag', titleKey: 'a6_t', descKey: 'a6_p', slug: 'how-to-choose-health-insurance-spain' },
 ];
 
 const published = await getCollection('articles', (a) => a.data.locale === locale);
