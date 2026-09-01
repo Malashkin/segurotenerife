@@ -33,53 +33,223 @@ const alternates = all
   .filter((a) => a.data.urlSlug === slug)
   .map((a) => ({ hreflang: a.data.locale, href: new URL(path(a.data.locale, a.data.urlSlug), Astro.site).href }));
 
-// Перекрёстные ссылки: для каждой темы — 3 релевантные статьи той же локали.
+// Перекрёстные ссылки: для каждой статьи — 3 релевантные той же локали.
+// Карта покрывает все статьи; кластеры: ВНЖ/визы, механика полиса, система
+// здравоохранения, сегменты клиентов, защита жизни и здоровья.
 const RELATED: Record<string, string[]> = {
+  // — ВНЖ, визы, документы.
   'insurance-for-residency-visa': [
-    'copay-or-no-copay',
-    'digital-nomad-visa-insurance',
-    'private-healthcare-tenerife',
+    'insurance-certificate-for-visa',
+    'non-lucrative-visa-insurance',
+    'family-reunification-visa-insurance',
+  ],
+  'insurance-certificate-for-visa': [
+    'insurance-for-residency-visa',
+    'student-visa-insurance-spain',
+    'carencias-waiting-periods-spain',
+  ],
+  'non-lucrative-visa-insurance': [
+    'insurance-for-residency-visa',
+    'insurance-certificate-for-visa',
+    'health-insurance-cost-spain',
   ],
   'digital-nomad-visa-insurance': [
     'insurance-for-residency-visa',
-    'copay-or-no-copay',
     'autonomo-business-insurance',
+    'insurance-certificate-for-visa',
   ],
-  'private-healthcare-tenerife': [
+  'student-visa-insurance-spain': [
+    'insurance-for-residency-visa',
+    'insurance-certificate-for-visa',
+    'private-healthcare-tenerife',
+  ],
+  'family-reunification-visa-insurance': [
     'insurance-for-residency-visa',
     'family-insurance-tenerife',
+    'insurance-certificate-for-visa',
+  ],
+  'travel-insurance-coming-to-spain': [
+    'annual-multi-trip-insurance-spain',
+    'cruise-travel-insurance-spain',
+    'insurance-for-residency-visa',
+  ],
+
+  // — Как устроен полис: цена, доплаты, карентности, смена страховой.
+  'health-insurance-cost-spain': [
+    'copay-or-no-copay',
+    'how-to-choose-health-insurance-spain',
+    'carencias-waiting-periods-spain',
+  ],
+  'carencias-waiting-periods-spain': [
+    'copay-or-no-copay',
+    'preexisting-conditions-insurance-spain',
+    'how-to-switch-health-insurance-spain',
+  ],
+  'preexisting-conditions-insurance-spain': [
+    'carencias-waiting-periods-spain',
+    'how-to-choose-health-insurance-spain',
+    'retiree-insurance-spain',
+  ],
+  'how-to-switch-health-insurance-spain': [
+    'carencias-waiting-periods-spain',
+    'health-insurance-cost-spain',
+    'preexisting-conditions-insurance-spain',
+  ],
+  'copay-or-no-copay': [
+    'carencias-waiting-periods-spain',
+    'health-insurance-cost-spain',
+    'insurance-for-residency-visa',
+  ],
+  'reimbursement-health-insurance-spain': [
+    'what-is-cuadro-medico-spain',
+    'copay-or-no-copay',
+    'health-insurance-cost-spain',
+  ],
+  'what-is-cuadro-medico-spain': [
+    'reimbursement-health-insurance-spain',
+    'private-healthcare-tenerife',
+    'how-to-choose-health-insurance-spain',
+  ],
+  'how-to-choose-health-insurance-spain': [
+    'health-insurance-cost-spain',
+    'copay-or-no-copay',
+    'what-is-cuadro-medico-spain',
+  ],
+
+  // — Система здравоохранения: частная, государственная, международная.
+  'private-healthcare-tenerife': [
+    'what-is-cuadro-medico-spain',
+    'private-vs-public-healthcare-spain',
+    'family-insurance-tenerife',
+  ],
+  'private-vs-public-healthcare-spain': [
+    'convenio-especial-vs-private-insurance',
+    'private-healthcare-tenerife',
+    'health-insurance-cost-spain',
+  ],
+  'convenio-especial-vs-private-insurance': [
+    'private-vs-public-healthcare-spain',
+    'private-healthcare-tenerife',
+    'health-insurance-cost-spain',
+  ],
+  'international-health-insurance-spain': [
+    'reimbursement-health-insurance-spain',
+    'travel-insurance-coming-to-spain',
+    'private-healthcare-tenerife',
+  ],
+
+  // — Сегменты: семья, дети, пенсионеры, самозанятые, питомцы, переезд.
+  'family-insurance-tenerife': [
+    'maternity-insurance-spain',
+    'dental-insurance-spain',
+    'health-insurance-cost-spain',
+  ],
+  'maternity-insurance-spain': [
+    'carencias-waiting-periods-spain',
+    'family-insurance-tenerife',
+    'private-healthcare-tenerife',
+  ],
+  'retiree-insurance-spain': [
+    'senior-accident-insurance-spain',
+    'preexisting-conditions-insurance-spain',
+    'health-insurance-cost-spain',
+  ],
+  'dental-insurance-spain': [
+    'dental-implants-insurance-spain',
+    'childrens-dental-orthodontics-spain',
+    'carencias-waiting-periods-spain',
+  ],
+  'pet-insurance-spain': [
+    'dog-liability-insurance-spain',
+    'moving-to-tenerife-checklist',
     'peace-of-mind-insurance-spain',
   ],
-  // Польза/спокойствие (продаём через ценность).
+  'autonomo-business-insurance': [
+    'digital-nomad-visa-insurance',
+    'private-vs-public-healthcare-spain',
+    'health-insurance-cost-spain',
+  ],
+  'moving-to-tenerife-checklist': [
+    'insurance-for-residency-visa',
+    'private-healthcare-tenerife',
+    'health-insurance-cost-spain',
+  ],
+
+  // — Защита жизни и здоровья (продаём через ценность).
   'peace-of-mind-insurance-spain': [
     'life-insurance-spain',
     'accident-insurance-spain',
     'private-healthcare-tenerife',
   ],
   'life-insurance-spain': [
+    'mortgage-life-insurance-spain',
     'peace-of-mind-insurance-spain',
     'accident-insurance-spain',
-    'family-insurance-tenerife',
   ],
   'accident-insurance-spain': [
-    'peace-of-mind-insurance-spain',
-    'life-insurance-spain',
-    'private-healthcare-tenerife',
+    'what-counts-as-accident-insurance-spain',
+    'active-sports-insurance-tenerife',
+    'hospitalization-cash-insurance-spain',
   ],
-  'copay-or-no-copay': [
-    'insurance-for-residency-visa',
-    'private-healthcare-tenerife',
+  'funeral-insurance-spain': [
+    'life-insurance-spain',
+    'peace-of-mind-insurance-spain',
+    'retiree-insurance-spain',
+  ],
+
+  // — Отдельные продуктовые линии: ответственность за питомца, ипотека,
+  // имплантология, детская стоматология, выплата за день госпитализации.
+  'dog-liability-insurance-spain': [
+    'pet-insurance-spain',
+    'peace-of-mind-insurance-spain',
+    'moving-to-tenerife-checklist',
+  ],
+  'mortgage-life-insurance-spain': [
+    'life-insurance-spain',
+    'preexisting-conditions-insurance-spain',
+    'peace-of-mind-insurance-spain',
+  ],
+  'dental-implants-insurance-spain': [
+    'dental-insurance-spain',
+    'childrens-dental-orthodontics-spain',
+    'carencias-waiting-periods-spain',
+  ],
+  'childrens-dental-orthodontics-spain': [
+    'dental-insurance-spain',
+    'dental-implants-insurance-spain',
     'family-insurance-tenerife',
   ],
-  'family-insurance-tenerife': [
-    'insurance-for-residency-visa',
-    'private-healthcare-tenerife',
-    'life-insurance-spain',
+  'hospitalization-cash-insurance-spain': [
+    'accident-insurance-spain',
+    'carencias-waiting-periods-spain',
+    'autonomo-business-insurance',
   ],
-  'autonomo-business-insurance': [
-    'insurance-for-residency-visa',
-    'digital-nomad-visa-insurance',
-    'copay-or-no-copay',
+
+  // — Поездки и несчастный случай: годовой/круизный полис, спорт, 65+, разбор.
+  'annual-multi-trip-insurance-spain': [
+    'travel-insurance-coming-to-spain',
+    'cruise-travel-insurance-spain',
+    'international-health-insurance-spain',
+  ],
+  'cruise-travel-insurance-spain': [
+    'annual-multi-trip-insurance-spain',
+    'travel-insurance-coming-to-spain',
+    'active-sports-insurance-tenerife',
+  ],
+  'active-sports-insurance-tenerife': [
+    'accident-insurance-spain',
+    'what-counts-as-accident-insurance-spain',
+    'private-healthcare-tenerife',
+  ],
+  'senior-accident-insurance-spain': [
+    'retiree-insurance-spain',
+    'funeral-insurance-spain',
+    'hospitalization-cash-insurance-spain',
+  ],
+  'what-counts-as-accident-insurance-spain': [
+    'accident-insurance-spain',
+    'active-sports-insurance-tenerife',
+    'hospitalization-cash-insurance-spain',
   ],
 };
 const related = (RELATED[slug] ?? [])
@@ -328,6 +498,30 @@ const share = {
   .article-body :global(a) {
     color: #0f766e;
     text-decoration: underline;
+  }
+  .article-body :global(table) {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+    margin: 1.1rem 0;
+    font-size: 0.94rem;
+  }
+  .article-body :global(th),
+  .article-body :global(td) {
+    border: 1px solid #e2e8f0;
+    padding: 0.55rem 0.75rem;
+    text-align: left;
+    vertical-align: top;
+    line-height: 1.55;
+  }
+  .article-body :global(th) {
+    background: #f0fdfa;
+    color: #0f172a;
+    font-weight: 700;
+  }
+  .article-body :global(td) {
+    color: #334155;
   }
   .article-body :global(blockquote) {
     margin: 1rem 0;
