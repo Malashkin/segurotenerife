@@ -1,0 +1,83 @@
+---
+/**
+ * Правовая страница: /privacy/, /terms/, /cookies/ (ru) и /<locale>/…
+ *
+ * Зачем страницы, если есть модалка в футере: у модалки нет URL — на неё нельзя
+ * сослаться из формы, договора или консоли Google, её не индексирует поиск.
+ * Тексты общие с модалкой (`LEGAL` из @widgets), дублирования контента нет.
+ */
+import Layout from '../layouts/Layout.astro';
+import NavBar from './NavBar.astro';
+import Footer from './Footer.astro';
+import Overlays from '../islands/Overlays.tsx';
+import { LEGAL, type LegalDocId } from '@widgets';
+import { LEGAL_META } from '../i18n/legal';
+import type { AppLocale } from '@shared/i18n';
+
+interface Props {
+  locale: AppLocale;
+  doc: LegalDocId;
+}
+const { locale, doc } = Astro.props;
+const content = LEGAL[locale][doc];
+const meta = LEGAL_META[locale][doc];
+
+const LOCALES: AppLocale[] = ['ru', 'en', 'es', 'uk'];
+// С завершающим слешем — совпадает с финальным URL и sitemap, чтобы canonical
+// не указывал на 308-редирект (как в статьях блога).
+const docPath = (l: string) => (l === 'ru' ? `/${doc}/` : `/${l}/${doc}/`);
+const canonical = new URL(docPath(locale), Astro.site).href;
+const homeHref = locale === 'ru' ? Astro.site!.href : new URL(`/${locale}/`, Astro.site).href;
+const alternates = LOCALES.map((l) => ({ hreflang: l, href: new URL(docPath(l), Astro.site).href }));
+
+const breadcrumb = {
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Seguro Tenerife', item: homeHref },
+    { '@type': 'ListItem', position: 2, name: content.title, item: canonical },
+  ],
+};
+---
+
+<Layout
+  locale={locale}
+  title={meta.title}
+  description={meta.description}
+  keywords={meta.keywords}
+  canonicalUrl={canonical}
+  includeSiteFaq={false}
+  extraSchema={[breadcrumb]}
+  alternates={alternates}
+>
+  <div id="top">
+    <NavBar locale={locale} />
+    <main class="bg-white">
+      <article class="mx-auto w-[min(760px,calc(100vw-40px))] py-12">
+        <nav class="mb-4 text-[0.82rem] text-muted" aria-label="breadcrumb">
+          <a href={homeHref} class="hover:text-brand-dark">Seguro Tenerife</a>
+          <span class="mx-1.5">/</span>
+          <span>{content.title}</span>
+        </nav>
+        <h1 class="font-heading text-[2rem] font-bold leading-tight text-ink sm:text-[2.4rem]">
+          {content.title}
+        </h1>
+        <p class="mt-2 text-[0.84rem] text-muted">{content.updated}</p>
+
+        <div class="mt-8 flex flex-col gap-6">
+          {
+            content.sections.map((s) => (
+              <section>
+                <h2 class="font-heading text-[1.3rem] font-bold text-ink">{s.h}</h2>
+                {s.p.map((par) => (
+                  <p class="mt-1.5 text-[0.98rem] leading-relaxed text-ink/80">{par}</p>
+                ))}
+              </section>
+            ))
+          }
+        </div>
+      </article>
+    </main>
+    <Footer locale={locale} />
+  </div>
+  <Overlays client:only="react" locale={locale} />
+</Layout>

@@ -36,3 +36,7 @@ export { Footer } from './organisms/Footer';
 export { ChatLauncher } from './organisms/ChatLauncher';
 export { CookieConsent } from './organisms/CookieConsent';
 export { LegalModal } from './legal/LegalModal';
+// Тексты правовых документов нужны не только модалке, но и статическим
+// страницам /privacy/, /terms/, /cookies/ в web-astro — единый источник.
+export { LEGAL } from './legal/legalContent';
+export type { LegalDocId, LegalDoc, LegalSection } from './legal/legalContent';

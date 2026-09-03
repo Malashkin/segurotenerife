@@ -1,0 +1,13 @@
+---
+/** Правовая страница на локалях с префиксом: /uk|en|es/cookies/ */
+import LegalPage from '../../../components/LegalPage.astro';
+import type { AppLocale } from '@shared/i18n';
+
+export function getStaticPaths() {
+  return (['en', 'es', 'uk'] as AppLocale[]).map((locale) => ({ params: { locale } }));
+}
+
+const { locale } = Astro.params as { locale: AppLocale };
+---
+
+<LegalPage locale={locale} doc="cookies" />
