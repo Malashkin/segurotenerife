@@ -33,7 +33,7 @@ updated: 2026-09-05
 
 | # | Тема | Целевой запрос | Продукт | Статус |
 |---|---|---|---|---|
-| 1 | Travel insurance for Tenerife (slug `travel-insurance-tenerife`, 4 локали) | `tenerife travel insurance` — 126 пок., поз. 64.7 (28д) | `viaje` (5 продуктов) | в работе |
+| 1 | Travel insurance for Tenerife (slug `travel-insurance-tenerife`, 4 локали) | `tenerife travel insurance` — 126 пок., поз. 64.7 (28д) | `viaje` (5 продуктов) | опубликовано 2026-09-05 |
 
 **Очередь намеренно короткая (аудит SEGU-4, 2026-09-05).** Из 127 запросов с
 показами за 28 дней только один кластер не имеет своей страницы. Остальной спрос

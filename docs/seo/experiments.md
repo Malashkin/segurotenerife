@@ -41,6 +41,11 @@ updated: 2026-09-05
 | 2026-09-05 | разведение интентов: раздел «asegurar el futuro de la familia» + перелинковка на `life-insurance-spain` | `/es/blog/family-insurance-tenerife/` (ранее ловила запрос) | asegurar el futuro de la familia en tenerife | 21.9 | 32 | — |
 | 2026-09-05 | новая статья `travel-insurance-tenerife` (4 локали) | `/en/blog/travel-insurance-coming-to-spain/` (донор показов) | tenerife travel insurance | 64.7 | 126 | — |
 
+Статья `travel-insurance-tenerife` внесена 2026-09-05, страница-приёмник —
+`/en/blog/travel-insurance-tenerife/`. При вердикте смотреть обе страницы сразу:
+успех — запрос переезжает на новую и растёт, провал — донор просел, а новая не
+поднялась (тогда это каннибализация, и статьи надо сливать).
+
 ## Проверяемая гипотеза
 
 **H1 (гео-модификатор).** Если целевой гео-запрос вынести в title, страница
