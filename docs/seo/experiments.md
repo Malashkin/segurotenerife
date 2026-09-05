@@ -36,8 +36,9 @@ updated: 2026-09-05
 | 2026-09-05 | 4 раздела прямых ответов про Tenerife + новый title | `/en/blog/private-vs-public-healthcare-spain/` | what is a public health charge in tenerife | 5.6 | 20 | — |
 | 2026-09-05 | 4 раздела прямых ответов про Tenerife + новый title | `/en/blog/private-vs-public-healthcare-spain/` | public/state medical centres in tenerife | 32.0 | 40 | — |
 | 2026-09-05 | 4 раздела прямых ответов про Tenerife + новый title | `/en/blog/private-vs-public-healthcare-spain/` | healthcare system in tenerife | 28.8 | 30 | — |
-| 2026-09-05 | дописан гео-раздел «Tenerife / Canarias» | `/es/blog/life-insurance-spain/` | seguros de vida en tenerife | 81.1 | 32 | — |
-| 2026-09-05 | дописан гео-раздел «Tenerife / Canarias» | `/es/blog/life-insurance-spain/` | seguro de vida en tenerife | 73.5 | 26 | — |
+| 2026-09-05 | новый title с гео + 3 раздела прямых ответов (гео, будущее семьи, vida vs decesos) | `/es/blog/life-insurance-spain/` | seguros de vida en tenerife | 81.1 | 32 | — |
+| 2026-09-05 | новый title с гео + 3 раздела прямых ответов (гео, будущее семьи, vida vs decesos) | `/es/blog/life-insurance-spain/` | seguro de vida en tenerife | 73.5 | 26 | — |
+| 2026-09-05 | разведение интентов: раздел «asegurar el futuro de la familia» + перелинковка на `life-insurance-spain` | `/es/blog/family-insurance-tenerife/` (ранее ловила запрос) | asegurar el futuro de la familia en tenerife | 21.9 | 32 | — |
 | 2026-09-05 | новая статья `travel-insurance-tenerife` (4 локали) | `/en/blog/travel-insurance-coming-to-spain/` (донор показов) | tenerife travel insurance | 64.7 | 126 | — |
 
 ## Проверяемая гипотеза
@@ -49,7 +50,15 @@ updated: 2026-09-05
 `mascotas` (только сниппет, тело не тронуто) не сдвинутся, гипотеза не работает и
 дальше вкладываемся только в глубину текста.
 
-`private-vs-public-healthcare` для H1 чистым замером не является: там вместе с
-title выросло и тело (539 → 1208 слов, четыре новых раздела прямых ответов),
-так что эта строка проверяет связку «гео в title + глубина», а не гео само по
-себе.
+`private-vs-public-healthcare` и `life-insurance` для H1 чистыми замерами не
+являются: там вместе с title выросло и тело (539 → 1208 и 690 → 1478 слов
+соответственно, новые разделы прямых ответов), так что эти строки проверяют
+связку «гео в title + глубина», а не гео само по себе. Чистые замеры H1 —
+только `decesos` и `mascotas`.
+
+**H2 (разведение интентов).** Если два запроса конкурируют за одну страницу с
+несовпадающим интентом, отдельный раздел прямого ответа на «правильной»
+странице плюс взаимная перелинковка перетягивают запрос туда, где он должен
+быть. Проверяется парой `family-insurance-tenerife` → `life-insurance-spain`
+по запросу `asegurar el futuro de la familia en tenerife`: успех — запрос
+переезжает на `life-insurance-spain`, а не просто теряет позицию у донора.

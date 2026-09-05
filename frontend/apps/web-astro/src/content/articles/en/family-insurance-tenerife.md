@@ -3,6 +3,7 @@ locale: en
 urlSlug: family-insurance-tenerife
 order: 5
 date: 2026-06-25
+updated: 2026-09-05
 tag: Family
 title: 'Family insurance on Tenerife: children, childbirth, paediatricians'
 description: 'What to look for when taking out family insurance on Tenerife: paediatrics, childhood vaccinations, childbirth and waiting periods, and how to save.'
@@ -35,6 +36,10 @@ Pregnancy care and childbirth are covered, but they almost always have a **waiti
 - **No co-payments** — if a family member is also applying for residency.
 - **Clinics nearby** — convenient when you have children.
 - **Doctors' languages** — Tenerife has English-speaking paediatricians.
+
+## A family health policy is not life insurance
+
+This is the most common mix-up, and it is worth untangling: this policy pays for doctors and treatment **while you are here**. It pays your family nothing if you are gone — that is a different kind of cover. If what you want is to secure your family's financial future, see how [life insurance in Tenerife](/en/blog/life-insurance-spain/) works.
 
 > Tip: take the policy out early — because of waiting periods, some services (childbirth, certain procedures) may not be available immediately on day one.
 
