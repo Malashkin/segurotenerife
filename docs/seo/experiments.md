@@ -33,9 +33,9 @@ updated: 2026-09-05
 | 2026-09-05 | переписан сниппет: гео «Tenerife» в title+description | `/es/blog/funeral-insurance-spain/` | seguro decesos tenerife | 11.9 | 15 | — |
 | 2026-09-05 | переписан сниппет: гео «Tenerife» в title | `/es/blog/pet-insurance-spain/` | seguros de mascotas en tenerife | 12.0 | 2 | — |
 | 2026-09-05 | переписан сниппет: формулировка `accident cover` вместо `accident insurance` | `/en/blog/accident-insurance-spain/` | accident cover in spain | 13.7 | 3 | — |
-| 2026-09-05 | дописан раздел прямых ответов про Tenerife + новый title | `/en/blog/private-vs-public-healthcare-spain/` | what is a public health charge in tenerife | 5.6 | 20 | — |
-| 2026-09-05 | дописан раздел прямых ответов про Tenerife + новый title | `/en/blog/private-vs-public-healthcare-spain/` | public/state medical centres in tenerife | 32.0 | 40 | — |
-| 2026-09-05 | дописан раздел прямых ответов про Tenerife + новый title | `/en/blog/private-vs-public-healthcare-spain/` | healthcare system in tenerife | 28.8 | 30 | — |
+| 2026-09-05 | 4 раздела прямых ответов про Tenerife + новый title | `/en/blog/private-vs-public-healthcare-spain/` | what is a public health charge in tenerife | 5.6 | 20 | — |
+| 2026-09-05 | 4 раздела прямых ответов про Tenerife + новый title | `/en/blog/private-vs-public-healthcare-spain/` | public/state medical centres in tenerife | 32.0 | 40 | — |
+| 2026-09-05 | 4 раздела прямых ответов про Tenerife + новый title | `/en/blog/private-vs-public-healthcare-spain/` | healthcare system in tenerife | 28.8 | 30 | — |
 | 2026-09-05 | дописан гео-раздел «Tenerife / Canarias» | `/es/blog/life-insurance-spain/` | seguros de vida en tenerife | 81.1 | 32 | — |
 | 2026-09-05 | дописан гео-раздел «Tenerife / Canarias» | `/es/blog/life-insurance-spain/` | seguro de vida en tenerife | 73.5 | 26 | — |
 | 2026-09-05 | новая статья `travel-insurance-tenerife` (4 локали) | `/en/blog/travel-insurance-coming-to-spain/` (донор показов) | tenerife travel insurance | 64.7 | 126 | — |
@@ -48,3 +48,8 @@ updated: 2026-09-05
 при неизменном теле статьи в первых двух случаях. Если позиции у `decesos` и
 `mascotas` (только сниппет, тело не тронуто) не сдвинутся, гипотеза не работает и
 дальше вкладываемся только в глубину текста.
+
+`private-vs-public-healthcare` для H1 чистым замером не является: там вместе с
+title выросло и тело (539 → 1208 слов, четыре новых раздела прямых ответов),
+так что эта строка проверяет связку «гео в title + глубина», а не гео само по
+себе.
