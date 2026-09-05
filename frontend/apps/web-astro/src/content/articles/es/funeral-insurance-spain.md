@@ -3,10 +3,11 @@ locale: es
 urlSlug: funeral-insurance-spain
 order: 23
 date: 2026-08-11
+updated: 2026-09-05
 tag: Decesos
-title: 'Seguro de decesos en España: cuidar de los tuyos con antelación'
-description: 'Por qué un expatriado en España valora un seguro de decesos, qué cubre, por qué la repatriación importa para quien vive lejos de su país y cómo alivia la carga de la familia.'
-keywords: seguro de decesos España, seguro de decesos expatriado, seguro funerario España, repatriación seguro Tenerife, decesos extranjero España, seguro en caso de fallecimiento España
+title: 'Seguro de decesos en Tenerife: qué cubre y por qué importa'
+description: 'Qué cubre un seguro de decesos en Tenerife y en el resto de España, por qué la repatriación importa a quien vive lejos de su país y cómo alivia a la familia.'
+keywords: seguro decesos Tenerife, seguro de decesos Tenerife, seguro de decesos España, seguro funerario Tenerife, repatriación seguro Tenerife, seguro de decesos expatriado, seguro en caso de fallecimiento España
 faq:
   - q: '¿Qué es un seguro de decesos?'
     a: 'Es un tipo de seguro muy común en España que se encarga de organizar y pagar el funeral, además de dar apoyo a la familia: administrativo, legal y psicológico. Los tuyos no tienen que ocuparse de todo eso en un momento difícil.'

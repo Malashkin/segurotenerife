@@ -4,6 +4,41 @@
 
 ## [Unreleased]
 
+### Changed — Сниппеты: гео «Tenerife» в title (decesos es/ru, mascotas es, accident cover en)
+
+Три страницы собирали показы по гео-запросам с «Tenerife», а в заголовке стояла
+только «España» — сниппет не отвечал на набранное. `title`, `description` и
+`keywords` переписаны, тела статей не тронуты.
+
+- `/es/blog/funeral-insurance-spain/` — `seguro decesos tenerife` (позиция 11.9,
+  15 показов за 28 дней): гео вынесено в начало title, описание обещает конкретику
+  (что покрывает, зачем репатриация).
+- `/blog/funeral-insurance-spain/` (ru) — `похоронная страховка испания`
+  (позиция 16.0): в заголовок выведена разговорная форма «похоронная страховка»,
+  официальный `decesos` оставлен рядом, чтобы человек связал одно с другим.
+- `/es/blog/pet-insurance-spain/` — `seguros de mascotas en tenerife` (12.0) и
+  `cobertura veterinaria españa` (23.5): гео в title, обязательная RC с 2023 года
+  и ветеринарная часть — в description.
+- `/en/blog/accident-insurance-spain/` — здесь дело не в гео, а в формулировке:
+  ищут `accident cover`, в сниппете стояло только `accident insurance`. Правка
+  идёт заодно (по 3 показа), отдельного вывода из неё не делается.
+
+Заодно вычищены опечатки из `keywords`: `accidnet insurance Tenerife`,
+`acident insurance expat` (en, accident) и `seguro de bida España`
+(es, life-insurance). Google `meta keywords` игнорирует — вреда не было, но и
+смысла тоже.
+
+Заголовки из брифа не влезали в лимиты сниппета (ru decesos 63 символа, es
+mascotas description 163, en accident title 61) — сокращены до ≤60 / ≤160 с
+сохранением целевого запроса в начале.
+
+Бизнес-ценность: вторая половина эксперимента H1 из `docs/seo/experiments.md` —
+`decesos` и `mascotas` меняют только сниппет при нетронутом теле, поэтому по ним
+видно, работает ли гео-модификатор в заголовке сам по себе. Если позиции не
+сдвинутся, дальше вкладываемся только в глубину текста, а не в переписывание
+заголовков. Страницы ведут на линии `decesos`, `mascotas` и `accidentes`.
+Вердикт — `/seo-monthly` не раньше 2026-10-05.
+
 ### Changed — Сниппет страницы про страховку для визы цифрового кочевника (es, en)
 
 `/es/blog/digital-nomad-visa-insurance/` стоит на позиции 4.7 по запросу

@@ -3,10 +3,11 @@ locale: es
 urlSlug: pet-insurance-spain
 order: 11
 date: 2026-07-20
+updated: 2026-09-05
 tag: Mascotas
-title: 'Seguro para mascotas en España: lo que debe saber un dueño en Tenerife'
-description: 'Por qué necesitas un seguro para tu perro o gato en España, para qué perros es obligatoria por ley la responsabilidad civil y qué cubre una póliza veterinaria en Tenerife.'
-keywords: seguro mascotas España, seguro perro Tenerife, seguro responsabilidad civil perro, seguro veterinario España, seguro gato Tenerife, seguro para animales España
+title: 'Seguro de mascotas en Tenerife: RC obligatoria y veterinario'
+description: 'Seguros de mascotas en Tenerife: por qué la responsabilidad civil del perro es obligatoria desde 2023, qué cubre la parte veterinaria y qué mirar en la póliza.'
+keywords: seguros de mascotas en Tenerife, seguro mascotas Tenerife, cobertura veterinaria España, seguro responsabilidad civil perro, seguro perro Tenerife, seguro gato Tenerife, seguro veterinario España
 faq:
   - q: '¿Es obligatorio el seguro para perros en España?'
     a: 'Desde 2023, con la ley de bienestar animal, el seguro de responsabilidad civil es obligatorio para todos los perros. Para las razas potencialmente peligrosas los requisitos son más estrictos. La cobertura veterinaria es opcional.'

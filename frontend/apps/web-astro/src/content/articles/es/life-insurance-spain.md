@@ -6,7 +6,7 @@ date: 2026-06-29
 tag: Vida
 title: 'Seguro de vida en España: tranquilidad para quienes más quieres'
 description: 'Por qué el seguro de vida en España da al expatriado confianza por los suyos, protege ante la hipoteca y evita que la familia quede en apuros.'
-keywords: seguro de vida España, seguro de vida Tenerife, seguro de vida hipoteca España, proteger a la familia España, seguro de bida España, seguro vida Tenerife
+keywords: seguro de vida España, seguro de vida Tenerife, seguro de vida hipoteca España, proteger a la familia España, seguro vida Tenerife
 faq:
   - q: '¿Por qué un expatriado en España necesita un seguro de vida?'
     a: 'Para que, si ocurre lo inesperado, tus seres queridos no se queden solos frente a las obligaciones económicas: hipoteca, préstamos, gastos del día a día. Es una forma de cuidar a la familia con antelación.'

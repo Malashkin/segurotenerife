@@ -3,10 +3,11 @@ locale: en
 urlSlug: accident-insurance-spain
 order: 9
 date: 2026-06-29
+updated: 2026-09-05
 tag: Protection
-title: 'Accident Insurance in Spain: Everyday Peace of Mind'
-description: 'Why an accident policy gives expats in Spain real peace of mind: how it supports you financially after an injury and quiets the «what if».'
-keywords: accident insurance Spain, accident insurance Tenerife, personal accident cover Spain, injury insurance for expats Spain, accidnet insurance Tenerife, acident insurance expat
+title: 'Accident Cover in Spain: How a Personal Accident Policy Pays'
+description: 'Accident cover in Spain for expats: how a personal accident policy pays a cash benefit after an injury and how it sits alongside health insurance.'
+keywords: accident cover in Spain, accident cover for expats in Spain, personal accident policy Spain, accident insurance Spain, accident insurance Tenerife, injury cover for expats Spain
 faq:
   - q: 'How is accident insurance different from health insurance?'
     a: 'A health policy pays for treatment, while accident insurance pays you a cash benefit — for an injury, your recovery time, or loss of ability to work. They complement each other well.'
