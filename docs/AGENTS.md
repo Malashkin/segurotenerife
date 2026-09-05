@@ -37,6 +37,8 @@ docs/            эта документация (по ролям)
 | Тесты (cargo/vitest/playwright/mutation) | [testing/](testing/index.md) | testing |
 | Деплой + ENV | [deploy.md](deploy.md) | devops |
 | SEO/GEO + блог + Google Search Console | [seo/index.md](seo/index.md) | product, frontend |
+| Пайплайн наблюдения: рутина, дневной и недельный отчёты | [seo/pipeline.md](seo/pipeline.md) | product, seo |
+| Доступы аналитики (PostHog, Search Console) | [analytics.md](analytics.md) | product, seo |
 | Лиды по каналам (схема) | [architecture/lead-flow.md](architecture/lead-flow.md) | product, backend |
 | UX-обзоры | [ux/](ux/ux-review.md) | product |
 | Changelog | [../CHANGELOG.md](../CHANGELOG.md) | all |

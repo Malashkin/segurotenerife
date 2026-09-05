@@ -1,13 +1,25 @@
 ---
 audience: [product, frontend]
 owner: seguro-tenerife
-updated: 2026-07-22
+updated: 2026-09-05
 ---
 
 # SEO
 
 Цель: попасть в выдачу Google по запросам про страховку на Тенерифе / для ВНЖ и
 визы в Испании на 4 языках (ru/uk/en/es).
+
+## Документы раздела
+
+| Документ | О чём |
+|---|---|
+| [pipeline.md](pipeline.md) | ежедневная рутина, дневной и недельный отчёты, расписание, эскалация |
+| [journal.md](journal.md) | журнал решений: что сделали и что решили не делать |
+| [backlog.md](backlog.md) | очередь тем, из которой берёт дневная рутина |
+| [experiments.md](experiments.md) | реестр правок с метрикой «до» и вердиктом |
+| [metrics.csv](metrics.csv) | история метрик Search Console по дням (ведёт `snapshot.py`) |
+| [domain-research.md](domain-research.md) | исследование ниши и домена |
+| [../analytics.md](../analytics.md) | доступы: PostHog и Search Console |
 
 ## Что уже настроено (в коде)
 
