@@ -1,7 +1,7 @@
 ---
 audience: [seo]
 owner: seguro-tenerife
-updated: 2026-09-04
+updated: 2026-09-05
 ---
 
 # Очередь тем
@@ -33,7 +33,14 @@ updated: 2026-09-04
 
 | # | Тема | Целевой запрос | Продукт | Статус |
 |---|---|---|---|---|
-| — | _пусто, наполняется `/seo-monthly`_ | | | |
+| 1 | Travel insurance for Tenerife (slug `travel-insurance-tenerife`, 4 локали) | `tenerife travel insurance` — 126 пок., поз. 64.7 (28д) | `viaje` (5 продуктов) | в работе |
+
+**Очередь намеренно короткая (аудит SEGU-4, 2026-09-05).** Из 127 запросов с
+показами за 28 дней только один кластер не имеет своей страницы. Остальной спрос
+уже покрыт статьями, которые стоят на позициях 30–80: узкое место — глубина и
+гео-модификатор в существующих текстах, а не количество тем. Поэтому дневная
+рутина этот месяц работает по своей ветке «очередь пуста» — доработка страниц на
+расстоянии удара. Список приоритетов — в `journal.md` за 2026-09-05.
 
 ## Отклонённые
 
@@ -41,4 +48,10 @@ updated: 2026-09-04
 
 | Тема | Причина отклонения |
 |---|---|
-| — | |
+| `necesito seguro medico para viajar a argentina / brasil / chile / colombia / uruguay` и родственные | Латинская Америка, не наш рынок. Подсказки Google на испанском тянут её массово |
+| `que es seguro medico facultativo`, `seguro medico al estilo jalisco`, `que es deducible seguro medico` | Мексиканские реалии (IMSS, «deducible»), в Испании термины другие |
+| `seguro medico adeslas`, `adeslas estudiantes` | Брендовые запросы конкурента. Бренд у нас нейтральный, чужое имя не используем |
+| `travel insurance for ibiza` (11 пок., поз. 88.9) | Другой остров, вне нашей гео-зоны. Продукт есть, но страница про Ибицу нам не нужна |
+| `retiring to tenerife` (3 пок.) | Ниже порога значимости (<10 показов). Интент уже частично закрыт `retiree-insurance-spain` и `moving-to-tenerife-checklist` |
+| Отдельная страница «Healthcare system in Tenerife (public)» | Каннибализация: кластер (98 пок.) уже целиком садится на `private-vs-public-healthcare-spain`, которую в сентябре дорабатываем. Вернуться к вопросу, если через 30 дней `public/state medical centres in tenerife` не сдвинется с поз. 32 |
+| Отдельная страница «Seguro de vida en Tenerife» | Каннибализация с `life-insurance-spain`. Гео-кластер (90 пок.) закрываем разделом в существующей статье |

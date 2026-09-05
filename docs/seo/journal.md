@@ -1,7 +1,7 @@
 ---
 audience: [seo]
 owner: seguro-tenerife
-updated: 2026-09-03
+updated: 2026-09-05
 ---
 
 # Журнал SEO-решений
@@ -20,3 +20,93 @@ updated: 2026-09-03
 ```
 
 <!-- новые записи добавляются ниже, свежие сверху -->
+
+## 2026-09-05 — стартовый аудит органики (SEGU-4)
+
+Показы 28д (2026-08-07 — 2026-09-03): **1630** (+1070) · клики **4** · CTR **0.25%**
+· позиция **41.0** (−0.8) · в индексе **85 из 90 проверенных** (в sitemap 184 URL).
+PostHog 28д: 33 сессии, из них органика 2; воронка чата 1 `chat_started` → 0 лидов.
+
+### Главный вывод: узкое место — позиция, а не сниппет
+
+Распределение показов по позициям (срез «запрос × страница», 1119 показов из 1630;
+остальное GSC анонимизирует):
+
+| Позиция | Показы | Доля |
+|---|---|---|
+| 1–3 | 1 | 0.1% |
+| 4–10 | 60 | 5.4% |
+| 11–20 | 40 | 3.6% |
+| 21–50 | 301 | 26.9% |
+| 51+ | 717 | 64.1% |
+
+91% показов приходится на позиции ниже 20-й, 64% — ниже 51-й. При средней позиции 41
+ожидаемый CTR — те же 0.1–0.3%, что мы и видим. **Сниппеты не мешают кликам: мешает
+то, что почти весь показ происходит там, где не кликают вообще.** Даже идеальный CTR
+на всём, что стоит на позициях 4–20, даёт порядок 5–8 кликов в месяц — это потолок
+правки сниппетов, а не стратегия.
+
+### Гипотеза о гео-модификаторе (проверяем)
+
+Спрос сформулирован с гео («… en Tenerife», «… in Tenerife»), а статьи названы
+«… en España». Страницы, у которых гео есть в slug/title, держатся на позициях 5–20
+(`private-healthcare-tenerife` 10.8, `family-insurance-tenerife` 19.4,
+`moving-to-tenerife-checklist` 5.9); страницы с «-spain» под теми же гео-запросами
+стоят на 30–80 (`life-insurance-spain` 73–81 под «seguro de vida en tenerife»).
+Это корреляция на малой выборке, не закон. Проверяем экспериментом — записи в
+`experiments.md` от 2026-09-05.
+
+### План на месяц, три ведра
+
+**Ведро 1 — переписать title+description** (эффект малый и быстрый, трудоёмкость часы):
+
+| Стр. | Целевой запрос | Поз. / показы |
+|---|---|---|
+| `/es/blog/digital-nomad-visa-insurance/` | `seguro dnv` | 4.7 / 28 |
+| `/es/blog/funeral-insurance-spain/` | `seguro decesos tenerife` | 11.9 / 15 |
+| `/es/blog/pet-insurance-spain/` | `seguros de mascotas en tenerife` | 10.3 / 28 (стр.) |
+| `/en/blog/accident-insurance-spain/` | `accident cover in spain` | 13.7 / 3 |
+| `/en/blog/reimbursement-health-insurance-spain/` | `reimbursement rehabilitation spain` | 20.2 / 8 |
+
+**Ведро 2 — дополнить существующую статью** (эффект средний, трудоёмкость день на статью):
+
+| Стр. | Кластер | Показы кластера |
+|---|---|---|
+| `/en/blog/private-vs-public-healthcare-spain/` | public healthcare Tenerife | 98 |
+| `/es/blog/life-insurance-spain/` | seguro de vida en Tenerife | 90 |
+| `/es|/en/blog/student-visa-insurance-spain/` | student visa insurance | 155 |
+| `/es|/en/blog/digital-nomad-visa-insurance/` | DNV 2026 / requirements | 232 |
+| `/es/blog/family-reunification-visa-insurance/` | reagrupación familiar | 28 |
+
+**Ведро 3 — новая тема** (эффект большой, трудоёмкость 4 локали):
+
+| Тема | Кластер | Показы |
+|---|---|---|
+| `travel-insurance-tenerife` (EN-ведущая) | tenerife travel insurance | 236 |
+
+### Решил не делать
+
+- **Отдельную страницу про public healthcare в Тенерифе** — каннибализировала бы
+  `private-vs-public-healthcare-spain`, которая уже собирает весь кластер и стоит
+  на 5.6 по «what is a public health charge in tenerife». Сначала углубляем её.
+- **Отдельную «Seguro de vida en Tenerife»** — по той же причине, гео-раздел уходит
+  в `life-insurance-spain`.
+- **Темы из `suggest.py`** — из 25 непокрытых испанских подсказок все 25 либо про
+  Латинскую Америку, либо брендовые (Adeslas). Полезных подсказок ноль; спрос в этом
+  проекте читается из Search Console, а не из `suggest.py`. Это стоит помнить.
+- **Правку canonical/hreflang** — разметка проверена на живом сайте и корректна
+  (self-canonical + 4 hreflang + x-default на всех трёх проверенных URL). Вердикт GSC
+  «`/en/` — копия, канонические версии не совпадают» — решение самого Google на
+  молодом домене, а не наш баг. Перепроверить через 30 дней.
+- **Гео-лендинги по городам** (Adeje, Arona, Los Cristianos, Santa Cruz, La Laguna) —
+  ни одного показа за 28 дней, спрос не подтверждён, правило отбора не выполнено.
+
+### Не наша зона / открытые вопросы владельцу
+
+- `/en/privacy/`, `/en/terms/`, `/cookies/`, `/en/cookies/` — «URL неизвестен Google».
+  Юридические страницы, на трафик не влияют; если хочется убрать из отчёта — вопрос
+  к владельцу, надо ли вообще держать их в sitemap.
+- В `keywords` нескольких статей засеяны опечатки (`accidnet insurance`,
+  `acident insurance`, `seguro de bida`). Google `meta keywords` игнорирует — вреда
+  нет, но мусор стоит вычистить попутно.
+
