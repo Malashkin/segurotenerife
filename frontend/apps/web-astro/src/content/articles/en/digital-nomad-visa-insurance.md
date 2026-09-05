@@ -3,9 +3,10 @@ locale: en
 urlSlug: digital-nomad-visa-insurance
 order: 2
 date: 2026-06-25
+updated: 2026-09-05
 tag: Digital nomad
-title: 'Insurance for the digital nomad visa (DNV) in Spain'
-description: 'What your medical policy must include for the Spanish digital nomad visa so the application is approved — and the mistakes people make most often.'
+title: 'Spain DNV Insurance: What the Digital Nomad Visa Requires'
+description: 'What your DNV policy must include for Spain''s digital nomad visa: full cover, no co-payments, no waiting periods, and a consulate certificate. Free check.'
 keywords: digital nomad visa insurance spain, DNV health insurance tenerife, remote worker visa insurance spain
 faq:
   - q: 'Do I need separate insurance for the digital nomad visa?'

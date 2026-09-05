@@ -3,9 +3,10 @@ locale: es
 urlSlug: digital-nomad-visa-insurance
 order: 2
 date: 2026-06-25
+updated: 2026-09-05
 tag: Nómada digital
-title: 'Seguro para el visado de nómada digital (DNV) en España'
-description: 'Qué debe incluir tu póliza médica para el visado de nómada digital en España para que aprueben la solicitud — y los errores más frecuentes.'
+title: 'Seguro DNV: póliza médica para el visado de nómada digital'
+description: 'Qué exige el seguro DNV del visado de nómada digital en España: cobertura completa, sin copagos ni carencias y certificado para el consulado. Cálculo gratis.'
 keywords: seguro visado nómada digital España, seguro DNV Tenerife, seguro teletrabajo visado España
 faq:
   - q: '¿Necesito un seguro específico para el visado de nómada digital?'
