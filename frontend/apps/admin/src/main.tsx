@@ -6,24 +6,18 @@
  */
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import {
-  QueryProvider,
-  initAnalytics,
-  setAnalyticsConsent,
-  captureEvent,
-} from '@shared/api';
+import { QueryProvider } from '@shared/api';
 import { initI18n } from '@shared/i18n';
 import { App } from './App';
 import './index.css';
 
 initI18n();
 
-// PostHog для admin: БЕЗ autocapture и записи сессий — на экранах видны PII лидов,
-// логируем только явные продуктовые события. Это внутренний инструмент за логином
-// (не публичные посетители), поэтому включаем трекинг явно, без куки-баннера.
-initAnalytics({ autocapture: false, sessionRecording: false });
-setAnalyticsConsent(true);
-captureEvent('admin_opened');
+// PostHog здесь НЕ инициализируется: админка — внутренний инструмент за логином,
+// её визиты не продуктовые. Раньше они шли в общий проект и завышали события,
+// сессии и просмотры (`admin_opened` отфильтровывали в отчётах, а `$pageview`
+// админки — нет). Страховка на случай, если обёртку позовут отсюда косвенно, —
+// `isInternalSurface()` в `shared/api/src/posthog.ts`.
 
 const rootEl = document.getElementById('root');
 if (!rootEl) {

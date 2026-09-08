@@ -31,9 +31,15 @@ from pathlib import Path
 CONFIG = Path.home() / ".config" / "segurotenerife" / "analytics.env"
 GSC_TOKEN = Path.home() / ".config" / "segurotenerife" / "gsc-token.json"
 
-# Служебные события: заходы менеджера в админку. Без этого фильтра свои же
-# визиты составляют большую часть выборки и метрики врут в нашу пользу.
+# Служебные события: заходы менеджера в админку. С сентября 2026 админка вообще
+# не инициализирует PostHog, но фильтр остаётся — отчёты смотрят и в прошлое, где
+# такие события есть.
 INTERNAL_EVENTS = ("admin_opened",)
+
+# Хосты внутренних поверхностей. Событие `admin_opened` — не единственный след
+# админки: были ещё её `$pageview`/`$pageleave`, они попадали в «Страницы» и
+# «Каналы» как обычный трафик. Отсекаем по хосту.
+INTERNAL_HOSTS = ("admin.",)
 
 
 def load_config() -> dict:
@@ -75,6 +81,11 @@ def posthog_section(cfg: dict, days: int, out: dict) -> None:
     hdr = {"Authorization": f"Bearer {key}"}
     skip = ", ".join(f"'{e}'" for e in INTERNAL_EVENTS)
     since = f"timestamp > now() - interval {days} day"
+    # Отсечь всё, что прилетело с внутренних хостов (админка) — иначе её
+    # просмотры считаются наравне с посетительскими.
+    external = " and ".join(
+        f"coalesce(properties.$host, '') not like '{h}%'" for h in INTERNAL_HOSTS
+    )
 
     def hogql(sql: str) -> list:
         try:
@@ -83,11 +94,11 @@ def posthog_section(cfg: dict, days: int, out: dict) -> None:
             print(f"  PostHog: HTTP {e.code} — {e.read()[:200].decode(errors='replace')}")
             return []
 
-    print(f"=== PostHog · последние {days} дн. (без {skip}) ===")
+    print(f"=== PostHog · последние {days} дн. (без админки и {skip}) ===")
 
     totals = hogql(
         f"select count() as events, count(distinct properties.$session_id) as sessions "
-        f"from events where {since} and event not in ({skip})"
+        f"from events where {since} and event not in ({skip}) and {external}"
     )
     if totals:
         ev, ses = totals[0]
@@ -97,7 +108,7 @@ def posthog_section(cfg: dict, days: int, out: dict) -> None:
     print("\n  Страницы:")
     for path, n in hogql(
         f"select replaceRegexpOne(properties.$current_url, '^https?://[^/]+', '') as path, "
-        f"count() as n from events where {since} and event = '$pageview' "
+        f"count() as n from events where {since} and event = '$pageview' and {external} "
         f"group by path order by n desc limit 15"
     ) or [("(нет данных)", "")]:
         print(f"    {n:>5}  {path}")
@@ -106,7 +117,7 @@ def posthog_section(cfg: dict, days: int, out: dict) -> None:
     for ch, ai, n in hogql(
         f"select coalesce(properties.traffic_channel, '(не задан)') as ch, "
         f"coalesce(properties.ai_engine, '') as ai, count() as n from events "
-        f"where {since} and event = '$pageview' group by ch, ai order by n desc"
+        f"where {since} and event = '$pageview' and {external} group by ch, ai order by n desc"
     ) or [("(нет данных)", "", "")]:
         label = f"{ch} / {ai}" if ai else ch
         print(f"    {n:>5}  {label}")
@@ -115,7 +126,7 @@ def posthog_section(cfg: dict, days: int, out: dict) -> None:
     funnel = ["chat_started", "question_asked", "answer_received",
               "chat_handoff_offered", "handoff_clicked", "lead_submitted"]
     counts = dict(hogql(
-        f"select event, count() as n from events where {since} and event in "
+        f"select event, count() as n from events where {since} and {external} and event in "
         f"({', '.join(repr(e) for e in funnel)}) group by event"
     ))
     first = counts.get(funnel[0], 0)

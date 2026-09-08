@@ -1,7 +1,7 @@
 ---
 audience: [backend, frontend, devops, testing, ai]
 owner: seguro-tenerife
-updated: 2026-06-26
+updated: 2026-09-08
 ---
 
 # Seguro Tenerife — AGENTS.md
@@ -98,3 +98,6 @@ pnpm dev:admin         # Vite dev (admin)
   — в кавычках (иначе YAML падает). См. `architecture/astro-web.md`.
 - **PostHog (web)** ходит через прокси `segurotenerife.com/ph` (Cloudflare
   `_worker.js`) — обход блокировщиков. Детали — `monitoring/observability.md`.
+- **Админка вне аналитики:** трекинг в admin не включается (`isInternalSurface()`
+  в `shared/api/src/posthog.ts` + отсутствие `initAnalytics` в `admin/main.tsx`).
+  Не возвращать — свои визиты завышали события и просмотры в отчётах.

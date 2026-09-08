@@ -1,5 +1,5 @@
 /**
- * Интеграция PostHog (продуктовая аналитика) — единая обёртка для web и admin.
+ * Интеграция PostHog (продуктовая аналитика) — обёртка для публичного сайта.
  *
  * Принципы:
  *  - GDPR: capture ВЫКЛЮЧЕН по умолчанию (`opt_out_capturing_by_default`), пока
@@ -9,8 +9,9 @@
  *    Персональные ключи `phx_…` сюда не годятся и в клиент НЕ попадают.
  *  - Никогда не бросает и не ломает UX: всё под `typeof window` и try/catch,
  *    без ключа/вне браузера — тихий no-op (dev/e2e/SSR работают как обычно).
- *  - PII: на форме чата есть контакт/имя → в session recording маскируем все
- *    инпуты; на admin (где видны лиды) autocapture/recording выключены.
+ *  - PII: на форме чата есть контакт/имя → в session recording маскируем все инпуты.
+ *  - Внутренние поверхности (админка) в аналитику НЕ попадают — см.
+ *    `isInternalSurface()`: там трекинг не инициализируется вовсе.
  */
 import posthog from 'posthog-js';
 
@@ -33,8 +34,31 @@ let initialized = false;
 export interface InitAnalyticsOptions {
   /** Авто-захват кликов/сабмитов (по умолчанию true — публичный сайт). */
   autocapture?: boolean;
-  /** Запись сессий (по умолчанию true для web; на admin выключаем — PII лидов). */
+  /** Запись сессий (по умолчанию true; выключать там, где на экране PII). */
   sessionRecording?: boolean;
+}
+
+/**
+ * Внутренняя (не публичная) поверхность — дашборд менеджера: поддомен
+ * `admin.*` или путь `/admin…`.
+ *
+ * Зачем: заходы менеджера в админку — это наш собственный трафик. В отчётах он
+ * смешивался с посетительским и завышал события/сессии/просмотры (фильтр по
+ * событию `admin_opened` в `scripts/analytics/report.py` убирал только его, но
+ * не `$pageview`/`$pageleave` админки). Поэтому трекинг здесь не включается
+ * вовсе — это дешевле и надёжнее, чем чистить данные постфактум.
+ *
+ * Проверка по location, а не по флагу сборки: гарантия держится даже если
+ * обёртку позовут из другого приложения или админку смонтируют по пути.
+ */
+export function isInternalSurface(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    const { hostname, pathname } = window.location;
+    return /^admin\./i.test(hostname) || /^\/admin(\/|$)/i.test(pathname);
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -111,12 +135,14 @@ function resolveTrafficChannel(): ReturnType<typeof detectTrafficChannel> {
 }
 
 /**
- * Инициализирует PostHog. Безопасна: без ключа/вне браузера — no-op.
+ * Инициализирует PostHog. Безопасна: без ключа/вне браузера/на внутренней
+ * поверхности (админка) — no-op.
  * Capture не начнётся, пока не вызовут setAnalyticsConsent(true) (или согласие
  * уже сохранено) — это требование GDPR.
  */
 export function initAnalytics(opts: InitAnalyticsOptions = {}): void {
   if (initialized || typeof window === 'undefined') return;
+  if (isInternalSurface()) return; // админка вне продуктовой аналитики
   const key = env('POSTHOG_KEY');
   if (!key) return; // ключ не задан — аналитика выключена, без ошибок
 

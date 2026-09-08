@@ -1,7 +1,7 @@
 ---
 audience: [backend, frontend, devops]
 owner: seguro-tenerife
-updated: 2026-06-26
+updated: 2026-09-08
 ---
 
 # Observability: Langfuse + PostHog
@@ -54,7 +54,8 @@ Langfuse не идут.
 ## PostHog — продуктовая аналитика
 
 **Где:** `frontend/libs/shared/api/src/posthog.ts` (+ init в острове
-`web-astro/.../Overlays.tsx` и `admin/.../main.tsx`).
+`web-astro/.../Overlays.tsx`). Только публичный сайт: админка аналитику не
+подключает.
 
 - **Web:** autocapture (клики/просмотры/сабмиты) + pageview/pageleave + запись
   сессий **с маскировкой инпутов** (PII контактной формы) + вся воронка чата
@@ -72,24 +73,33 @@ Langfuse не идут.
   `agent_fallback {reason}` (агент недоступен/ошибка) → `chat_handoff_offered
   {source}` → `handoff_clicked {messenger, topic}` → `lead_submitted {messenger,
   topic}` (подтверждённая бэкендом конверсия) + `tg_message_copied` (Telegram).
-- **Admin:** БЕЗ autocapture/записи сессий (на экранах PII лидов) — только явные
-  события.
+- **Admin: трекинга нет вообще.** Дашборд менеджера — внутренний инструмент за
+  логином, его визиты не продуктовые: раньше они шли в общий проект и завышали
+  события/сессии/просмотры (отчёт фильтровал только `admin_opened`, а
+  `$pageview`/`$pageleave` админки считались наравне с посетительскими).
+  `main.tsx` больше не зовёт `initAnalytics`, а `isInternalSurface()` в обёртке
+  делает init no-op на хосте `admin.*` и по пути `/admin…` — страховка, если
+  обёртку позовут оттуда косвенно. Благодаря `sideEffects: false` у
+  `@seguro/shared-api` `posthog-js` не попадает и в admin-бандл (−268 КБ).
+  Следствие: события `admin_opened` больше не появляются; в отчётах фильтр по
+  нему остался ради исторических данных.
 - **Реверс-прокси (web):** PostHog ходит через наш домен `segurotenerife.com/ph/*`
   (Cloudflare Pages `_worker.js` → `apps/web-astro/pages-functions/_worker.js`,
   копируется в `dist/_worker.js` в CI). Зачем: блокировщики/Safari ITP режут
   `i.posthog.com` и теряют аналитику; первый-сторонний `/ph` не блокируется.
   Хост web = `PUBLIC_POSTHOG_HOST=https://segurotenerife.com/ph`, `ui_host` =
-  `eu.posthog.com`. Admin ходит напрямую (`VITE_POSTHOG_HOST=eu.i.posthog.com`).
+  `eu.posthog.com`. Для admin PostHog-переменные не нужны вовсе.
 - **GDPR-гейт:** capture **выключен по умолчанию** (`opt_out_capturing_by_default`);
   включается только после согласия в баннере куки (`setAnalyticsConsent`). Ключ —
   публичный `phc_…` (безопасен в клиенте); персональный `phx_…` в клиент НЕ кладём.
 
-| ENV (web `PUBLIC_*`, admin `VITE_*`) | Значение |
+| ENV (только web, `PUBLIC_*`) | Значение |
 |---|---|
-| `PUBLIC_POSTHOG_KEY` / `VITE_POSTHOG_KEY` | публичный проектный ключ `phc_…` |
-| `PUBLIC_POSTHOG_HOST` / `VITE_POSTHOG_HOST` | EU `https://eu.i.posthog.com` (дефолт) / US — **должен совпадать с регионом проекта** |
+| `PUBLIC_POSTHOG_KEY` | публичный проектный ключ `phc_…` |
+| `PUBLIC_POSTHOG_HOST` | EU `https://eu.i.posthog.com` (дефолт) / US — **должен совпадать с регионом проекта** |
 
 ## Тесты
 - Langfuse: `cargo test` (`langfuse::tests::*` — форма batch, gate `enabled`,
   интеграция `log_chat` через mock-сервер).
-- PostHog: `pnpm test` (`posthog.test.ts` — no-op без ключа, GDPR-гейт, consent).
+- PostHog: `pnpm test` (`posthog.test.ts` — no-op без ключа, GDPR-гейт, consent,
+  no-op на внутренних поверхностях `admin.*` / `/admin`).

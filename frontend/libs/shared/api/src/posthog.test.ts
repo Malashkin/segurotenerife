@@ -55,13 +55,50 @@ describe('analytics (PostHog)', () => {
     expect(ph.capture).toHaveBeenCalledWith('insurance_intent_selected', { intent: 'dental' });
   });
 
-  it('admin-режим: autocapture и запись сессий выключаются (PII лидов)', async () => {
+  it('опции: autocapture и запись сессий можно выключить (экраны с PII)', async () => {
     vi.stubEnv('PUBLIC_POSTHOG_KEY', 'phc_test');
     const { initAnalytics } = await import('./posthog');
     initAnalytics({ autocapture: false, sessionRecording: false });
     const cfg = ph.init.mock.calls[0]![1] as Record<string, unknown>;
     expect(cfg.autocapture).toBe(false);
     expect(cfg.disable_session_recording).toBe(true);
+  });
+});
+
+describe('внутренние поверхности (админка) вне трекинга', () => {
+  const setLocation = (hostname: string, pathname = '/') => {
+    Object.defineProperty(window, 'location', {
+      value: { hostname, pathname, search: '' },
+      configurable: true,
+    });
+  };
+
+  it('поддомен admin.* — init не вызывается даже при заданном ключе', async () => {
+    vi.stubEnv('PUBLIC_POSTHOG_KEY', 'phc_test');
+    setLocation('admin.segurotenerife.com');
+    const { initAnalytics, captureEvent } = await import('./posthog');
+    initAnalytics();
+    captureEvent('admin_opened');
+    expect(ph.init).not.toHaveBeenCalled();
+    expect(ph.capture).not.toHaveBeenCalled();
+  });
+
+  it('путь /admin — тоже вне трекинга', async () => {
+    vi.stubEnv('PUBLIC_POSTHOG_KEY', 'phc_test');
+    setLocation('segurotenerife.com', '/admin/leads');
+    const { initAnalytics, isInternalSurface } = await import('./posthog');
+    expect(isInternalSurface()).toBe(true);
+    initAnalytics();
+    expect(ph.init).not.toHaveBeenCalled();
+  });
+
+  it('публичный сайт внутренней поверхностью не считается', async () => {
+    vi.stubEnv('PUBLIC_POSTHOG_KEY', 'phc_test');
+    setLocation('segurotenerife.com', '/ru/seguro-de-salud/');
+    const { initAnalytics, isInternalSurface } = await import('./posthog');
+    expect(isInternalSurface()).toBe(false);
+    initAnalytics();
+    expect(ph.init).toHaveBeenCalledTimes(1);
   });
 });
 

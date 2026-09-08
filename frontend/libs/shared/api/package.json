@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "//sideEffects": "Модули библиотеки чистые (только объявления) — бандлер вправе выбросить неиспользуемые. Благодаря этому в admin-бандл не попадает posthog-js: админка аналитику не подключает.",
+  "sideEffects": false,
   "//": "FSD shared/api — fetch-клиент, QueryClient (TanStack Query) и провайдер.",
   "main": "src/index.ts",
   "module": "src/index.ts",

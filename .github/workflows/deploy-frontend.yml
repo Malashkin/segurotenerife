@@ -26,11 +26,10 @@ jobs:
       PUBLIC_API_URL: https://api.segurotenerife.com
       VITE_API_URL: https://api.segurotenerife.com
       PUBLIC_POSTHOG_KEY: phc_phmVq5JExsz99aR7ohtmqy8YWLdP4rr4ZvoGLzF7mDsi
-      VITE_POSTHOG_KEY: phc_phmVq5JExsz99aR7ohtmqy8YWLdP4rr4ZvoGLzF7mDsi
       # Web ходит в PostHog через наш реверс-прокси /ph/* (обход блокировщиков/ITP,
-      # _worker.js проверен). Admin — напрямую (им пользуется менеджер).
+      # _worker.js проверен). Для admin PostHog-переменных нет намеренно: админка
+      # в аналитику не пишет, её визиты искажали продуктовые метрики.
       PUBLIC_POSTHOG_HOST: https://segurotenerife.com/ph
-      VITE_POSTHOG_HOST: https://eu.i.posthog.com
       # Контакты менеджера для deep-link'ов хендоффа: клиент из чата попадает
       # прямо к менеджеру (WhatsApp/Viber +34638034463, Telegram @feke2015).
       VITE_WHATSAPP_NUMBER: '34638034463'

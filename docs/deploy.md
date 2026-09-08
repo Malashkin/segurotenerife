@@ -102,13 +102,14 @@ web на Astro (`apps/web-astro`) читает `PUBLIC_*` и `VITE_*`; admin (Vi
 | `VITE_WHATSAPP_NUMBER` | номер WhatsApp офиса (формат wa.me, только цифры) |
 | `VITE_TELEGRAM_USERNAME` | username Telegram офиса (без `@`) |
 | `VITE_VIBER_NUMBER` | номер Viber (по умолчанию = WhatsApp) |
-| `PUBLIC_POSTHOG_KEY` (web) / `VITE_POSTHOG_KEY` (admin) | **публичный** проектный ключ PostHog `phc_…` (Project Settings → Project API Key). Без него аналитика выключена (no-op). НЕ персональный `phx_…` ключ! |
-| `PUBLIC_POSTHOG_HOST` / `VITE_POSTHOG_HOST` | хост PostHog по региону проекта: EU `https://eu.i.posthog.com` (по умолчанию) или US `https://us.i.posthog.com`. **Должен совпадать с регионом вашего проекта**, иначе события не дойдут. |
+| `PUBLIC_POSTHOG_KEY` (**только web**) | **публичный** проектный ключ PostHog `phc_…` (Project Settings → Project API Key). Без него аналитика выключена (no-op). НЕ персональный `phx_…` ключ! В проекте admin эта переменная не нужна — трекинга там нет. |
+| `PUBLIC_POSTHOG_HOST` (**только web**) | хост PostHog по региону проекта: EU `https://eu.i.posthog.com` (по умолчанию) или US `https://us.i.posthog.com`. **Должен совпадать с регионом вашего проекта**, иначе события не дойдут. |
 
 > **PostHog/GDPR:** на публичном сайте capture включается ТОЛЬКО после согласия в
 > баннере куки (по умолчанию opt-out). В записях сессий маскируются все инпуты
-> (PII контактной формы). На admin autocapture и запись сессий выключены (на
-> экранах видны данные лидов) — логируются лишь явные события.
+> (PII контактной формы). **Admin в аналитику не пишет вообще** — свои визиты
+> искажали продуктовые метрики; init там не вызывается, а обёртка дополнительно
+> отключает себя на хосте `admin.*`. PostHog-переменные проекту admin не нужны.
 
 > SPA без роутера — fallback на `index.html` не обязателен. Если позже появится
 > клиентский роутинг, добавить rewrite всех путей на `/index.html`
