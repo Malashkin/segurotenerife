@@ -23,15 +23,15 @@
   HEALTHY все вопросы отвечены, дошёл до заявки
 
 Тексты вопросов и ответов PostHog не хранит намеренно (`trackEvent` шлёт только
-язык). Они есть в Langfuse — если положить ключи в
-~/.config/segurotenerife/langfuse.env, разбор подтянет их автоматически:
+язык). Они есть в Langfuse: ключи берутся из `.env` репозитория (там же, где их
+читает backend) или из ~/.config/segurotenerife/langfuse.env. Без ключей скрипт
+работает и пропускает тексты — судит только об исправности механики, о чём
+честно пишет в отчёте.
 
-    LANGFUSE_PUBLIC_KEY=pk-lf-...
-    LANGFUSE_SECRET_KEY=sk-lf-...
-    LANGFUSE_BASE_URL=https://cloud.langfuse.com
-
-Без этого файла скрипт работает и молча пропускает тексты — судит только об
-исправности механики, о чём честно пишет в отчёте.
+Связка трейса с сессией — по времени, а не по `sessionId`: у Langfuse свой
+идентификатор сессии (фронт шлёт в `/api/chat` собственный `getSessionId()`), и
+с `$session_id` в PostHog он не совпадает. Склейка по идентификатору молча
+возвращает пустоту на любой сессии.
 
 Запуск:
     python3 scripts/analytics/chat_sessions.py                # новое с прошлого раза
@@ -49,11 +49,16 @@ import sys
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 CONFIG = Path.home() / ".config" / "segurotenerife" / "analytics.env"
-LANGFUSE_CONFIG = Path.home() / ".config" / "segurotenerife" / "langfuse.env"
+# Ключи Langfuse ищем в двух местах: `.env` репозитория (там же, где их держит
+# backend) и отдельный файл в ~/.config — на машине, где репозитория нет.
+LANGFUSE_CONFIGS = [
+    Path(__file__).resolve().parents[2] / ".env",
+    Path.home() / ".config" / "segurotenerife" / "langfuse.env",
+]
 STATE = Path.home() / ".config" / "segurotenerife" / "chat-sessions-seen.json"
 
 # События воронки чата. Порядок важен только для чтения таймлайна.
@@ -79,7 +84,7 @@ def load_env(path: Path) -> dict:
             line = line.strip()
             if line and not line.startswith("#") and "=" in line:
                 k, v = line.split("=", 1)
-                cfg[k.strip()] = v.strip()
+                cfg[k.strip()] = v.strip().strip('"').strip("'")
     return cfg
 
 
@@ -159,21 +164,39 @@ def session_context(cfg: dict, sid: str) -> dict:
 
 # ── Langfuse (опционально) ───────────────────────────────────────────────────
 
-def langfuse_dialogue(sid: str) -> list[dict] | None:
+def langfuse_creds() -> dict | None:
+    for path in LANGFUSE_CONFIGS:
+        cfg = load_env(path)
+        if cfg.get("LANGFUSE_PUBLIC_KEY") and cfg.get("LANGFUSE_SECRET_KEY"):
+            return cfg
+    return None
+
+
+def langfuse_dialogue(events: list[dict]) -> list[dict] | None:
     """
     Тексты вопросов и ответов по сессии. None — ключей нет (это не ошибка).
-    Пустой список — ключи есть, но трейсов по этой сессии не нашлось: так бывает,
-    когда посетитель не дал согласия на аналитику — тогда фронт не шлёт
-    session_id, трейс пишется, но без группировки в сессию.
+
+    Связываем по ВРЕМЕНИ, а не по идентификатору сессии. Казалось бы, у трейса
+    есть `sessionId` — но это не тот же идентификатор, что `$session_id` в
+    PostHog: фронт шлёт в `/api/chat` свой `getSessionId()`, и PostHog о нём не
+    знает. Склейка по sessionId молча даёт пустой результат на любой сессии.
+
+    Окно берём по таймлайну сессии с запасом в минуту: трейс пишется в момент
+    ответа агента, то есть всегда внутри него.
     """
-    cfg = load_env(LANGFUSE_CONFIG)
-    pub, sec = cfg.get("LANGFUSE_PUBLIC_KEY"), cfg.get("LANGFUSE_SECRET_KEY")
-    if not pub or not sec:
+    cfg = langfuse_creds()
+    if cfg is None:
         return None
     base = cfg.get("LANGFUSE_BASE_URL", "https://cloud.langfuse.com").rstrip("/")
-    url = f"{base}/api/public/traces?" + urllib.parse.urlencode({"sessionId": sid, "limit": 50})
-    req = urllib.request.Request(url)
-    token = base64.b64encode(f"{pub}:{sec}".encode()).decode()
+    first, last = parse_ts(events[0]["ts"]), parse_ts(events[-1]["ts"])
+    query = urllib.parse.urlencode({
+        "fromTimestamp": (first - timedelta(minutes=1)).isoformat().replace("+00:00", "Z"),
+        "toTimestamp": (last + timedelta(minutes=1)).isoformat().replace("+00:00", "Z"),
+        "limit": 100,
+    })
+    req = urllib.request.Request(f"{base}/api/public/traces?{query}")
+    token = base64.b64encode(
+        f"{cfg['LANGFUSE_PUBLIC_KEY']}:{cfg['LANGFUSE_SECRET_KEY']}".encode()).decode()
     req.add_header("Authorization", f"Basic {token}")
     try:
         with urllib.request.urlopen(req, timeout=60) as r:
@@ -186,11 +209,15 @@ def langfuse_dialogue(sid: str) -> list[dict] | None:
         return None
     out = []
     for t in sorted(data, key=lambda x: x.get("timestamp") or ""):
+        meta = t.get("metadata") or {}
         out.append({
             "ts": t.get("timestamp"),
             "question": t.get("input"),
             "answer": t.get("output"),
-            "meta": t.get("metadata") or {},
+            "retrieved": meta.get("retrieved") or [],
+            "brand_leaked": meta.get("brand_leaked"),
+            "latency": t.get("latency"),
+            "cost": t.get("totalCost"),
         })
     return out
 
@@ -212,7 +239,7 @@ def parse_ts(v) -> datetime:
     return datetime.fromisoformat(str(v).replace("Z", "+00:00"))
 
 
-def analyse(events: list[dict]) -> dict:
+def analyse(events: list[dict], dialogue: list[dict] | None = None) -> dict:
     """Вердикт и список замечаний по таймлайну одной сессии."""
     broken: list[str] = []
     dropped: list[str] = []
@@ -250,27 +277,32 @@ def analyse(events: list[dict]) -> dict:
         if q["lang"] and match["lang"] and q["lang"] != match["lang"]:
             broken.append(f"язык поехал: спросили на {q['lang']}, ответили на {match['lang']}")
 
-    # 4. Агент падал или был выключен.
+    # 4. Утечка бренда страховщика в ответ — видна только в трейсах Langfuse.
+    for t in (dialogue or []):
+        if t.get("brand_leaked"):
+            broken.append(f"в ответе {str(t['ts'])[11:19]} утёк бренд страховщика")
+
+    # 5. Агент падал или был выключен.
     for f in fallbacks:
         broken.append(f"agent_fallback в {parse_ts(f['ts']):%H:%M:%S} — агент не ответил")
 
-    # 5. Открыл чат и ничего не спросил.
+    # 6. Открыл чат и ничего не спросил.
     opened = [e for e in events if e["event"] in ("chat_opened", "chat_started")]
     if opened and not questions:
         dropped.append("открыл чат и не задал ни одного вопроса")
 
-    # 6. Недописанный вопрос: правок в полях больше, чем отправок формы.
+    # 7. Недописанный вопрос: правок в полях больше, чем отправок формы.
     changes = sum(1 for e in events if e["event"] == "$autocapture" and e["click_type"] == "change")
     submits = sum(1 for e in events if e["event"] == "$autocapture" and e["click_type"] == "submit")
     if questions and changes > submits:
         dropped.append(f"начал печатать и не отправил ({changes} правок поля на {submits} отправок)")
 
-    # 7. Закрыл чат руками — это не то же самое, что просто уйти со страницы.
+    # 8. Закрыл чат руками — это не то же самое, что просто уйти со страницы.
     closes = [e for e in events if e["event"] == "$autocapture" and is_close(e)]
     if closes:
         dropped.append(f"закрыл чат крестиком в {parse_ts(closes[-1]['ts']):%H:%M:%S}")
 
-    # 8. Довели ли до менеджера и где сорвалось.
+    # 9. Довели ли до менеджера и где сорвалось.
     offers = {e["source"] for e in events if e["event"] == "chat_handoff_offered"}
     clicked = any(e["event"] == "handoff_clicked" for e in events)
     lead = any(e["event"] == "lead_submitted" for e in events)
@@ -322,20 +354,23 @@ def render(sid: str, ctx: dict, events: list[dict], verdict: dict, dialogue) -> 
         out.append("")
 
     if dialogue is None:
-        out.append("_Тексты вопросов недоступны: ключей Langfuse нет "
-                   "(`~/.config/segurotenerife/langfuse.env`). Судим только об исправности._")
+        out.append("_Тексты вопросов недоступны: ключей Langfuse нет ни в `.env` репозитория, "
+                   "ни в `~/.config/segurotenerife/langfuse.env`. Судим только об исправности._")
     elif not dialogue:
-        out.append("_Langfuse подключён, но трейсов по этой сессии нет — вероятно, "
-                   "посетитель не дал согласия на аналитику и session_id не ушёл._")
+        out.append("_Langfuse подключён, но трейсов за это время нет — либо агент тогда ещё "
+                   "не трассировался, либо вопросов в сессии не было._")
     else:
         out.append("**Диалог:**")
         for t in dialogue:
             q = (t.get("question") or "").strip()
             a = (t.get("answer") or "").strip()
-            if isinstance(t.get("meta"), dict) and t["meta"].get("retrieved"):
-                a += f"\n  _(подняты документы: {t['meta']['retrieved']})_"
-            out.append(f"- **В:** {q}")
-            out.append(f"  **О:** {a}")
+            out.append("")
+            out.append(f"**В:** {q}")
+            out.append("")
+            out.append(f"**О:** {a}")
+            docs = ", ".join(f"`{d}`" for d in t.get("retrieved") or []) or "—"
+            out.append("")
+            out.append(f"_подняты документы: {docs} · {t.get('latency') or 0:.1f} с_")
     out.append("")
     out.append("**Таймлайн:**")
     out.append("")
@@ -413,10 +448,10 @@ def main() -> int:
         events = session_events(cfg, sid)
         if not events:
             continue
-        verdict = analyse(events)
+        dialogue = langfuse_dialogue(events)
+        verdict = analyse(events, dialogue)
         broken_count += verdict["verdict"] == "BROKEN"
-        reports.append(render(sid, session_context(cfg, sid), events, verdict,
-                              langfuse_dialogue(sid)))
+        reports.append(render(sid, session_context(cfg, sid), events, verdict, dialogue))
         seen.add(sid)
 
     print(f"## Заходы в чат: {len(reports)}"
