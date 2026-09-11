@@ -53,12 +53,30 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 CONFIG = Path.home() / ".config" / "segurotenerife" / "analytics.env"
-# Ключи Langfuse ищем в двух местах: `.env` репозитория (там же, где их держит
-# backend) и отдельный файл в ~/.config — на машине, где репозитория нет.
-LANGFUSE_CONFIGS = [
-    Path(__file__).resolve().parents[2] / ".env",
-    Path.home() / ".config" / "segurotenerife" / "langfuse.env",
-]
+# Отдельный файл с ключами Langfuse — для машины, где репозитория нет.
+LANGFUSE_FALLBACK = Path.home() / ".config" / "segurotenerife" / "langfuse.env"
+
+
+def langfuse_config_paths() -> list[Path]:
+    """
+    Где искать ключи Langfuse: `.env` репозитория, затем отдельный файл.
+
+    Ищем `.env` вверх по дереву и от самого скрипта, и от рабочей директории.
+    Второе не перестраховка: автопилот берёт скрипт из невлитой ветки через
+    `git show` и запускает копию из /tmp — тогда `__file__` указывает мимо
+    репозитория, и разбор молча остаётся без текстов вопросов.
+    """
+    paths, seen = [], set()
+    for start in (Path(__file__).resolve().parent, Path.cwd().resolve()):
+        for d in [start, *start.parents]:
+            candidate = d / ".env"
+            if candidate not in seen:
+                seen.add(candidate)
+                paths.append(candidate)
+    paths.append(LANGFUSE_FALLBACK)
+    return paths
+
+
 STATE = Path.home() / ".config" / "segurotenerife" / "chat-sessions-seen.json"
 
 # События воронки чата. Порядок важен только для чтения таймлайна.
@@ -165,7 +183,7 @@ def session_context(cfg: dict, sid: str) -> dict:
 # ── Langfuse (опционально) ───────────────────────────────────────────────────
 
 def langfuse_creds() -> dict | None:
-    for path in LANGFUSE_CONFIGS:
+    for path in langfuse_config_paths():
         cfg = load_env(path)
         if cfg.get("LANGFUSE_PUBLIC_KEY") and cfg.get("LANGFUSE_SECRET_KEY"):
             return cfg
@@ -371,6 +389,10 @@ def render(sid: str, ctx: dict, events: list[dict], verdict: dict, dialogue) -> 
             docs = ", ".join(f"`{d}`" for d in t.get("retrieved") or []) or "—"
             out.append("")
             out.append(f"_подняты документы: {docs} · {t.get('latency') or 0:.1f} с_")
+        cost = sum(t.get("cost") or 0 for t in dialogue)
+        if cost:
+            out.append("")
+            out.append(f"_разговор стоил ${cost:.4f}_")
     out.append("")
     out.append("**Таймлайн:**")
     out.append("")
