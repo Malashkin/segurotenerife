@@ -180,6 +180,32 @@ def session_context(cfg: dict, sid: str) -> dict:
     return dict(zip(keys, rows[0])) if rows else {}
 
 
+def session_recording(cfg: dict, sid: str) -> dict | None:
+    """
+    Метаданные записи сессии: сколько человек был активен, сколько кликал и
+    печатал. Ключу нужен scope `session_recording:read` — без него PostHog
+    отдаёт 403, и разбор просто идёт дальше.
+
+    404 означает не «не было записи», а «запись истекла»: retention 30 дней,
+    и сессия старше месяца уже недоступна. Разница важна — отсутствие записи не
+    должно читаться как отсутствие активности.
+    """
+    host = cfg.get("POSTHOG_HOST", "https://eu.posthog.com").rstrip("/")
+    req = urllib.request.Request(f"{host}/api/projects/@current/session_recordings/{sid}/")
+    req.add_header("Authorization", f"Bearer {cfg['POSTHOG_PERSONAL_API_KEY']}")
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            return json.load(r)
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            return {"__expired__": True}
+        if e.code == 403:
+            return {"__no_scope__": True}
+        return None
+    except Exception:
+        return None
+
+
 # ── Langfuse (опционально) ───────────────────────────────────────────────────
 
 def langfuse_creds() -> dict | None:
@@ -257,7 +283,8 @@ def parse_ts(v) -> datetime:
     return datetime.fromisoformat(str(v).replace("Z", "+00:00"))
 
 
-def analyse(events: list[dict], dialogue: list[dict] | None = None) -> dict:
+def analyse(events: list[dict], dialogue: list[dict] | None = None,
+            rec: dict | None = None) -> dict:
     """Вердикт и список замечаний по таймлайну одной сессии."""
     broken: list[str] = []
     dropped: list[str] = []
@@ -309,11 +336,34 @@ def analyse(events: list[dict], dialogue: list[dict] | None = None) -> dict:
     if opened and not questions:
         dropped.append("открыл чат и не задал ни одного вопроса")
 
-    # 7. Недописанный вопрос: правок в полях больше, чем отправок формы.
-    changes = sum(1 for e in events if e["event"] == "$autocapture" and e["click_type"] == "change")
-    submits = sum(1 for e in events if e["event"] == "$autocapture" and e["click_type"] == "submit")
-    if questions and changes > submits:
-        dropped.append(f"начал печатать и не отправил ({changes} правок поля на {submits} отправок)")
+    # 7. Недописанный вопрос. Если есть и запись, и тексты — судим по числу
+    #    нажатий клавиш против длины отправленного: это точнее, чем считать
+    #    change/submit. Запас в полтора раза плюс 20 — на опечатки и правки.
+    keys = (rec or {}).get("keypress_count")
+    sent = sum(len(t.get("question") or "") for t in (dialogue or []))
+    if questions and keys is not None and sent:
+        # Сильный сигнал: нажатий клавиш против длины отправленного. Если он
+        # есть, слабый (change без submit) не озвучиваем вовсе — `change`
+        # срабатывает и на программной очистке поля, и на blur, и тогда
+        # «начал печатать и не отправил» — выдумка поверх данных, которые её
+        # опровергают.
+        if keys > sent * 1.5 + 20:
+            dropped.append(f"печатал заметно больше, чем отправил "
+                           f"({keys} нажатий клавиш против {sent} отправленных символов) — "
+                           f"вопрос остался недописанным")
+    elif questions:
+        changes = sum(1 for e in events
+                      if e["event"] == "$autocapture" and e["click_type"] == "change")
+        submits = sum(1 for e in events
+                      if e["event"] == "$autocapture" and e["click_type"] == "submit")
+        if changes > submits:
+            dropped.append(f"начал печатать и не отправил "
+                           f"({changes} правок поля на {submits} отправок, "
+                           f"записи сессии нет — судить точнее нечем)")
+
+    # Открыл чат и не притронулся к клавиатуре — это не «сломалось», это уход.
+    if opened and not questions and keys == 0:
+        notes.append("к клавиатуре не притронулся ни разу")
 
     # 8. Закрыл чат руками — это не то же самое, что просто уйти со страницы.
     closes = [e for e in events if e["event"] == "$autocapture" and is_close(e)]
@@ -343,7 +393,8 @@ def analyse(events: list[dict], dialogue: list[dict] | None = None) -> dict:
 MARK = {"BROKEN": "СЛОМАНО", "DROPPED": "СОРВАЛСЯ", "HEALTHY": "ЗДОРОВ"}
 
 
-def render(sid: str, ctx: dict, events: list[dict], verdict: dict, dialogue) -> str:
+def render(sid: str, ctx: dict, events: list[dict], verdict: dict, dialogue,
+           rec: dict | None = None) -> str:
     first = parse_ts(events[0]["ts"]) if events else None
     out = [f"### Сессия `{sid}` — {MARK[verdict['verdict']]}"]
     if first:
@@ -413,8 +464,33 @@ def render(sid: str, ctx: dict, events: list[dict], verdict: dict, dialogue) -> 
         ] if x)
         out.append(f"| {parse_ts(e['ts']):%H:%M:%S} | `{e['event']}` | {detail} |")
     out.append("")
-    out.append(f"Запись сессии: https://eu.posthog.com/replay/{sid}")
+    out.append(render_recording(sid, rec))
     return "\n".join(out)
+
+
+def render_recording(sid: str, rec: dict | None) -> str:
+    """Блок про запись сессии — с честной разницей между «нет» и «истекла»."""
+    link = f"https://eu.posthog.com/replay/{sid}"
+    if rec is None:
+        return f"Запись сессии: {link}"
+    if rec.get("__no_scope__"):
+        return (f"Запись сессии: {link}\n\n_Цифры по записи недоступны: ключу PostHog нужен "
+                f"scope `session_recording:read`._")
+    if rec.get("__expired__"):
+        return (f"Запись сессии: {link}\n\n_Записи уже нет — retention 30 дней. "
+                f"Это не «не записалась», а «истекла»._")
+    total = rec.get("recording_duration") or 0
+    active = rec.get("active_seconds") or 0
+    ttl = rec.get("recording_ttl")
+    lines = [f"Запись сессии: {link}", ""]
+    lines.append(f"**По записи:** на странице {total // 60} мин {total % 60} с, "
+                 f"из них активно {active} с · кликов {rec.get('click_count', 0)} · "
+                 f"нажатий клавиш {rec.get('keypress_count', 0)} · "
+                 f"движений мыши {rec.get('mouse_activity_count', 0)}")
+    if isinstance(ttl, int) and ttl <= 7:
+        lines.append("")
+        lines.append(f"⚠️ Запись удалится через {ttl} дн. — если смотреть, то сейчас.")
+    return "\n".join(lines)
 
 
 # ── Состояние ────────────────────────────────────────────────────────────────
@@ -471,9 +547,10 @@ def main() -> int:
         if not events:
             continue
         dialogue = langfuse_dialogue(events)
-        verdict = analyse(events, dialogue)
+        rec = session_recording(cfg, sid)
+        verdict = analyse(events, dialogue, rec)
         broken_count += verdict["verdict"] == "BROKEN"
-        reports.append(render(sid, session_context(cfg, sid), events, verdict, dialogue))
+        reports.append(render(sid, session_context(cfg, sid), events, verdict, dialogue, rec))
         seen.add(sid)
 
     print(f"## Заходы в чат: {len(reports)}"
