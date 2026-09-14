@@ -38,6 +38,58 @@ function analyticsAllowed(): boolean {
   }
 }
 
+/** Решение по кукам ещё не принято — баннер висит, выбора не было. */
+function consentUndecided(): boolean {
+  try {
+    return window.localStorage.getItem(CONSENT_KEY) === null;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Очередь событий, случившихся ДО решения по кукам.
+ *
+ * Зачем: `chat_started` шлётся один раз при монтировании виджета. Посетитель,
+ * который согласился на куки уже после этого, терял событие навсегда — молча.
+ * Так заход 2026-09-02 с двумя настоящими вопросами не попал ни в один
+ * недельный отчёт, а воронка считала диалоги по событию, которого не было.
+ *
+ * Очередь живёт ТОЛЬКО в памяти вкладки и только пока выбор не сделан. Отказ
+ * («necessary») её выбрасывает — ничего не отправляется и никуда не пишется.
+ */
+interface PendingEvent {
+  event: FunnelEvent;
+  opts: TrackOptions;
+  at: number;
+}
+
+/** Больше этого не копим: защита от бесконечного роста на длинной странице. */
+const PENDING_LIMIT = 20;
+
+let pending: PendingEvent[] = [];
+
+/**
+ * Применяет решение по кукам к накопленной очереди: согласие → досылаем,
+ * отказ → выбрасываем. Вызывается из баннера согласия.
+ *
+ * Досланное событие уходит с задержкой, поэтому в `meta.queued_for_ms`
+ * проставляется, сколько оно пролежало: у backend время пишется на приёме
+ * (`created_at DEFAULT now()`), и без этого отметки поехали бы.
+ */
+export function applyConsentToPendingEvents(granted: boolean): void {
+  const queued = pending;
+  pending = [];
+  if (!granted) return;
+  const now = Date.now();
+  for (const item of queued) {
+    void trackEvent(item.event, {
+      ...item.opts,
+      meta: { ...(item.opts.meta ?? {}), queued_for_ms: now - item.at },
+    });
+  }
+}
+
 /** Известные типы событий воронки (для автодополнения и единообразия). */
 export type FunnelEvent =
   | 'chat_started'
@@ -95,7 +147,13 @@ export function getSessionId(): string {
  */
 export async function trackEvent(event: FunnelEvent, opts: TrackOptions = {}): Promise<void> {
   // Аналитика только при согласии — иначе событие не отправляем.
-  if (!analyticsAllowed()) return;
+  if (!analyticsAllowed()) {
+    // Решение ещё не принято — придержим до ответа на баннер, а не потеряем.
+    if (consentUndecided() && pending.length < PENDING_LIMIT) {
+      pending.push({ event, opts, at: Date.now() });
+    }
+    return;
+  }
   const sessionId = getSessionId();
   const body: Record<string, unknown> = { event };
   if (sessionId) body.session_id = sessionId;

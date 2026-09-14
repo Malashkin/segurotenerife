@@ -122,18 +122,35 @@ def posthog_section(cfg: dict, days: int, out: dict) -> None:
         label = f"{ch} / {ai}" if ai else ch
         print(f"    {n:>5}  {label}")
 
-    print("\n  Воронка чата:")
-    funnel = ["chat_started", "question_asked", "answer_received",
+    # Воронка считается по СЕССИЯМ, а не по событиям, и её основание —
+    # `chat_opened`/`question_asked`, а не `chat_started`.
+    #
+    # Две причины, обе стоили нам неверных отчётов. Первая: `chat_started`
+    # шлётся один раз при монтировании виджета и проходит через согласие на
+    # куки — у того, кто согласился позже, событие терялось, и диалог с двумя
+    # настоящими вопросами не попадал в отчёт вовсе. Вторая: одна сессия может
+    # дать несколько `chat_started` (перемонтирование, смена языка), и счёт по
+    # событиям её задваивал. Считать надо так же, как chat_sessions.py, иначе
+    # два отчёта об одном и том же окне расходятся.
+    print("\n  Воронка чата (сессий):")
+    funnel = ["question_asked", "answer_received",
               "chat_handoff_offered", "handoff_clicked", "lead_submitted"]
+    base_rows = hogql(
+        f"select count(distinct properties.$session_id) from events where {since} and {external} "
+        f"and event in ('chat_opened', 'question_asked')"
+    )
+    base = base_rows[0][0] if base_rows else 0
     counts = dict(hogql(
-        f"select event, count() as n from events where {since} and {external} and event in "
+        f"select event, count(distinct properties.$session_id) as n from events "
+        f"where {since} and {external} and event in "
         f"({', '.join(repr(e) for e in funnel)}) group by event"
     ))
-    first = counts.get(funnel[0], 0)
+    print(f"    {base:>5}  {'дошли до чата':<22} {'100%' if base else '—':>5}")
     for step in funnel:
         n = counts.get(step, 0)
-        share = f"{n / first * 100:.0f}%" if first else "—"
+        share = f"{n / base * 100:.0f}%" if base else "—"
         print(f"    {n:>5}  {step:<22} {share:>5}")
+    out['chat_sessions'] = base
     print()
 
 
