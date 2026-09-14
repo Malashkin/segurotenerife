@@ -173,6 +173,21 @@ export function initAnalytics(opts: InitAnalyticsOptions = {}): void {
         } catch {
           /* не критично */
         }
+        // Сбор ошибок браузера. Без него упавший в белый экран чат выглядит в
+        // данных как «открыл и не спросил» — неотличимо от потери интереса.
+        // Как и autocapture, обработчики вешаются сразу, а отправка всё равно
+        // ждёт согласия: до opt-in PostHog ничего не шлёт.
+        // Консольные ошибки НЕ собираем: их генерируют и сторонние скрипты, и
+        // в текст console.error легко утекает то, чего мы не контролируем.
+        try {
+          ph.startExceptionAutocapture({
+            capture_unhandled_errors: true,
+            capture_unhandled_rejections: true,
+            capture_console_errors: false,
+          });
+        } catch {
+          /* сбор ошибок не должен мешать аналитике, а аналитика — сайту */
+        }
         // Если согласие уже было дано ранее — включаем capture сразу.
         try {
           if (window.localStorage.getItem(CONSENT_KEY) === 'accepted') {

@@ -85,6 +85,9 @@ CHAT_EVENTS = [
     "agent_fallback", "chat_handoff_offered", "chat_completed",
     "handoff_clicked", "lead_submitted", "tg_message_copied",
     "insurance_intent_selected", "lang_switched",
+    # Ошибка в браузере посетителя. Без неё «открыл чат и не спросил»
+    # неотличимо от «чат упал в белый экран».
+    "$exception",
 ]
 # Сессия попадает в разбор, если есть хоть одно из этих событий.
 TRIGGER_EVENTS = ["chat_opened", "question_asked"]
@@ -327,16 +330,21 @@ def analyse(events: list[dict], dialogue: list[dict] | None = None,
         if t.get("brand_leaked"):
             broken.append(f"в ответе {str(t['ts'])[11:19]} утёк бренд страховщика")
 
-    # 5. Агент падал или был выключен.
+    # 5. Ошибка в браузере во время сессии с чатом — это поломка, а не уход.
+    for e in events:
+        if e["event"] == "$exception":
+            broken.append(f"ошибка JavaScript в {parse_ts(e['ts']):%H:%M:%S}")
+
+    # 6. Агент падал или был выключен.
     for f in fallbacks:
         broken.append(f"agent_fallback в {parse_ts(f['ts']):%H:%M:%S} — агент не ответил")
 
-    # 6. Открыл чат и ничего не спросил.
+    # 7. Открыл чат и ничего не спросил.
     opened = [e for e in events if e["event"] in ("chat_opened", "chat_started")]
     if opened and not questions:
         dropped.append("открыл чат и не задал ни одного вопроса")
 
-    # 7. Недописанный вопрос. Если есть и запись, и тексты — судим по числу
+    # 8. Недописанный вопрос. Если есть и запись, и тексты — судим по числу
     #    нажатий клавиш против длины отправленного: это точнее, чем считать
     #    change/submit. Запас в полтора раза плюс 20 — на опечатки и правки.
     keys = (rec or {}).get("keypress_count")
@@ -365,12 +373,12 @@ def analyse(events: list[dict], dialogue: list[dict] | None = None,
     if opened and not questions and keys == 0:
         notes.append("к клавиатуре не притронулся ни разу")
 
-    # 8. Закрыл чат руками — это не то же самое, что просто уйти со страницы.
+    # 9. Закрыл чат руками — это не то же самое, что просто уйти со страницы.
     closes = [e for e in events if e["event"] == "$autocapture" and is_close(e)]
     if closes:
         dropped.append(f"закрыл чат крестиком в {parse_ts(closes[-1]['ts']):%H:%M:%S}")
 
-    # 9. Довели ли до менеджера и где сорвалось.
+    # 10. Довели ли до менеджера и где сорвалось.
     offers = {e["source"] for e in events if e["event"] == "chat_handoff_offered"}
     clicked = any(e["event"] == "handoff_clicked" for e in events)
     lead = any(e["event"] == "lead_submitted" for e in events)
