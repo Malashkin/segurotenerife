@@ -3,10 +3,11 @@ locale: es
 urlSlug: reimbursement-health-insurance-spain
 order: 20
 date: 2026-08-11
+updated: 2026-09-15
 tag: Reembolso
-title: 'Seguro de reembolso en España: libre elección de médico'
-description: 'Cómo funciona el seguro médico de reembolso en España: libre elección de cualquier médico y clínica, límites de reembolso y en qué se diferencia del seguro de cuadro médico.'
-keywords: seguro de reembolso España, libre elección de médico España, seguro reembolso Tenerife, seguro médico cualquier médico, reembolso de gastos médicos España, seguro salud reembolso
+title: 'Seguro de reembolso en España: rehabilitación y libre elección de médico'
+description: 'Cómo funciona el seguro de reembolso en España y Tenerife: elige cualquier médico o clínica, reembolso de la rehabilitación, límites anuales y carencias.'
+keywords: seguro de reembolso España, reembolso rehabilitación España, libre elección de médico España, seguro reembolso Tenerife, rehabilitación seguro privado, reembolso de gastos médicos España, seguro salud reembolso
 faq:
   - q: '¿Qué es un seguro de reembolso?'
     a: 'Es un seguro en el que tú eliges cualquier médico o clínica —incluso fuera del cuadro de la aseguradora—, pagas la consulta y la aseguradora te reembolsa el gasto hasta un límite (por ejemplo, hasta 100.000 € al año, y más en las modalidades superiores).'
@@ -29,6 +30,19 @@ Normalmente esta póliza incluye cobertura completa con hospitalización, y a me
 - **Cuadro médico:** solo profesionales del listado, pero la consulta suele ser sin pago en el momento.
 - **Reembolso:** cualquier médico y clínica, incluidas privadas y del extranjero, pero primero pagas y luego te devuelven el importe.
 
+## Rehabilitación y otros tratamientos especiales
+
+Las pólizas de reembolso recogen la rehabilitación junto a otros tratamientos especiales, como la diálisis o la medicina nuclear. Es justo la parte por la que más se pregunta después de una lesión o una operación: acudes al centro de rehabilitación que tú eliges, pagas el tratamiento y después solicitas el reembolso.
+
+Cuánto vuelve de verdad lo marcan dos condiciones:
+
+- **Un porcentaje, no la factura entera.** Fuera de la red de la aseguradora, el reembolso suele cubrir en torno al 80% de lo pagado; el resto corre de tu cuenta. Dentro del [cuadro médico](/es/blog/what-is-cuadro-medico-spain/) ese mismo tratamiento se resuelve normalmente sin pagar en el momento.
+- **El techo anual.** Todo lo reembolsado a lo largo del año se acumula contra un mismo límite, cuyo tamaño depende de la modalidad contratada. Es algo distinto del [copago por acto](/es/blog/copay-or-no-copay/).
+
+Aquí las carencias pesan más que en ningún otro apartado: ciertos servicios no se activan hasta pasados seis u ocho meses de póliza, y la hospitalización hasta los ocho. Una póliza contratada la semana siguiente a un accidente no cubrirá la rehabilitación posterior.
+
+Conviene preguntar algo antes de firmar: la fisioterapia dentro de un curso de rehabilitación y las sesiones sueltas de fisioterapia no siempre son la misma línea del condicionado — las sesiones pueden estar limitadas por año o exigir prescripción médica. Si la fisioterapia es tu motivo principal, pide que te confirmen esa línea por escrito.
+
 ## Para quién es
 
 - Para quien quiere un **médico o clínica concretos** que no están en el cuadro.
@@ -46,6 +60,6 @@ Normalmente esta póliza incluye cobertura completa con hospitalización, y a me
 
 ## Cuánto cuesta
 
-Las pólizas de reembolso suelen ser más caras que las de cuadro, por la libertad de elección y los límites altos. El precio exacto se calcula de forma individual, según edad, cobertura y límite. **El cálculo es gratuito y no compromete a nada.**
+Las pólizas de reembolso suelen ser más caras que las de cuadro, por la libertad de elección y los límites altos. El precio exacto se calcula de forma individual, según edad, cobertura y límite, igual que en [cualquier seguro de salud en España](/es/blog/health-insurance-cost-spain/). **El cálculo es gratuito y no compromete a nada.**
 
 ¿No tienes claro qué elegir, cuadro médico o reembolso? Pregúntanos en el chat: te ayudamos a comparar los formatos para tu caso y preparamos un cálculo gratuito con un gestor.
