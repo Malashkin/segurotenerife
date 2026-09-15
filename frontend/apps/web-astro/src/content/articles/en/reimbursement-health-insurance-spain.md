@@ -3,10 +3,11 @@ locale: en
 urlSlug: reimbursement-health-insurance-spain
 order: 20
 date: 2026-08-11
+updated: 2026-09-15
 tag: Reimbursement
-title: 'Reimbursement Health Insurance in Spain: Free Choice of Doctor'
-description: 'How reimbursement health insurance in Spain works — free choice of any doctor and clinic, reimbursement limits, and how it differs from a medical-network (cuadro médico) policy.'
-keywords: reimbursement health insurance Spain, seguro de reembolso, free choice of doctor Spain, any doctor insurance Spain, medical expenses reimbursement Spain, reimbursement policy Tenerife
+title: 'Reimbursement Health Insurance in Spain: Rehabilitation and Free Choice of Doctor'
+description: 'How reimbursement cover works in Spain and Tenerife: choose any doctor or clinic, claim back rehabilitation, and see how limits differ from a cuadro médico policy.'
+keywords: reimbursement health insurance Spain, reimbursement rehabilitation Spain, rehabilitation cover Spain, seguro de reembolso, free choice of doctor Spain, medical expenses reimbursement Spain, reimbursement policy Tenerife
 faq:
   - q: 'What is a reimbursement policy?'
     a: 'It is insurance where you choose any doctor or clinic — even outside the insurer''s network — pay for the visit, and the insurer reimburses the cost up to a limit (for example, up to €100,000 a year, and more in higher tiers).'
@@ -29,6 +30,19 @@ Such a policy usually includes full cover with hospitalisation, and often networ
 - **Network (cuadro médico):** only doctors from the list, but the visit is usually with no payment on the spot.
 - **Reimbursement (reembolso):** any doctor and clinic, including private and abroad, but you pay first and are refunded afterwards.
 
+## Rehabilitation and other special treatments
+
+Reimbursement policies list rehabilitation alongside other special treatments such as dialysis and nuclear medicine. In practice this is what people ask about most after an injury or an operation: you go to the rehabilitation centre you picked yourself, pay for the course, and then claim the cost back.
+
+How much actually comes back is set by two conditions:
+
+- **A share, not the whole bill.** Outside the insurer's network a reimbursement policy usually refunds around 80% of what you paid — the rest stays with you. Inside the [network (cuadro médico)](/en/blog/what-is-cuadro-medico-spain/) the same treatment normally goes through with no payment on the spot.
+- **The annual ceiling.** Everything reimbursed across the year adds up against a single limit, and its size depends on the tier you choose. This is separate from any [copay per visit](/en/blog/copay-or-no-copay/).
+
+Waiting periods (carencia — the stretch after you buy when a service is not live yet) matter here more than anywhere else: some services only open after six to eight months of cover, and hospitalisation after eight. A policy bought the week after an accident will not pay for the rehabilitation that follows it.
+
+Worth asking before you sign: physiotherapy inside a rehabilitation course and standalone physiotherapy sessions are not always the same line in the conditions — sessions can be capped per year or need a doctor's referral. If physiotherapy is your main reason for buying, ask for that line in writing.
+
 ## Who it suits
 
 - Those who want a **specific doctor or clinic** not in the network.
@@ -46,6 +60,6 @@ Such a policy usually includes full cover with hospitalisation, and often networ
 
 ## How much it costs
 
-Reimbursement policies are usually more expensive than network ones, due to the freedom of choice and high limits. The exact price is calculated individually — by age, cover and limit. **The estimate is free and commits you to nothing.**
+Reimbursement policies are usually more expensive than network ones, due to the freedom of choice and high limits. The exact price is calculated individually — by age, cover and limit, the same way it works for [any health policy in Spain](/en/blog/health-insurance-cost-spain/). **The estimate is free and commits you to nothing.**
 
 Not sure what to choose — a network or a reimbursement policy? Just ask in the chat — we will help you compare the formats for your situation and prepare a free estimate with a manager.
