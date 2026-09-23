@@ -89,6 +89,29 @@ def remote_branches() -> list[str]:
     return names
 
 
+def has_conflicts(ref: str) -> "bool | None":
+    """Сводится ли ветка с BASE. Считаем локально, а не по полю `mergeable`.
+
+    GitHub вычисляет `mergeable` лениво: сразу после того, как `main` уехал
+    вперёд, API какое-то время отдаёт UNKNOWN по конфликтующему PR. Скрипт,
+    который верит этому полю, в такой момент молча объявляет конфликтующую
+    ветку здоровой — то есть ровно тогда, когда аудит нужнее всего.
+    `git merge-tree --write-tree` (git >= 2.38) отвечает на тот же вопрос
+    здесь и сейчас: код 0 — сводится, 1 — конфликт.
+    """
+    proc = subprocess.run(
+        ["git", "merge-tree", "--write-tree", BASE, ref],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if proc.returncode == 0:
+        return False
+    if proc.returncode == 1:
+        return True
+    return None  # старый git или битая ссылка — врать не будем
+
+
 def age_days(iso: str) -> float:
     # gh отдаёт время с суффиксом Z, который fromisoformat не понимает до 3.11.
     ts = datetime.fromisoformat(iso.replace("Z", "+00:00"))
@@ -124,6 +147,7 @@ def classify(
     gh_ok: bool,
     no_pr_days: float,
     pr_days: float,
+    conflicts: bool | None = None,
 ) -> tuple[str, str | None]:
     """Состояние ветки и нарушение, если оно есть. Чистая функция — вся логика
     правила из docs/process/code-integration.md живёт здесь и только здесь."""
@@ -132,7 +156,9 @@ def classify(
         return ("merged" if pr else "merged-stale"), None
 
     if pr:
-        if pr.get("mergeable") == "CONFLICTING":
+        if conflicts is True or (
+            conflicts is None and pr.get("mergeable") == "CONFLICTING"
+        ):
             return "pr-open", f"PR #{pr['number']} с конфликтами — сам не вольётся"
         if pr["age_days"] > pr_days and not pr.get("draft"):
             return "pr-open", (
@@ -144,6 +170,11 @@ def classify(
     if not gh_ok:
         return "pr-unknown", None
 
+    if conflicts is True:
+        return "no-pr", (
+            f"{ahead} коммит(ов) вне main, PR нет и ветка уже не сводится — "
+            f"чем дольше ждёт, тем дороже развести"
+        )
     if branch_age > no_pr_days:
         return "no-pr", (
             f"{ahead} коммит(ов) вне main, PR нет, возраст "
@@ -167,6 +198,7 @@ def collect(no_pr_days: float, pr_days: float) -> dict:
             "last_commit": last_commit,
             "age_days": round(age_days(last_commit), 1),
             "pr": None,
+            "conflicts": None,
             "state": "",
             "violation": None,
         }
@@ -180,8 +212,15 @@ def collect(no_pr_days: float, pr_days: float) -> dict:
                 "draft": pr.get("isDraft", False),
             }
 
+        row["conflicts"] = has_conflicts(ref) if ahead else None
         row["state"], row["violation"] = classify(
-            ahead, row["age_days"], row["pr"], gh_ok, no_pr_days, pr_days
+            ahead,
+            row["age_days"],
+            row["pr"],
+            gh_ok,
+            no_pr_days,
+            pr_days,
+            row["conflicts"],
         )
         rows.append(row)
 
