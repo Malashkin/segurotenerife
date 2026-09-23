@@ -1,0 +1,41 @@
+query,locale,landing,reason,added
+seguro de vida en tenerife,es,/es/blog/life-insurance-spain/,"121 пок./90д, поз. 77.8, 0 кликов — крупнейший гео-кластер линии vida; backlog закрывает его разделом в life-insurance-spain, а не отдельной страницей",2026-09-23
+seguros de vida en tenerife,es,/es/blog/life-insurance-spain/,"93 пок., поз. 82.0 — множественное число того же кластера; держим обе формы, чтобы увидеть, расходятся ли они в выдаче",2026-09-23
+asegurar el futuro de la familia en tenerife,es,/es/blog/family-insurance-tenerife/,"84 пок., поз. 33.5 — гео-кластер семейной линии, ближе к топ-20, чем кластер vida",2026-09-23
+seguro digital nomad visa,es,/es/blog/digital-nomad-visa-insurance/,"76 пок., поз. 29.8 — ядро лучшего кластера сайта (329 пок./90д по всем локалям)",2026-09-23
+cambiar de mutua medica,es,/es/blog/how-to-switch-health-insurance-spain/,"52 пок., поз. 51.0 — коммерческий интент смены страховщика, продукт salud",2026-09-23
+seguro dnv,es,/es/blog/digital-nomad-visa-insurance/,"47 пок., поз. 4.3 — единственная фраза сайта в топ-5; контрольная точка ряда: если Rush покажет её вне топ-10, врёт регион, а не выдача",2026-09-23
+seguros para visa nomada digital espana,es,/es/blog/digital-nomad-visa-insurance/,"39 пок., поз. 53.9 — развёрнутая форма кластера DNV",2026-09-23
+seguro dental que cubra implantes,es,/es/blog/dental-implants-insurance-spain/,"38 пок., поз. 39.7 — линия dental, статья переписана 2026-09-22 (SEGU-29), нужен ряд «после»",2026-09-23
+cuadro médico,es,/es/blog/what-is-cuadro-medico-spain/,"37 пок., поз. 53.1 — информационное ядро линии salud, высокая конкуренция брендов",2026-09-23
+precio de implantes con seguro dental,es,/es/blog/dental-implants-insurance-spain/,"34 пок., поз. 46.8 — ценовой интент линии dental; цены в статье не называются, ведём на расчёт",2026-09-23
+cuanto cuesta un seguro medico,es,/es/blog/health-insurance-cost-spain/,"34 пок., поз. 18.7 — на расстоянии удара (поз. 5–20, показы есть, кликов нет)",2026-09-23
+seguro médico obligatorio para visado de estudiante españa,es,/es/blog/student-visa-insurance-spain/,"33 пок., поз. 60.6 — кластер доработан и выкачен 2026-09-21, нужен внешний ряд «после»",2026-09-23
+seguro medico para reagrupacion familiar,es,/es/blog/family-reunification-visa-insurance/,"26 пок., поз. 63.5 — кластер доработан и выкачен 2026-09-23, ряд «после» начинается с нуля",2026-09-23
+seguro de hospitalizacion,es,/es/blog/hospitalization-cash-insurance-spain/,"21 пок., поз. 27.8 — линия hospitalizacion, один продукт в каталоге и одна страница",2026-09-23
+seguro viaje anual,es,/es/blog/annual-multi-trip-insurance-spain/,"19 пок., поз. 80.7 — линия viaje, глубокий хвост: проверяем, есть ли мы там вообще",2026-09-23
+sanidad privada,es,/es/blog/private-vs-public-healthcare-spain/,"16 пок., поз. 36.1 — широкое информационное ядро, входная точка всей линии salud",2026-09-23
+seguro decesos tenerife,es,/es/blog/funeral-insurance-spain/,"15 пок., поз. 11.9 — гео + линия decesos, на расстоянии удара",2026-09-23
+tenerife travel insurance,en,/en/blog/travel-insurance-tenerife/,"376 пок./90д — крупнейший запрос сайта, поз. 63.2 и ноль кликов; ранжируется главная, а не целевая статья",2026-09-23
+is tenerife in europe for travel insurance,en,/en/blog/travel-insurance-tenerife/,"98 пок., поз. 15.9 — ближайший к топ-10 крупный запрос, приоритет «на расстоянии удара»",2026-09-23
+healthcare system in tenerife,en,/en/blog/private-vs-public-healthcare-spain/,"93 пок., поз. 32.7 — гео-кластер сравнения систем, отдельную страницу под него отклонили (каннибализация)",2026-09-23
+travel insurance tenerife,en,/en/blog/travel-insurance-tenerife/,"84 пок., поз. 38.3 — порядок слов другой, посадочная та же: смотрим, различает ли их Google",2026-09-23
+dnv spain insurance 2026,en,/en/blog/digital-nomad-visa-insurance/,"67 пок., поз. 48.0 — запрос с годом, проверяем, не выпадет ли он в 2027",2026-09-23
+public/state medical centres in tenerife,en,/en/blog/private-vs-public-healthcare-spain/,"65 пок., поз. 31.1 — backlog обещал вернуться к отдельной странице, если запрос не сдвинется с поз. 32",2026-09-23
+travel insurance for tenerife,en,/en/blog/travel-insurance-tenerife/,"59 пок., поз. 39.6 — каннибализация: в GSC ранжируется travel-insurance-coming-to-spain, целевая — статья про Тенерифе",2026-09-23
+canary islands travel insurance,en,/en/blog/travel-insurance-tenerife/,"55 пок., поз. 30.7 — гео-модификатор уровня архипелага",2026-09-23
+health insurance student visa spain,en,/en/blog/student-visa-insurance-spain/,"52 пок., поз. 66.6 — кластер доработан 2026-09-21, ряд «после»",2026-09-23
+digital nomad visa spain insurance requirements,en,/en/blog/digital-nomad-visa-insurance/,"50 пок., поз. 65.9 — интент «требования», глубокий хвост при заметном спросе",2026-09-23
+student insurance spain,en,/en/blog/student-visa-insurance-spain/,"34 пок., поз. 68.6 — короткая форма студенческого кластера",2026-09-23
+is tenerife classed as spain for travel insurance,en,/en/blog/travel-insurance-tenerife/,"30 пок., поз. 28.9 — длинный вопросительный интент, у него самый высокий шанс на топ-10",2026-09-23
+what is a public health charge in tenerife,en,/en/blog/private-vs-public-healthcare-spain/,"20 пок., поз. 5.6 — вторая контрольная точка ряда: фраза в топ-10 по GSC",2026-09-23
+reimbursement rehabilitation spain,en,/en/blog/reimbursement-health-insurance-spain/,"18 пок., поз. 23.0 — узкий коммерческий интент линии reembolso",2026-09-23
+private healthcare canary islands,en,/en/blog/private-healthcare-tenerife/,"14 пок., поз. 38.1 — гео-посадочная линии salud на английском",2026-09-23
+страховка для поездки в испанию,ru,/blog/travel-insurance-coming-to-spain/,"6 пок., поз. 31.8 — верх русского хвоста; спрос в GSC ниже порога значимости, поэтому фраза включена как зонд: GSC по ней вывода не даёт",2026-09-23
+является ли инфаркт несчастным случаем при страховании,ru,/blog/what-counts-as-accident-insurance-spain/,"5 пок., поз. 23.4 — зонд; линия accidentes, интент с высоким коммерческим потенциалом",2026-09-23
+похоронная страховка испания,ru,/blog/funeral-insurance-spain/,"5 пок., поз. 14.2 — зонд; лучшая русская позиция по GSC, проверяем её извне",2026-09-23
+сколько стоит медицинская страховка в испании,ru,/blog/health-insurance-cost-spain/,"2 пок., поз. 40.0 — зонд; ценовой интент, самый массовый в русском сегменте по подсказкам",2026-09-23
+страховка планирование беременности,ru,/blog/maternity-insurance-spain/,"2 пок., поз. 10.0 — зонд; по GSC почти топ-10 при двух показах, число ничего не доказывает — за этим и внешний съём",2026-09-23
+каренсия что это,ru,/blog/carencias-waiting-periods-spain/,"1 пок., поз. 8.0 — зонд; термин из полиса, по которому мы, вероятно, единственные на русском",2026-09-23
+туристична страховка на рік,uk,/uk/blog/annual-multi-trip-insurance-spain/,"1 пок., поз. 33.0 — один из двух украинских запросов с показами за 90 дней",2026-09-23
+страхування аутономо,uk,/uk/blog/autonomo-business-insurance/,"1 пок., поз. 99.0 — второй и последний украинский запрос с показом; больше в GSC нет ничего",2026-09-23
