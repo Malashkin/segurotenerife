@@ -1,7 +1,7 @@
 ---
 audience: [backend, frontend, devops, testing, ai]
 owner: seguro-tenerife
-updated: 2026-09-08
+updated: 2026-09-23
 ---
 
 # Seguro Tenerife — AGENTS.md
@@ -36,6 +36,7 @@ docs/            эта документация (по ролям)
 | Наблюдаемость (Langfuse, PostHog) | [monitoring/](monitoring/index.md) | backend, frontend, devops |
 | Тесты (cargo/vitest/playwright/mutation) | [testing/](testing/index.md) | testing |
 | Деплой + ENV | [deploy.md](deploy.md) | devops |
+| Интеграция кода: кто сводит ветки в `main`, эскалация | [process/code-integration.md](process/code-integration.md) | all |
 | SEO/GEO + блог + Google Search Console | [seo/index.md](seo/index.md) | product, frontend |
 | Пайплайн наблюдения: рутина, дневной и недельный отчёты | [seo/pipeline.md](seo/pipeline.md) | product, seo |
 | Доступы аналитики (PostHog, Search Console) | [analytics.md](analytics.md) | product, seo |
