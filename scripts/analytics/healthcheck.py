@@ -269,6 +269,10 @@ def branches_ahead_of_main(main_urls: set[str]) -> list[tuple[str, str, int]]:
         if "\t" not in line:
             continue
         ref, committed = line.split("\t", 1)
+        # origin/HEAD — симлинк на main, в отчёте он выглядел бы веткой «origin»
+        # и отправлял открывать PR в саму же main.
+        if ref == "origin" or ref.endswith("/HEAD") or ref == MAIN_REF:
+            continue
         urls = ref_article_urls(ref)
         if urls is None:
             continue

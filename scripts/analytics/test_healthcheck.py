@@ -113,6 +113,13 @@ class TestBranchNaming(RepoFixture):
         self.assertEqual([(ref, n) for ref, _, n in holders],
                          [("origin/fix/segu-31", 1)])
 
+    def test_origin_head_is_not_reported_as_branch(self) -> None:
+        """origin/HEAD — симлинк, а не ветка: PR в него не открыть."""
+        self.park_on_branch("fix/segu-31", "parked")
+        run(self.work, "remote", "set-head", "origin", "fix/segu-31")
+        holders = hc.branches_ahead_of_main(hc.ref_article_urls("origin/main"))
+        self.assertEqual([ref for ref, _, _ in holders], ["origin/fix/segu-31"])
+
     def test_merged_branch_is_not_reported(self) -> None:
         self.park_on_branch("fix/segu-31", "parked")
         run(self.work, "checkout", "-q", "main")
