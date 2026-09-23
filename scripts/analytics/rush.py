@@ -97,6 +97,8 @@ TRIAL_QUERIES = [
 RATE_LIMIT_SEC = 1.1   # не чаще 1 запроса в секунду — иначе временная блокировка IP
 BUSY_RETRIES = 6       # «No more free API threads» — занято чужим проектом на общем ключе
 BUSY_RETRY_SEC = 45
+CREATE_VISIBLE_TRIES = 12   # перечень проектов отстаёт от создания
+CREATE_VISIBLE_SEC = 10
 POLL_SEC = 30
 DONE_STATES = {"done", "complete", "completed", "finished"}
 FAILED_STATES = {"error", "failed", "canceled", "cancelled", "stopped"}
@@ -212,11 +214,20 @@ def create_project(name: str, targets: list[dict]) -> int:
     # номеру ручка /status/ бодро отвечала «Parsing», то есть мы бы неделями
     # снимали позиции чужого проекта и не заметили. Единственный надёжный
     # идентификатор — тот, под которым проект виден в перечне по своему имени.
-    pid = find_project(name)
-    if not pid:
-        raise RushError(f"проект «{name}» создан, но в перечне не появился — "
-                        f"снимать нечего, пока он не виден по имени")
-    return pid
+    # Перечень отстаёт от создания: проверено 2026-09-23 — проект завёлся, а в
+    # /projectids/ появился заметно позже. Отказать сразу означало бы позвать
+    # setup ещё раз и завести близнеца ровно той идемпотентностью, ради которой
+    # всё и сделано. Поэтому ждём появления, а не создаём повторно.
+    for _ in range(CREATE_VISIBLE_TRIES):
+        pid = find_project(name)
+        if pid:
+            return pid
+        time.sleep(CREATE_VISIBLE_SEC)
+    raise RushError(
+        f"проект «{name}» создан, но за "
+        f"{CREATE_VISIBLE_TRIES * CREATE_VISIBLE_SEC} с. не появился в перечне. "
+        f"**Повторный setup запускать нельзя** — он заведёт близнеца. Проверьте "
+        f"перечень и позовите snapshot, когда проект станет виден по имени")
 
 
 def ensure_project(name: str, targets: list[dict]) -> tuple[int, bool]:
@@ -236,19 +247,64 @@ def project_status(pid: int) -> str:
     raise RushError("сервис не сообщил статус задания")
 
 
-def fetch_rows(pid: int) -> list[dict]:
-    """Последний столбец истории позиций: фраза, позиция, найденный адрес."""
-    rows, page = [], 1
+def _history(pid: int, kind: str, value_key: str) -> dict:
+    """Историю сервис отдаёт таблицей «фраза → столбцы по датам». Берём **последний**
+    столбец и вместе с ним дату сбора: сервис собирает по своему расписанию, и
+    датировать снимок днём, когда мы за ним пришли, значит датировать его неверно."""
+    out: dict = {}
+    page = 1
     while True:
-        res = _call(f"/result/ranktracker/positions_history/{pid}/{page}")
-        chunk = _extract_rows(res)
-        if not chunk:
+        res = _call(f"/result/ranktracker/{kind}/{pid}/{page}")
+        rows = res if isinstance(res, list) else _extract_rows(res)
+        if not rows:
             break
-        rows += chunk
+        for r in rows:
+            kw = r.get("keyword")
+            hist = r.get(kind) or r.get("history") or []
+            if kw is None or not isinstance(hist, list) or not hist:
+                continue
+            last = max(hist, key=lambda h: _as_date(h.get("date")))
+            out[str(kw).strip().lower()] = (str(kw), last.get(value_key), _as_date(last.get("date")))
         page += 1
         if page > 50:
-            raise RushError("история позиций не кончается — обрыв на 50-й странице")
-    return rows
+            raise RushError("история не кончается — обрыв на 50-й странице")
+    return out
+
+
+def _as_date(value) -> date:
+    """Сервис пишет дату как ДД.ММ.ГГГГ. Неразобранная дата — это `date.min`, а не
+    «сегодня»: иначе мусорная строка победит настоящий последний столбец."""
+    try:
+        d, m, y = str(value).split(".")
+        return date(int(y), int(m), int(d))
+    except (ValueError, AttributeError):
+        return date.min
+
+
+def fetch_rows(pid: int) -> tuple[list[dict], date | None]:
+    """Позиции и посадочные адреса — две разные ручки сервиса, соединяем по фразе.
+
+    Позиция без адреса бессмысленна: именно пара «позиция + пустой адрес по всем
+    фразам» и отличает болванку свежесозданного проекта от настоящего съёма."""
+    positions = _history(pid, "positions_history", "position")
+    urls = _history(pid, "urls_history", "url")
+    rows, collected = [], None
+    for key, (kw, pos, day) in positions.items():
+        url = urls.get(key, (None, "", None))[1] or ""
+        rows.append({"query": kw, "position": _clamp(pos), "url": str(url).strip()})
+        if day and day != date.min and (collected is None or day > collected):
+            collected = day
+    return rows, collected
+
+
+def _clamp(value) -> int:
+    """Позиция сервиса — строка. Ноль, пустота и всё глубже отсечки означают
+    «не найдено», а не первое место: приводим к отсечке глубины."""
+    try:
+        n = int(float(value))
+    except (TypeError, ValueError):
+        return DEPTH
+    return DEPTH if n <= 0 or n > DEPTH else n
 
 
 def _extract_rows(res) -> list[dict]:
@@ -263,53 +319,9 @@ def _extract_rows(res) -> list[dict]:
                 return v
             if isinstance(v, dict) and all(isinstance(x, dict) for x in v.values()):
                 return list(v.values())
-        if all(isinstance(x, dict) for x in res.values()) and res:
+        if res and all(isinstance(x, dict) for x in res.values()):
             return list(res.values())
     return []
-
-
-def normalize(raw: list[dict]) -> list[dict]:
-    """Приводит строку сервиса к нашей форме. Позиция вне глубины — DEPTH."""
-    out = []
-    for r in raw:
-        q = _first(r, ("keyword", "query", "phrase", "kw", "name"))
-        if q is None:
-            continue
-        pos = _last_position(r)
-        url = _first(r, ("url", "found_url", "relevantUrl", "relevant_url", "landing")) or ""
-        out.append({"query": str(q), "position": pos, "url": str(url).strip()})
-    return out
-
-
-def _first(r: dict, keys: tuple):
-    for k in keys:
-        if k in r and r[k] not in (None, ""):
-            return r[k]
-    return None
-
-
-def _last_position(r: dict):
-    """Берём самый свежий столбец истории. Ноль и «>100» сервиса — это «не найдено»,
-    а не первая позиция: приводим их к отсечке глубины."""
-    val = None
-    for k in ("position", "pos", "value"):
-        if k in r:
-            val = r[k]
-            break
-    if val is None:
-        hist = r.get("positions") or r.get("history") or r.get("dynamic")
-        if isinstance(hist, dict) and hist:
-            val = hist[sorted(hist)[-1]]
-        elif isinstance(hist, list) and hist:
-            last = hist[-1]
-            val = last.get("position") if isinstance(last, dict) else last
-    if isinstance(val, dict):
-        val = _first(val, ("position", "pos", "value"))
-    try:
-        n = int(float(val))
-    except (TypeError, ValueError):
-        return DEPTH
-    return DEPTH if n <= 0 or n > DEPTH else n
 
 
 # ── отбраковка: до записи файла, а не после ─────────────────────────────────
@@ -493,11 +505,29 @@ def cmd_snapshot(args) -> int:
 
     # Отбраковка идёт **до** записи файла. Записанная болванка навсегда остаётся
     # в ряду как провал, которого не было, и отличить её потом нечем.
-    joined = validate(normalize(fetch_rows(pid)), targets)
+    #
+    # Статус «готово» у свежесозданного проекта наступает раньше, чем приходят
+    # настоящие данные: проверено 2026-09-23 — сервис отдал полный комплект из 5
+    # строк на отсечке глубины и с пустыми посадочными уже через 7 минут после
+    # создания. Поэтому ждём не статуса, а годного среза, и упираемся в тот же
+    # срок. Истёк срок при негодном срезе — отказ, а не запись.
+    while True:
+        try:
+            rows, collected = fetch_rows(pid)
+            joined = validate(rows, targets)
+            break
+        except SnapshotRejected as e:
+            if time.monotonic() >= deadline:
+                raise
+            left = int(deadline - time.monotonic())
+            print(f"  срез пока негодный ({e.args[0].split(':')[0]}) — "
+                  f"ждём (осталось {left // 60} мин.)")
+            time.sleep(POLL_SEC)
 
     after = balance()
     if args.trial:
-        print(f"\nПробный срез ({len(joined)} фраз), остаток после: {after:.2f} "
+        print(f"\nПробный срез ({len(joined)} фраз), собран {collected or '—'}, "
+              f"остаток после: {after:.2f} "
               f"(списано {before - after:.2f})\n")
         for r in sorted(joined, key=lambda x: x["position"]):
             print(f"  поз. {r['position']:>3}  {r['locale']}  {r['query']}")
@@ -510,7 +540,13 @@ def cmd_snapshot(args) -> int:
             return 2
         return 0
 
-    path = write_snapshot(joined, args.date or date.today())
+    # Снимок датируется днём **сбора**, а не днём, когда мы за ним пришли: сервис
+    # собирает по своему расписанию, и две эти даты расходятся.
+    day = args.date or collected or date.today()
+    if collected and collected != date.today():
+        print(f"  сбор датирован сервисом {collected} — снимок под этой датой, "
+              f"а не сегодняшней")
+    path = write_snapshot(joined, day)
     print(f"\nСнимок записан: {path.relative_to(ROOT)} "
           f"(остаток после: {after:.2f}, списано {before - after:.2f})")
     prior = [p for p in snapshots() if p != path]
