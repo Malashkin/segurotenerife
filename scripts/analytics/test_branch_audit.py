@@ -18,8 +18,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from branch_audit import DEFAULT_NO_PR_DAYS, DEFAULT_PR_DAYS, classify  # noqa: E402
 
 
-def call(ahead=3, age=0.0, pr=None, gh_ok=True):
-    return classify(ahead, age, pr, gh_ok, DEFAULT_NO_PR_DAYS, DEFAULT_PR_DAYS)
+def call(ahead=3, age=0.0, pr=None, gh_ok=True, conflicts=None):
+    return classify(
+        ahead, age, pr, gh_ok, DEFAULT_NO_PR_DAYS, DEFAULT_PR_DAYS, conflicts
+    )
 
 
 def make_pr(number=7, age=0.0, mergeable="MERGEABLE", draft=False):
@@ -78,6 +80,32 @@ class BranchWithPR(unittest.TestCase):
         self.assertIsNotNone(
             call(pr=make_pr(age=0.0, mergeable="CONFLICTING", draft=True))[1]
         )
+
+
+class LocalConflictWins(unittest.TestCase):
+    """GitHub вычисляет `mergeable` лениво и сразу после движения main отдаёт
+    UNKNOWN по конфликтующему PR. Локальный merge-tree знает правду сейчас."""
+
+    def test_local_conflict_overrides_stale_mergeable_field(self):
+        pr = make_pr(age=0.0, mergeable="MERGEABLE")  # поле ещё не пересчитано
+        _, violation = call(pr=pr, conflicts=True)
+        self.assertIn("конфликт", violation)
+
+    def test_local_clean_overrides_stale_conflicting_field(self):
+        pr = make_pr(age=0.0, mergeable="CONFLICTING")  # поле устарело
+        self.assertIsNone(call(pr=pr, conflicts=False)[1])
+
+    def test_falls_back_to_gh_field_when_merge_tree_unavailable(self):
+        pr = make_pr(age=0.0, mergeable="CONFLICTING")
+        self.assertIsNotNone(call(pr=pr, conflicts=None)[1])
+
+    def test_fresh_branch_without_pr_but_already_conflicting_violates(self):
+        """Возраст ни при чём: несводимая ветка — долг с первого дня."""
+        _, violation = call(age=0.1, conflicts=True)
+        self.assertIn("не сводится", violation)
+
+    def test_merged_branch_is_never_checked_for_conflicts(self):
+        self.assertIsNone(call(ahead=0, conflicts=True)[1])
 
 
 class GhUnavailable(unittest.TestCase):
