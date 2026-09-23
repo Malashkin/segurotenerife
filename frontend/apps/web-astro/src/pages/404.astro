@@ -1,0 +1,56 @@
+---
+/**
+ * Страница «не найдено» → dist/404.html.
+ *
+ * Зачем она нужна: без 404.html Cloudflare Pages включает SPA-фоллбэк и отдаёт
+ * главную с кодом 200 на ЛЮБОЙ несуществующий путь. Для поисковика это «мягкая
+ * 404»: опечатка в ссылке превращается в дубль главной, а проверка «страница
+ * открылась» даёт ложный зелёный на неопубликованной статье. С этим файлом
+ * Pages отдаёт его с кодом 404.
+ *
+ * Намеренно без общего Layout: ему не нужны canonical, hreflang и JSON-LD
+ * главной, а язык посетителя неизвестен — текст на всех четырёх локалях.
+ */
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>404 · Seguro Tenerife</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+        color: #0f172a;
+        background: #f8fafc;
+      }
+      main { max-width: 32rem; padding: 2rem; }
+      h1 { font-size: 3rem; margin: 0 0 1rem; }
+      p { margin: 0.4rem 0; line-height: 1.5; }
+      ul { list-style: none; padding: 0; margin: 1.5rem 0 0; display: grid; gap: 0.5rem; }
+      a { color: #0e7490; font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>404</h1>
+      <p>Página no encontrada.</p>
+      <p>Страница не найдена.</p>
+      <p>Сторінку не знайдено.</p>
+      <p>Page not found.</p>
+      <ul>
+        <li><a href="/es/">Inicio</a> · <a href="/es/blog/">Blog</a></li>
+        <li><a href="/">Главная</a> · <a href="/blog/">Блог</a></li>
+        <li><a href="/uk/">Головна</a> · <a href="/uk/blog/">Блог</a></li>
+        <li><a href="/en/">Home</a> · <a href="/en/blog/">Blog</a></li>
+      </ul>
+    </main>
+  </body>
+</html>
