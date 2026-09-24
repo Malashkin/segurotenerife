@@ -1,7 +1,7 @@
 ---
 audience: [product, frontend]
 owner: seguro-tenerife
-updated: 2026-09-09
+updated: 2026-09-24
 ---
 
 # SEO
@@ -19,6 +19,7 @@ updated: 2026-09-09
 | [content-lifecycle.md](content-lifecycle.md) | правила вывода и замены страниц: вердикты, пороги, квота новых тем |
 | [measuring-positions.md](measuring-positions.md) | как измеряем позиции: почему персонализация нас не достаёт, что врёт на самом деле, инструмент `positions.py` |
 | [candidates-2026-09-09.md](candidates-2026-09-09.md) | выборка кандидатов на вывод и переработку: четыре среза GSC за 90 дней, календарь когорт, предварительные вердикты (SEGU-16) |
+| [decision-2026-09-24-uk-travel-cluster.md](decision-2026-09-24-uk-travel-cluster.md) | вердикт по британскому тревел-кластеру: целевой ли лид, что делаем со страницей, чем дополнено правило отбора тем (SEGU-37) |
 | [experiments.md](experiments.md) | реестр правок с метрикой «до» и вердиктом |
 | [metrics.csv](metrics.csv) | история метрик Search Console по дням (ведёт `snapshot.py`) |
 | [domain-research.md](domain-research.md) | исследование ниши и домена |
