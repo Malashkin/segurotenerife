@@ -1,7 +1,7 @@
 ---
 audience: [product, seo]
 owner: seguro-tenerife
-updated: 2026-09-08
+updated: 2026-09-24
 ---
 
 # Аналитика: доступы и ежедневный цикл
@@ -66,6 +66,7 @@ python3 scripts/analytics/snapshot.py --days 30           # история ме�
 python3 scripts/analytics/report.py --days 28 --compare   # трафик + динамика
 python3 scripts/analytics/indexation.py --limit 200       # что в индексе
 python3 scripts/analytics/suggest.py --json /tmp/s.json   # подсказки Google (месячный слой)
+python3 scripts/analytics/intent.py --country gbr --days 28 --compare   # страна в разрезе интента
 python3 scripts/validate_articles.py                      # контент перед сборкой
 ```
 
