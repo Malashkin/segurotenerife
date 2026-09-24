@@ -36,6 +36,19 @@ STATE = Path.home() / ".config" / "segurotenerife" / "indexation.json"
 SITEMAP = "https://segurotenerife.com/sitemap-0.xml"
 RECHECK_OK_DAYS = 7  # проиндексированные перепроверяем раз в неделю
 
+# Решение владельца от 2026-09-24 (SEGU-36): юридические страницы остаются
+# в sitemap, хотя Google их не индексирует. Это постоянный осознанный остаток,
+# а не выпадение — иначе каждый дневной отчёт вынужден заново объяснять одни
+# и те же 12 адресов, и на их фоне теряется настоящая потеря индекса.
+# Поэтому они выводятся отдельным блоком и перепроверяются раз в неделю,
+# а не каждый запуск: тратить на них квоту ежедневно незачем.
+ACCEPTED_OUT_OF_INDEX = re.compile(r"/(privacy|terms|cookies)/$")
+
+
+def is_accepted(url: str) -> bool:
+    """Адрес, которому разрешено быть вне индекса по решению, а не по ошибке."""
+    return bool(ACCEPTED_OUT_OF_INDEX.search(url))
+
 
 def load_config() -> dict:
     cfg = {}
@@ -118,10 +131,10 @@ def main() -> int:
         prev = state.get(u)
         if args.force or prev is None:
             todo.append(u)
-        elif prev.get("verdict") != "PASS":
+        elif prev.get("verdict") != "PASS" and not is_accepted(u):
             todo.append(u)          # проблемные — каждый запуск
         elif prev.get("checked", "") < cutoff:
-            todo.append(u)          # успешные — раз в неделю
+            todo.append(u)          # успешные и принятые исключения — раз в неделю
     todo = todo[: args.limit]
 
     print(f"В sitemap: {len(urls)} URL. К проверке: {len(todo)} "
@@ -155,12 +168,25 @@ def main() -> int:
 
     problems = [u for u in urls
                 if state.get(u) and state[u].get("verdict") != "PASS"]
-    if problems:
-        print(f"\n  Не в индексе ({len(problems)}):")
-        for u in problems[:25]:
+    accepted = [u for u in problems if is_accepted(u)]
+    unexpected = [u for u in problems if not is_accepted(u)]
+
+    if unexpected:
+        print(f"\n  Не в индексе ({len(unexpected)}):")
+        for u in unexpected[:25]:
             print(f"    {state[u].get('coverage', '?')}  {u}")
-        if len(problems) > 25:
-            print(f"    … и ещё {len(problems) - 25}")
+        if len(unexpected) > 25:
+            print(f"    … и ещё {len(unexpected) - 25}")
+    else:
+        print("\n  Не в индексе: ничего сверх принятых исключений.")
+
+    if accepted:
+        print(f"\n  Принятые исключения ({len(accepted)}, решение SEGU-36 "
+              f"от 2026-09-24 — остаются в sitemap):")
+        for u in accepted[:25]:
+            print(f"    {state[u].get('coverage', '?')}  {u}")
+        if len(accepted) > 25:
+            print(f"    … и ещё {len(accepted) - 25}")
     print(f"\nСостояние: {STATE}")
     return 0
 
