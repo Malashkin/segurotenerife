@@ -1,0 +1,3 @@
+# CHANGELOG — файл только на дополнение: параллельные записи сводятся объединением,
+# а не конфликтом. Правило и причина — docs/process/code-integration.md.
+CHANGELOG.md merge=union
