@@ -10,12 +10,20 @@
 """
 
 import os
+import subprocess
 import sys
+import tempfile
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from branch_audit import DEFAULT_NO_PR_DAYS, DEFAULT_PR_DAYS, classify  # noqa: E402
+import branch_audit  # noqa: E402
+from branch_audit import (  # noqa: E402
+    DEFAULT_NO_PR_DAYS,
+    DEFAULT_PR_DAYS,
+    classify,
+    oldest_unmerged,
+)
 
 
 def call(ahead=3, age=0.0, pr=None, gh_ok=True, conflicts=None):
@@ -24,8 +32,18 @@ def call(ahead=3, age=0.0, pr=None, gh_ok=True, conflicts=None):
     )
 
 
-def make_pr(number=7, age=0.0, mergeable="MERGEABLE", draft=False):
-    return {"number": number, "age_days": age, "mergeable": mergeable, "draft": draft}
+def make_pr(
+    number=7, age=0.0, mergeable="MERGEABLE", draft=False,
+    base="main", base_has_pr=False,
+):
+    return {
+        "number": number,
+        "age_days": age,
+        "base": base,
+        "base_has_pr": base_has_pr,
+        "mergeable": mergeable,
+        "draft": draft,
+    }
 
 
 class MergedBranches(unittest.TestCase):
@@ -106,6 +124,103 @@ class LocalConflictWins(unittest.TestCase):
 
     def test_merged_branch_is_never_checked_for_conflicts(self):
         self.assertIsNone(call(ahead=0, conflicts=True)[1])
+
+
+class PrTarget(unittest.TestCase):
+    """PR должен вести в main, иначе он не отвечает на вопрос аудита.
+
+    Поймано 25.09: PR #1 был нацелен в `docs/seo-content-lifecycle` — ветку,
+    у которой своего PR не было вообще. Аудит считал его обычным открытым PR
+    и молчал, пока работа не вела в main ниоткуда.
+    """
+
+    def test_pr_into_branch_without_its_own_pr_is_a_violation(self):
+        _, violation = call(pr=make_pr(base="docs/seo-content-lifecycle"))
+        self.assertIn("не ведёт ниоткуда", violation)
+
+    def test_stack_is_fine_when_the_base_has_its_own_pr(self):
+        """Стопка PR-ов законна: у основания есть своя дорога в main."""
+        pr = make_pr(base="seo/decision-uk-travel-cluster", base_has_pr=True)
+        self.assertIsNone(call(pr=pr)[1])
+
+    def test_pr_into_main_is_fine(self):
+        self.assertIsNone(call(pr=make_pr(base="main"))[1])
+
+    def test_wrong_base_outranks_the_time_threshold(self):
+        """Сначала называем настоящую причину, а не «открыт четыре дня»."""
+        _, violation = call(pr=make_pr(base="other", age=DEFAULT_PR_DAYS + 5))
+        self.assertIn("не ведёт ниоткуда", violation)
+
+    def test_missing_base_field_does_not_accuse(self):
+        """Старый gh без baseRefName — не повод обвинять ветку наугад."""
+        pr = make_pr()
+        del pr["base"]
+        self.assertIsNone(call(pr=pr)[1])
+
+
+class BranchAge(unittest.TestCase):
+    """Возраст ветки — возраст самой старой невлитой работы.
+
+    Риск, ради которого тест написан: если возраст считать по последнему
+    коммиту, мерж `main` в ветку обнуляет счётчик, и просроченная ветка
+    становится «свежей» ровно тогда, когда ей помогли развести конфликт.
+    Снаружи это неотличимо от «нарушений нет».
+    """
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.cwd = os.getcwd()
+        os.chdir(self.tmp.name)
+        self.base = branch_audit.BASE
+        branch_audit.BASE = "main"
+        self.sh("git", "init", "-q", "-b", "main")
+        self.sh("git", "config", "user.email", "t@example.com")
+        self.sh("git", "config", "user.name", "T")
+        self.commit("base.txt", "1", "2026-09-01T00:00:00+00:00")
+
+    def tearDown(self):
+        branch_audit.BASE = self.base
+        os.chdir(self.cwd)
+        self.tmp.cleanup()
+
+    def sh(self, *args):
+        subprocess.run(args, check=True, capture_output=True)
+
+    def commit(self, name, text, when):
+        with open(name, "w", encoding="utf-8") as fh:
+            fh.write(text)
+        env = dict(os.environ, GIT_AUTHOR_DATE=when, GIT_COMMITTER_DATE=when)
+        subprocess.run(["git", "add", "-A"], check=True, capture_output=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", name], check=True,
+            capture_output=True, env=env,
+        )
+
+    def test_age_is_taken_from_oldest_unmerged_commit(self):
+        self.sh("git", "checkout", "-q", "-b", "feature")
+        self.commit("old.txt", "x", "2026-09-05T00:00:00+00:00")
+        self.assertTrue(oldest_unmerged("feature").startswith("2026-09-05"))
+
+    def test_merging_base_into_branch_does_not_reset_the_clock(self):
+        self.sh("git", "checkout", "-q", "-b", "feature")
+        self.commit("old.txt", "x", "2026-09-05T00:00:00+00:00")
+        self.sh("git", "checkout", "-q", "main")
+        self.commit("other.txt", "y", "2026-09-20T00:00:00+00:00")
+        self.sh("git", "checkout", "-q", "feature")
+        subprocess.run(
+            ["git", "merge", "-q", "--no-edit", "main"],
+            check=True, capture_output=True,
+            env=dict(
+                os.environ,
+                GIT_AUTHOR_DATE="2026-09-25T00:00:00+00:00",
+                GIT_COMMITTER_DATE="2026-09-25T00:00:00+00:00",
+            ),
+        )
+        self.assertTrue(oldest_unmerged("feature").startswith("2026-09-05"))
+
+    def test_fully_merged_branch_has_no_age(self):
+        self.sh("git", "checkout", "-q", "-b", "feature")
+        self.assertIsNone(oldest_unmerged("feature"))
 
 
 class GhUnavailable(unittest.TestCase):
