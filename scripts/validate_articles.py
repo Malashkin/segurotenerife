@@ -5,7 +5,9 @@
 
 Ловит ровно те ошибки, которые Astro либо пропустит, либо покажет невнятно:
 неэкранированный апостроф в YAML, ссылку на чужую локаль, статью-сироту без
-входящих ссылок. Запускать после любой правки контента:
+входящих ссылок. Плюс планка перелинковки: у новой или обновлённой статьи
+вход в продукт стоит в теле, а не только в подвале (см. check_product_link).
+Запускать после любой правки контента:
 
     python3 scripts/validate_articles.py
 
@@ -24,6 +26,57 @@ ARTICLE_PAGE = ROOT / "frontend/apps/web-astro/src/components/ArticlePage.astro"
 LOCALES = ["ru", "uk", "en", "es"]
 REQUIRED = ["locale", "urlSlug", "title", "description", "tag", "date", "order"]
 KEY = r"[A-Za-z_]+"
+
+# Планка перелинковки действует для статей, опубликованных или обновлённых с
+# этой даты. 164 статьи до неё написаны без ранней ссылки в продукт; правка
+# статьи подтягивает её под планку.
+PRODUCT_LINK_SINCE = "2026-09-22"
+PRODUCT_LINK = "](#chat)"
+PRODUCT_LINK_MAX = 3
+NO_PRODUCT_LINK = re.compile(r"<!--\s*no-product-link:\s*(.*?)\s*-->", re.S)
+
+
+def check_product_link(fm: list, body: str) -> list:
+    """Ошибки планки перелинковки для одной статьи (пустой список — планка пройдена).
+
+    Вход в продукт у нас один — чат-подбор, в markdown он ставится ссылкой
+    `[задача читателя](#chat)`. Шаблонная кнопка в подвале статьи не считается:
+    она одинакова у всех статей, и до неё доходят только дочитавшие.
+
+    Требования: хотя бы одна такая ссылка, первая — в первой половине тела,
+    якорь не короче трёх слов (называет задачу читателя, а не «здесь» или
+    «чат»), всего не больше трёх. Тема, где продукту места нет, выходит без
+    ссылки, но с комментарием `<!-- no-product-link: причина -->`: отказ
+    пишется, а не подразумевается.
+    """
+    dates = [
+        x.split(":", 1)[1].strip().strip("'\"")
+        for x in fm
+        if x.startswith("date:") or x.startswith("updated:")
+    ]
+    if not dates or max(dates) < PRODUCT_LINK_SINCE:
+        return []
+
+    exc = NO_PRODUCT_LINK.search(body)
+    if exc:
+        return [] if exc.group(1) else ["no-product-link без причины"]
+
+    text = body.strip()
+    first = text.find(PRODUCT_LINK)
+    if first < 0:
+        return ["нет ссылки в продукт в теле: [задача читателя](#chat) "
+                "или <!-- no-product-link: причина -->"]
+    errs = []
+    share = first / max(len(text), 1)
+    if share > 0.5:
+        errs.append(f"первая ссылка в продукт на {share:.0%} тела, нужна в первой половине")
+    count = text.count(PRODUCT_LINK)
+    if count > PRODUCT_LINK_MAX:
+        errs.append(f"ссылок в продукт {count}, потолок {PRODUCT_LINK_MAX}")
+    for m in re.finditer(r"\[([^\]]*)\]\(#chat\)", text):
+        if len(m.group(1).split()) < 3:
+            errs.append(f"якорь «{m.group(1)}» не называет задачу читателя (меньше трёх слов)")
+    return errs
 
 
 def check_quoting(path: str, line: str, errs: list) -> None:
@@ -104,6 +157,9 @@ def main() -> int:
 
             for x in fm:
                 check_quoting(rel, x, errs)
+
+            for e in check_product_link(fm, "\n".join(lines[end + 1:])):
+                errs.append((rel, e))
 
             q = len([x for x in fm if re.match(r"^\s+-\s+q:", x)])
             a = len([x for x in fm if re.match(r"^\s+a:", x)])

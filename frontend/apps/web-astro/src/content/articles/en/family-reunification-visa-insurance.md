@@ -3,7 +3,7 @@ locale: en
 urlSlug: family-reunification-visa-insurance
 order: 18
 date: 2026-08-11
-updated: 2026-09-23
+updated: 2026-09-25
 tag: Residency & visas
 title: 'Family Reunification Visa Spain: What Insurance Your Relatives Need'
 description: 'Health cover for reagrupación familiar: when Seguridad Social is enough, when a private policy is required, and what each relative''s certificate has to say.'
@@ -48,6 +48,8 @@ Where a private policy is needed, the conditions are the same as for any [reside
 - **no waiting periods** (*carencia* — a period after signing during which some treatments are not yet covered; see [waiting periods](/en/blog/carencias-waiting-periods-spain/)) — cover from day one;
 - **for a full year** and across the whole of Spain;
 - **with a certificate** for immigration and the consulate.
+
+Checking these conditions product by product takes time. Tell us in the chat who is coming — we will help you [choose a policy for family reunification](#chat) and work out the cost for everyone, free of charge.
 
 ## When to buy the policy, and from what date
 
