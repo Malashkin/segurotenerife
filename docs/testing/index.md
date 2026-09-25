@@ -44,6 +44,7 @@ pnpm e2e              # Playwright (web на Astro + admin; *.spec.ts)
 | Frontend unit | `**/src/**/*.test.ts` | `vitest` |
 | Frontend e2e | `frontend/e2e/tests/*.spec.ts` | `playwright` |
 | SEO-пайплайн | `scripts/analytics/test_*.py` | `unittest` (stdlib) |
+| Валидатор статей блога | `scripts/test_validate_articles.py` | `python3 -m unittest scripts/test_validate_articles.py` |
 
 - **`*.test.ts` = vitest, `*.spec.ts` = Playwright** (раздельные include-паттерны).
 - E2E **герметичен**: `playwright.config` обнуляет PostHog-ключ в тест-сборке
@@ -57,3 +58,22 @@ pnpm e2e              # Playwright (web на Astro + admin; *.spec.ts)
 - Mutation: выжившие мутанты **убить или обосновать** (равноценные/лог-только) —
   обоснования в `TEST_RESULTS.md`.
 - Без флака: детерминизм (инъекция часов в rate-limit вместо `sleep`).
+
+## Валидатор статей и планка перелинковки
+
+`scripts/validate_articles.py` — гейт перед выкладкой контента. С 2026-09-22 он
+же принуждает планку перелинковки (SEGU-25): у статьи, опубликованной или
+обновлённой с этой даты, в первой половине тела стоит ссылка в продукт
+`[задача читателя](#chat)` либо комментарий `<!-- no-product-link: причина -->`.
+Тесты — 16 штук на `check_product_link`; мутационный прогон вручную (порог
+половины тела, длина якоря, потолок ссылок, дата действия, поле `updated`,
+причина исключения) — 9 мутантов из 9 убиты.
+
+Ловушка при ручном мутационном прогоне на Python: `sed -i` в пределах той же
+секунды и с тем же размером файла не инвалидирует `__pycache__`, и тесты гоняют
+старый байткод — мутант «выживает» ложно. Запускать с
+`PYTHONDONTWRITEBYTECODE=1` и после `rm -rf scripts/__pycache__`.
+
+E2E `web-chat.spec.ts` проверяет, что ссылка `#chat` в теле статьи открывает чат,
+а кнопка CTA в подвале по-прежнему работает; тест падает, если откатить обработку
+`#chat` в мосте `Layout.astro` (проверено).

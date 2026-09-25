@@ -1,7 +1,7 @@
 ---
 audience: [product, frontend]
 owner: seguro-tenerife
-updated: 2026-09-09
+updated: 2026-09-21
 ---
 
 # SEO
@@ -20,6 +20,8 @@ updated: 2026-09-09
 | [measuring-positions.md](measuring-positions.md) | как измеряем позиции: почему персонализация нас не достаёт, что врёт на самом деле, инструмент `positions.py` |
 | [candidates-2026-09-09.md](candidates-2026-09-09.md) | выборка кандидатов на вывод и переработку: четыре среза GSC за 90 дней, календарь когорт, предварительные вердикты (SEGU-16) |
 | [experiments.md](experiments.md) | реестр правок с метрикой «до» и вердиктом |
+| [transfer-pack-adaptation.md](transfer-pack-adaptation.md) | перенос чужой SEO-практики (5 рутин, 8 навыков): что взяли, что уже было, что не взяли и почему; три новых автопилота (SEGU-25) |
+| [geo-visibility.md](geo-visibility.md) | ручной замер: упоминают ли нас языковые модели — методика, фиксированный список вопросов, снимки |
 | [metrics.csv](metrics.csv) | история метрик Search Console по дням (ведёт `snapshot.py`) |
 | [domain-research.md](domain-research.md) | исследование ниши и домена |
 | [../analytics.md](../analytics.md) | доступы: PostHog и Search Console |

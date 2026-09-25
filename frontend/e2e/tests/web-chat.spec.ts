@@ -148,4 +148,26 @@ test.describe('web — чат-консультант', () => {
     await expect(chat.getByText('Какой полис для ВНЖ?')).toHaveCount(0);
     await expect(chat.getByText(/Спросите что угодно о страховке/i)).toBeVisible();
   });
+
+  test('ссылка [текст](#chat) в теле статьи открывает чат, кнопка в подвале — тоже', async ({ page }) => {
+    // Вход в продукт прямо в теле статьи (планка перелинковки, docs/seo/pipeline.md):
+    // markdown-ссылка `#chat` — атрибутов data-ui в markdown не поставить.
+    // В опубликованных статьях таких ссылок пока нет, поэтому вставляем её сами.
+    await page.goto(`${WEB}/blog/pet-insurance-spain/`);
+    await page.locator('.article-body').evaluate((el) => {
+      const a = document.createElement('a');
+      a.href = '#chat';
+      a.textContent = 'подобрать полис для собаки';
+      a.dataset.testid = 'inline-chat-link';
+      el.prepend(a);
+    });
+    await page.getByTestId('inline-chat-link').click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    expect(new URL(page.url()).hash).toBe(''); // переход по якорю подавлен
+
+    // Регрессия моста data-ui: кнопка CTA в подвале статьи по-прежнему открывает чат.
+    await page.reload();
+    await page.locator('aside [data-ui="open-chat"]').click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+  });
 });
