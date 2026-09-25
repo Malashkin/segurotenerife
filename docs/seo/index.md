@@ -20,6 +20,7 @@ updated: 2026-09-24
 | [measuring-positions.md](measuring-positions.md) | как измеряем позиции: почему персонализация нас не достаёт, что врёт на самом деле, инструмент `positions.py` |
 | [candidates-2026-09-09.md](candidates-2026-09-09.md) | выборка кандидатов на вывод и переработку: четыре среза GSC за 90 дней, календарь когорт, предварительные вердикты (SEGU-16) |
 | [decision-2026-09-24-uk-travel-cluster.md](decision-2026-09-24-uk-travel-cluster.md) | вердикт по британскому тревел-кластеру: целевой ли лид, что делаем со страницей, чем дополнено правило отбора тем (SEGU-37) |
+| [analysis-2026-09-24-en-resident-intent.md](analysis-2026-09-24-en-resident-intent.md) | английская локаль в разрезе интента: резидентский спрос против туристического, покрытие запросов страницами, инструмент `intent.py` (SEGU-38) |
 | [experiments.md](experiments.md) | реестр правок с метрикой «до» и вердиктом |
 | [metrics.csv](metrics.csv) | история метрик Search Console по дням (ведёт `snapshot.py`) |
 | [domain-research.md](domain-research.md) | исследование ниши и домена |
