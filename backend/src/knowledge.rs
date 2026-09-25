@@ -53,6 +53,17 @@ pub struct KnowledgeBase {
 /// Слова длиной меньше этого в скоринге не учитываем (шум: «и», «по», «de»).
 const MIN_TOKEN_LEN: usize = 3;
 
+/// Результат скоринга одного дока.
+///
+/// `strong` отделяет осмысленное совпадение (интент или курированный `keyword`)
+/// от случайного вхождения слова в общий «стог». Без этого различия выдача не
+/// отличает «нашли по делу» от «слово встретилось в описании».
+#[derive(Clone, Copy, Debug)]
+struct Hit {
+    score: i64,
+    strong: bool,
+}
+
 impl KnowledgeBase {
     /// Грузит и парсит корпус из JSON-файла.
     pub fn load(path: &str) -> anyhow::Result<Self> {
@@ -101,34 +112,41 @@ impl KnowledgeBase {
     /// общий дефолт, чтобы агент всегда имел заземление.
     pub fn retrieve(&self, query: &str, intent: Option<&str>, k: usize) -> Vec<&ServiceDoc> {
         let tokens = tokenize(query);
-        let mut scored: Vec<(i64, usize)> = self
+        let mut scored: Vec<(Hit, usize)> = self
             .docs
             .iter()
             .enumerate()
             .map(|(i, doc)| (self.score(doc, &self.haystacks[i], &tokens, intent), i))
             .collect();
 
-        scored.sort_by(|a, b| b.0.cmp(&a.0).then(a.1.cmp(&b.1)));
+        scored.sort_by(|a, b| b.0.score.cmp(&a.0.score).then(a.1.cmp(&b.1)));
 
-        let any_positive = scored.first().map(|(s, _)| *s > 0).unwrap_or(false);
-        if !any_positive {
-            // Ни интента, ни лексики — дефолтная подборка (медицина для приезжих).
+        // Фолбэк решается по СИЛЬНЫМ совпадениям (интент или курированный
+        // keyword), а не по «счёт больше нуля». Разница не косметическая: слабое
+        // вхождение в общий «стог» даёт +2, и нескольких таких хватало, чтобы
+        // счёт стал положительным. Тогда фолбэк не срабатывал, и вместо
+        // осмысленного дефолта выдача уходила в шум — на живом запросе
+        // «long term residence» поднимались `salud-internacional` и `viaje`,
+        // хотя правильный `salud-residencia` стоит первым в PRIORITY.
+        let any_strong = scored.first().map(|(h, _)| h.strong).unwrap_or(false);
+        if !any_strong {
             return self.fallback_docs(k);
         }
 
         scored
             .into_iter()
-            .filter(|(s, _)| *s > 0)
+            .filter(|(h, _)| h.strong)
             .take(k)
             .map(|(_, i)| &self.docs[i])
             .collect()
     }
 
-    fn score(&self, doc: &ServiceDoc, haystack: &str, tokens: &BTreeSet<String>, intent: Option<&str>) -> i64 {
-        let mut score = 0i64;
+    fn score(&self, doc: &ServiceDoc, haystack: &str, tokens: &BTreeSet<String>, intent: Option<&str>) -> Hit {
+        let mut hit = Hit { score: 0, strong: false };
         if let Some(intent) = intent {
             if doc.intents.iter().any(|i| i == intent) {
-                score += 100;
+                hit.score += 100;
+                hit.strong = true;
             }
         }
         for tok in tokens {
@@ -136,12 +154,13 @@ impl KnowledgeBase {
                 let kw = kw.to_lowercase();
                 kw == *tok || kw.contains(tok.as_str())
             }) {
-                score += 10;
+                hit.score += 10;
+                hit.strong = true;
             } else if haystack.contains(tok.as_str()) {
-                score += 2;
+                hit.score += 2;
             }
         }
-        score
+        hit
     }
 
     /// Дефолт, когда запрос ничего не зацепил: самые частые для аудитории доки.
@@ -430,5 +449,84 @@ mod tests {
         let (out, leaked) = strip_brand("El casero firmó las generalidades del contrato.");
         assert!(!leaked);
         assert_eq!(out, "El casero firmó las generalidades del contrato.");
+    }
+
+    // ── Реальный корпус ──────────────────────────────────────────────────────
+    // Эти проверки идут по боевому `knowledge-base/asisa/services.json`, а не по
+    // игрушечному kb() выше. Причина: промах, который они ловят, был именно в
+    // данных — в курированных `keywords` не хватало английских формулировок,
+    // и на игрушечном корпусе он не воспроизводится.
+
+    fn real_kb() -> KnowledgeBase {
+        KnowledgeBase::load("../knowledge-base/asisa/services.json")
+            .expect("боевой корпус должен читаться")
+    }
+
+    /// Запросы из живых сессий 2026-09-08: человек искал полис под ВНЖ, а
+    /// ретривал поднимал `salud-estudiantes` + `mascotas` и `salud-internacional`
+    /// + `viaje`. Тема лида бралась с этого промаха.
+    #[test]
+    fn english_residency_queries_retrieve_residencia_doc() {
+        let kb = real_kb();
+        for query in [
+            "long term residence",
+            "private medical insurance for residency",
+            "residence permit insurance",
+            "resident visa health cover",
+        ] {
+            let got = kb.retrieve(query, None, 2);
+            assert_eq!(
+                got.first().map(|d| d.id.as_str()),
+                Some("salud-residencia"),
+                "запрос {query:?} должен поднимать salud-residencia, а поднял {:?}",
+                got.iter().map(|d| d.id.as_str()).collect::<Vec<_>>()
+            );
+        }
+    }
+
+    /// Слабые совпадения по общему «стогу» (+2) не должны вытеснять фолбэк:
+    /// именно они делали счёт положительным и уводили выдачу в шум.
+    #[test]
+    fn weak_haystack_hits_do_not_beat_fallback() {
+        let kb = real_kb();
+        // Ни одного курированного keyword — только общие слова, которые
+        // встречаются в описаниях доков.
+        let got = kb.retrieve("hola buenos dias como estan ustedes", None, 3);
+        assert_eq!(
+            got.first().map(|d| d.id.as_str()),
+            Some("salud-residencia"),
+            "без keyword-совпадений должен отдаваться фолбэк, а пришло {:?}",
+            got.iter().map(|d| d.id.as_str()).collect::<Vec<_>>()
+        );
+    }
+
+    /// Английский посетитель должен попадать в свой док НАПРЯМУЮ, а не через
+    /// фолбэк. Фолбэк спасает только там, где его приоритет случайно совпал с
+    /// нужным доком; для всего остального он молча выдаёт не то.
+    #[test]
+    fn english_queries_route_to_their_own_doc() {
+        let kb = real_kb();
+        for (query, expected) in [
+            ("long term residence", "salud-residencia"),
+            ("residence permit insurance", "salud-residencia"),
+            ("hospitalization cover", "hospitalizacion"),
+            ("surgery and inpatient care", "hospitalizacion"),
+            ("braces for my teeth", "dental"),
+            ("travel luggage cover", "viaje"),
+            ("mortgage life insurance", "vida"),
+            ("maternity and pregnancy", "salud-completa"),
+            ("outpatient budget plan", "salud-ambulatoria"),
+            ("reimbursement refund private clinic", "salud-reembolso"),
+            ("funeral repatriation", "decesos"),
+            ("dog liability vet", "mascotas"),
+        ] {
+            let got = kb.retrieve(query, None, 3);
+            assert_eq!(
+                got.first().map(|d| d.id.as_str()),
+                Some(expected),
+                "запрос {query:?} должен поднимать {expected}, а поднял {:?}",
+                got.iter().map(|d| d.id.as_str()).collect::<Vec<_>>()
+            );
+        }
     }
 }

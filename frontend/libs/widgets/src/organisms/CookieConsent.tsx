@@ -12,7 +12,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUiStore } from '@shared/store';
-import { setAnalyticsConsent, captureEvent } from '@shared/api';
+import { setAnalyticsConsent, captureEvent, applyConsentToPendingEvents } from '@shared/api';
 import { Button } from '@shared/ui';
 
 const CONSENT_KEY = 'seguro_cookie_consent';
@@ -42,6 +42,10 @@ export function CookieConsent(): JSX.Element | null {
     }
     // Применяем решение к PostHog: accepted → начинаем трекинг, necessary → opt-out.
     setAnalyticsConsent(value === 'accepted');
+    // И к событиям, которые случились ДО ответа на баннер: согласие → досылаем,
+    // отказ → выбрасываем. Без этого `chat_started` терялся у всех, кто открыл
+    // чат раньше, чем нажал кнопку в баннере.
+    applyConsentToPendingEvents(value === 'accepted');
     // Фиксируем выбор (для 'necessary' уже opted out → no-op, это ок).
     captureEvent('cookie_consent', { choice: value });
     setVisible(false);

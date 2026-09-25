@@ -11,6 +11,8 @@ const ph = vi.hoisted(() => ({
   opt_in_capturing: vi.fn(),
   opt_out_capturing: vi.fn(),
   capture: vi.fn(),
+  register: vi.fn(),
+  startExceptionAutocapture: vi.fn(),
 }));
 vi.mock('posthog-js', () => ({ default: ph }));
 
@@ -81,6 +83,9 @@ describe('внутренние поверхности (админка) вне т
     captureEvent('admin_opened');
     expect(ph.init).not.toHaveBeenCalled();
     expect(ph.capture).not.toHaveBeenCalled();
+    // Сбор ошибок живёт в `loaded`, а его без init не бывает — но проверяем
+    // явно: заходы менеджера в админку не должны попадать никуда.
+    expect(ph.startExceptionAutocapture).not.toHaveBeenCalled();
   });
 
   it('путь /admin — тоже вне трекинга', async () => {
@@ -135,5 +140,43 @@ describe('detectTrafficChannel (GEO vs обычный трафик)', () => {
     expect(detectTrafficChannel().traffic_channel).toBe('social');
     setEnv('');
     expect(detectTrafficChannel().traffic_channel).toBe('direct');
+  });
+
+  it('ошибки браузера собираются, консольные — нет', async () => {
+    vi.stubEnv('PUBLIC_POSTHOG_KEY', 'phc_test');
+    const { initAnalytics } = await import('./posthog');
+    initAnalytics();
+    // `loaded` вызывает сам posthog-js после инициализации — в тесте дёргаем сами.
+    const cfg = ph.init.mock.calls[0]![1] as { loaded: (p: typeof ph) => void };
+    cfg.loaded(ph);
+    expect(ph.startExceptionAutocapture).toHaveBeenCalledWith({
+      capture_unhandled_errors: true,
+      capture_unhandled_rejections: true,
+      // Сторонние скрипты шумят, и в console.error утекает неконтролируемое.
+      capture_console_errors: false,
+    });
+  });
+
+  it('сбор ошибок не отменяет GDPR-гейт: до согласия capture закрыт', async () => {
+    vi.stubEnv('PUBLIC_POSTHOG_KEY', 'phc_test');
+    const { initAnalytics } = await import('./posthog');
+    initAnalytics();
+    const cfg = ph.init.mock.calls[0]![1] as Record<string, unknown>;
+    // Обработчики ошибок вешаются сразу, но отправка ждёт opt-in — как autocapture.
+    expect(cfg.opt_out_capturing_by_default).toBe(true);
+    expect(ph.opt_in_capturing).not.toHaveBeenCalled();
+  });
+
+  it('падение startExceptionAutocapture не ломает инициализацию', async () => {
+    vi.stubEnv('PUBLIC_POSTHOG_KEY', 'phc_test');
+    ph.startExceptionAutocapture.mockImplementationOnce(() => {
+      throw new Error('boom');
+    });
+    const { initAnalytics, captureEvent } = await import('./posthog');
+    initAnalytics();
+    const cfg = ph.init.mock.calls[0]![1] as { loaded: (p: typeof ph) => void };
+    expect(() => cfg.loaded(ph)).not.toThrow();
+    captureEvent('still_working');
+    expect(ph.capture).toHaveBeenCalledWith('still_working', undefined);
   });
 });

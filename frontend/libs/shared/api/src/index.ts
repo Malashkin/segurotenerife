@@ -22,7 +22,7 @@ export { QueryProvider, type QueryProviderProps } from './QueryProvider';
 
 export { createLead, listLeads } from './leads';
 
-export { trackEvent, getSessionId } from './events';
+export { trackEvent, getSessionId, applyConsentToPendingEvents } from './events';
 
 export {
   initAnalytics,

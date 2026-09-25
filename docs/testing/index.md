@@ -1,7 +1,7 @@
 ---
 audience: [backend, frontend, testing]
 owner: seguro-tenerife
-updated: 2026-09-21
+updated: 2026-09-23
 ---
 
 # Testing
@@ -20,6 +20,14 @@ cargo build
 cargo mutants -f src/<file>.rs   # mutation-гейт на изменённом файле
 ```
 
+### SEO-пайплайн (`scripts/analytics/`)
+```bash
+python3 -m unittest discover -s scripts/analytics -p 'test_*.py' -v
+```
+Только стандартная библиотека: pytest в проекте нет, а ставить рантайм ради
+четырёх скриптов дороже, чем обойтись `unittest`. Тесты герметичны — git-репозиторий
+создаётся во временной папке, HTTP замокан. Что именно пинится — `../seo/pipeline.md`.
+
 ### Frontend (`frontend/`)
 ```bash
 pnpm install
@@ -35,6 +43,7 @@ pnpm e2e              # Playwright (web на Astro + admin; *.spec.ts)
 | Backend mutation | изменённые `.rs` | `cargo-mutants` |
 | Frontend unit | `**/src/**/*.test.ts` | `vitest` |
 | Frontend e2e | `frontend/e2e/tests/*.spec.ts` | `playwright` |
+| SEO-пайплайн | `scripts/analytics/test_*.py` | `unittest` (stdlib) |
 | Валидатор статей блога | `scripts/test_validate_articles.py` | `python3 -m unittest scripts/test_validate_articles.py` |
 
 - **`*.test.ts` = vitest, `*.spec.ts` = Playwright** (раздельные include-паттерны).

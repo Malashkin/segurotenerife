@@ -1,7 +1,7 @@
 ---
 audience: [product, backend, frontend, devops, testing]
 owner: seguro-tenerife
-updated: 2026-06-19
+updated: 2026-09-23
 ---
 
 # Документация Seguro Tenerife
@@ -15,5 +15,6 @@ AI-агентов — в [`AGENTS.md`](AGENTS.md).
 - **Наблюдаемость:** [monitoring/](monitoring/index.md) — Langfuse + PostHog.
 - **Тесты:** [testing/](testing/index.md) — cargo/vitest/playwright/mutation.
 - **DevOps:** [deploy.md](deploy.md) — деплой и ENV.
+- **Процесс:** [process/](process/index.md) — владелец интеграции кода и правило эскалации для веток без PR.
 - **Product:** [seo/domain-research.md](seo/domain-research.md), [ux/](ux/ux-review.md).
 - **История:** [../CHANGELOG.md](../CHANGELOG.md), [../TEST_RESULTS.md](../TEST_RESULTS.md).
