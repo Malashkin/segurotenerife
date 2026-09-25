@@ -3,7 +3,7 @@ locale: es
 urlSlug: family-reunification-visa-insurance
 order: 18
 date: 2026-08-11
-updated: 2026-09-23
+updated: 2026-09-25
 tag: Residencia y visados
 title: 'Seguro médico para reagrupación familiar: qué exigen y cuándo contratarlo'
 description: 'Cuándo basta con la Seguridad Social y cuándo hace falta un seguro privado para reagrupar a tu familia, y qué debe decir el certificado de cada familiar.'
@@ -48,6 +48,8 @@ Cuando hace falta seguro privado, las condiciones son las mismas que para cualqu
 - **sin periodos de carencia**: cobertura desde el primer día ([qué son las carencias](/es/blog/carencias-waiting-periods-spain/));
 - **para todo el año** y en toda España;
 - **con certificado** para extranjería y el consulado.
+
+Comprobar estas condiciones producto por producto lleva tiempo. Cuéntenos en el chat quiénes vienen y le ayudamos a [elegir la póliza para la reagrupación familiar](#chat) y a calcular el precio de toda la familia gratis.
 
 ## Cuándo contratarla y con qué fecha de inicio
 

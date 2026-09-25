@@ -64,6 +64,7 @@ python3 scripts/analytics/gsc_auth.py ~/Downloads/client_secret_*.json
 python3 scripts/analytics/healthcheck.py                  # живы ли доступы
 python3 scripts/analytics/snapshot.py --days 30           # история метрик по дням
 python3 scripts/analytics/report.py --days 28 --compare   # трафик + динамика
+python3 scripts/analytics/positions.py --days 28          # позиции без искажения миксом
 python3 scripts/analytics/indexation.py --limit 200       # что в индексе
 python3 scripts/analytics/suggest.py --json /tmp/s.json   # подсказки Google (месячный слой)
 python3 scripts/analytics/intent.py --country gbr --days 28 --compare   # страна в разрезе интента
@@ -78,6 +79,11 @@ python3 scripts/validate_articles.py                      # контент пе�
 написан, но не задеплоен. Он идёт первым шагом рутины именно поэтому: без
 токена остальные инструменты не падают, а печатают нули, и отчёт выглядит как
 «трафика нет».
+
+`positions.py` отвечает на вопрос «мы правда выросли или просто сменился набор
+запросов»: считает позицию на фиксированной корзине запросов и отделяет движение выдачи
+от смены микса. Он же — ответ на вопрос про персонализацию поиска: позицию у нас нельзя
+проверять глазами в браузере, и почему — в [`seo/measuring-positions.md`](seo/measuring-positions.md).
 
 `snapshot.py` копит `docs/seo/metrics.csv` — по строке на день. Search Console
 не отдаёт исторический срез «какая была позиция на такую-то дату», только

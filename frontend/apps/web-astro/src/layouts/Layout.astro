@@ -188,10 +188,19 @@ const jsonld = {
     <slot />
 
     <!-- Мост статичных кнопок → острова Overlays: делегированный клик по
-         [data-ui] шлёт событие seguro:ui с данными кнопки (ui/intent/doc). -->
+         [data-ui] шлёт событие seguro:ui с данными кнопки (ui/intent/doc).
+         Ссылка `[текст](#chat)` в markdown статьи открывает чат так же, как
+         кнопка data-ui="open-chat": атрибутов в markdown не поставить, а вход в
+         продукт нужен прямо в теле статьи, а не только в подвале. -->
     <script>
       document.addEventListener('click', (e) => {
-        const el = (e.target as HTMLElement | null)?.closest<HTMLElement>('[data-ui]');
+        const target = e.target as HTMLElement | null;
+        if (target?.closest('a[href="#chat"]')) {
+          e.preventDefault();
+          window.dispatchEvent(new CustomEvent('seguro:ui', { detail: { ui: 'open-chat' } }));
+          return;
+        }
+        const el = target?.closest<HTMLElement>('[data-ui]');
         if (!el) return;
         window.dispatchEvent(new CustomEvent('seguro:ui', { detail: { ...el.dataset } }));
       });
