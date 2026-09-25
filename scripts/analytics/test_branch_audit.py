@@ -32,8 +32,18 @@ def call(ahead=3, age=0.0, pr=None, gh_ok=True, conflicts=None):
     )
 
 
-def make_pr(number=7, age=0.0, mergeable="MERGEABLE", draft=False):
-    return {"number": number, "age_days": age, "mergeable": mergeable, "draft": draft}
+def make_pr(
+    number=7, age=0.0, mergeable="MERGEABLE", draft=False,
+    base="main", base_has_pr=False,
+):
+    return {
+        "number": number,
+        "age_days": age,
+        "base": base,
+        "base_has_pr": base_has_pr,
+        "mergeable": mergeable,
+        "draft": draft,
+    }
 
 
 class MergedBranches(unittest.TestCase):
@@ -114,6 +124,38 @@ class LocalConflictWins(unittest.TestCase):
 
     def test_merged_branch_is_never_checked_for_conflicts(self):
         self.assertIsNone(call(ahead=0, conflicts=True)[1])
+
+
+class PrTarget(unittest.TestCase):
+    """PR должен вести в main, иначе он не отвечает на вопрос аудита.
+
+    Поймано 25.09: PR #1 был нацелен в `docs/seo-content-lifecycle` — ветку,
+    у которой своего PR не было вообще. Аудит считал его обычным открытым PR
+    и молчал, пока работа не вела в main ниоткуда.
+    """
+
+    def test_pr_into_branch_without_its_own_pr_is_a_violation(self):
+        _, violation = call(pr=make_pr(base="docs/seo-content-lifecycle"))
+        self.assertIn("не ведёт ниоткуда", violation)
+
+    def test_stack_is_fine_when_the_base_has_its_own_pr(self):
+        """Стопка PR-ов законна: у основания есть своя дорога в main."""
+        pr = make_pr(base="seo/decision-uk-travel-cluster", base_has_pr=True)
+        self.assertIsNone(call(pr=pr)[1])
+
+    def test_pr_into_main_is_fine(self):
+        self.assertIsNone(call(pr=make_pr(base="main"))[1])
+
+    def test_wrong_base_outranks_the_time_threshold(self):
+        """Сначала называем настоящую причину, а не «открыт четыре дня»."""
+        _, violation = call(pr=make_pr(base="other", age=DEFAULT_PR_DAYS + 5))
+        self.assertIn("не ведёт ниоткуда", violation)
+
+    def test_missing_base_field_does_not_accuse(self):
+        """Старый gh без baseRefName — не повод обвинять ветку наугад."""
+        pr = make_pr()
+        del pr["base"]
+        self.assertIsNone(call(pr=pr)[1])
 
 
 class BranchAge(unittest.TestCase):

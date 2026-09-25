@@ -141,7 +141,7 @@ def open_prs() -> tuple[dict[str, dict], bool]:
     proc = subprocess.run(
         [
             "gh", "pr", "list", "--state", "open", "--limit", "100",
-            "--json", "number,title,headRefName,createdAt,mergeable,isDraft",
+            "--json", "number,title,headRefName,baseRefName,createdAt,mergeable,isDraft",
         ],
         capture_output=True,
         text=True,
@@ -172,6 +172,16 @@ def classify(
         return ("merged" if pr else "merged-stale"), None
 
     if pr:
+        base = pr.get("base")
+        if base and base != BASE.split("/", 1)[-1] and not pr.get("base_has_pr"):
+            # Стопка PR-ов законна, пока у основания есть своя дорога в main.
+            # Если её нет, работа не ведёт в main ниоткуда, а аудит видит
+            # обычный открытый PR и молчит. Поймано 25.09 на PR #1: база —
+            # `docs/seo-content-lifecycle`, у которой PR не было вовсе.
+            return "pr-open", (
+                f"PR #{pr['number']} нацелен в `{base}`, а у той ветки своего "
+                f"PR нет — до main эта работа не ведёт ниоткуда"
+            )
         if conflicts is True or (
             conflicts is None and pr.get("mergeable") == "CONFLICTING"
         ):
@@ -224,6 +234,8 @@ def collect(no_pr_days: float, pr_days: float) -> dict:
             row["pr"] = {
                 "number": pr["number"],
                 "age_days": round(age_days(pr["createdAt"]), 1),
+                "base": pr.get("baseRefName"),
+                "base_has_pr": pr.get("baseRefName") in prs,
                 "mergeable": pr.get("mergeable"),
                 "draft": pr.get("isDraft", False),
             }
