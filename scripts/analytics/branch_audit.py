@@ -120,6 +120,22 @@ def age_days(iso: str) -> float:
     return (datetime.now(timezone.utc) - ts).total_seconds() / 86400
 
 
+def oldest_unmerged(ref: str) -> "str | None":
+    """Дата самого старого коммита ветки, которого нет в BASE.
+
+    Возраст нарушения — это возраст самой старой невлитой работы, а не дата
+    последнего касания ветки. Считать по последнему коммиту нельзя: любой
+    мерж `main` в ветку (в том числе разводка конфликта владельцем интеграции)
+    обнуляет счётчик, и ветка, шестнадцать суток лежавшая без PR, на следующем
+    же прогоне выглядит свежей. Поймано 25.09 на `docs/seo-content-lifecycle`:
+    аудит замолчал про неё ровно после того, как ей помогли.
+
+    None — если невлитых коммитов нет.
+    """
+    out = git("log", "--format=%cI", "--reverse", f"{BASE}..{ref}")
+    return out.splitlines()[0] if out else None
+
+
 def open_prs() -> tuple[dict[str, dict], bool]:
     """{имя ветки: данные PR}. Второе значение — удалось ли спросить gh."""
     proc = subprocess.run(
@@ -196,7 +212,7 @@ def collect(no_pr_days: float, pr_days: float) -> dict:
             "branch": short,
             "commits_ahead": ahead,
             "last_commit": last_commit,
-            "age_days": round(age_days(last_commit), 1),
+            "age_days": round(age_days(oldest_unmerged(ref) or last_commit), 1),
             "pr": None,
             "conflicts": None,
             "state": "",

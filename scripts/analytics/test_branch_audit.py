@@ -10,12 +10,20 @@
 """
 
 import os
+import subprocess
 import sys
+import tempfile
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from branch_audit import DEFAULT_NO_PR_DAYS, DEFAULT_PR_DAYS, classify  # noqa: E402
+import branch_audit  # noqa: E402
+from branch_audit import (  # noqa: E402
+    DEFAULT_NO_PR_DAYS,
+    DEFAULT_PR_DAYS,
+    classify,
+    oldest_unmerged,
+)
 
 
 def call(ahead=3, age=0.0, pr=None, gh_ok=True, conflicts=None):
@@ -106,6 +114,71 @@ class LocalConflictWins(unittest.TestCase):
 
     def test_merged_branch_is_never_checked_for_conflicts(self):
         self.assertIsNone(call(ahead=0, conflicts=True)[1])
+
+
+class BranchAge(unittest.TestCase):
+    """Возраст ветки — возраст самой старой невлитой работы.
+
+    Риск, ради которого тест написан: если возраст считать по последнему
+    коммиту, мерж `main` в ветку обнуляет счётчик, и просроченная ветка
+    становится «свежей» ровно тогда, когда ей помогли развести конфликт.
+    Снаружи это неотличимо от «нарушений нет».
+    """
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.cwd = os.getcwd()
+        os.chdir(self.tmp.name)
+        self.base = branch_audit.BASE
+        branch_audit.BASE = "main"
+        self.sh("git", "init", "-q", "-b", "main")
+        self.sh("git", "config", "user.email", "t@example.com")
+        self.sh("git", "config", "user.name", "T")
+        self.commit("base.txt", "1", "2026-09-01T00:00:00+00:00")
+
+    def tearDown(self):
+        branch_audit.BASE = self.base
+        os.chdir(self.cwd)
+        self.tmp.cleanup()
+
+    def sh(self, *args):
+        subprocess.run(args, check=True, capture_output=True)
+
+    def commit(self, name, text, when):
+        with open(name, "w", encoding="utf-8") as fh:
+            fh.write(text)
+        env = dict(os.environ, GIT_AUTHOR_DATE=when, GIT_COMMITTER_DATE=when)
+        subprocess.run(["git", "add", "-A"], check=True, capture_output=True)
+        subprocess.run(
+            ["git", "commit", "-q", "-m", name], check=True,
+            capture_output=True, env=env,
+        )
+
+    def test_age_is_taken_from_oldest_unmerged_commit(self):
+        self.sh("git", "checkout", "-q", "-b", "feature")
+        self.commit("old.txt", "x", "2026-09-05T00:00:00+00:00")
+        self.assertTrue(oldest_unmerged("feature").startswith("2026-09-05"))
+
+    def test_merging_base_into_branch_does_not_reset_the_clock(self):
+        self.sh("git", "checkout", "-q", "-b", "feature")
+        self.commit("old.txt", "x", "2026-09-05T00:00:00+00:00")
+        self.sh("git", "checkout", "-q", "main")
+        self.commit("other.txt", "y", "2026-09-20T00:00:00+00:00")
+        self.sh("git", "checkout", "-q", "feature")
+        subprocess.run(
+            ["git", "merge", "-q", "--no-edit", "main"],
+            check=True, capture_output=True,
+            env=dict(
+                os.environ,
+                GIT_AUTHOR_DATE="2026-09-25T00:00:00+00:00",
+                GIT_COMMITTER_DATE="2026-09-25T00:00:00+00:00",
+            ),
+        )
+        self.assertTrue(oldest_unmerged("feature").startswith("2026-09-05"))
+
+    def test_fully_merged_branch_has_no_age(self):
+        self.sh("git", "checkout", "-q", "-b", "feature")
+        self.assertIsNone(oldest_unmerged("feature"))
 
 
 class GhUnavailable(unittest.TestCase):
