@@ -21,6 +21,8 @@ updated: 2026-09-24
 | [candidates-2026-09-09.md](candidates-2026-09-09.md) | выборка кандидатов на вывод и переработку: четыре среза GSC за 90 дней, календарь когорт, предварительные вердикты (SEGU-16) |
 | [decision-2026-09-24-uk-travel-cluster.md](decision-2026-09-24-uk-travel-cluster.md) | вердикт по британскому тревел-кластеру: целевой ли лид, что делаем со страницей, чем дополнено правило отбора тем (SEGU-37) |
 | [experiments.md](experiments.md) | реестр правок с метрикой «до» и вердиктом |
+| [transfer-pack-adaptation.md](transfer-pack-adaptation.md) | перенос чужой SEO-практики (5 рутин, 8 навыков): что взяли, что уже было, что не взяли и почему; три новых автопилота (SEGU-25) |
+| [geo-visibility.md](geo-visibility.md) | ручной замер: упоминают ли нас языковые модели — методика, фиксированный список вопросов, снимки |
 | [metrics.csv](metrics.csv) | история метрик Search Console по дням (ведёт `snapshot.py`) |
 | [domain-research.md](domain-research.md) | исследование ниши и домена |
 | [../analytics.md](../analytics.md) | доступы: PostHog и Search Console |
